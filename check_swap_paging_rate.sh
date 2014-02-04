@@ -88,7 +88,7 @@ function swap_rate() {
 in_rate=`swap_rate $IN_DATAFILE $CURRENT_PAGES_SWAPPED_IN`
 out_rate=`swap_rate $OUT_DATAFILE $CURRENT_PAGES_SWAPPED_OUT`
 
-echo "swap in/out is $in_rate/$out_rate per second | in=${in_rate}pages/s;;;; out=${out_rate}pages/s;;;;"
+echo "swap in/out is $in_rate/$out_rate per second | in=${in_rate}pages/s;${WARN_THRESHOLD};${CRITICAL_THRESHOLD};; out=${out_rate}pages/s;${WARN_THRESHOLD};${CRITICAL_THRESHOLD};;"
 if [[ $in_rate -ge $CRITICAL_THRESHOLD ]] || [[ $out_rate -ge $CRITICAL_THRESHOLD ]]; then
     exit $CRITICAL
 fi
