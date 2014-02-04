@@ -80,7 +80,7 @@ while read ts process_count; do
 done < $DATAFILE.previous
 echo -e "$NOW\t$current_process_count" >> $DATAFILE
 
-echo "fork rate is $current_fork_rate processes/second (based on the last $ts_delta seconds)"
+echo "fork rate is $current_fork_rate processes/second (based on the last $ts_delta seconds) | rate=${current_fork_rate}processes/s;;;;"
 if [[ $current_fork_rate -ge $CRITICAL_THRESHOLD ]]; then
     exit $CRITICAL
 fi
