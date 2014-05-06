@@ -289,6 +289,10 @@ def main():
                         metavar="W", help="warning threshold.")
     parser.add_argument('-c', '--critical', type=int, dest="critical",
                         metavar="C", help="critical threshold.")
+    parser.add_argument('-u' '--user', dest='user', metavar='U',
+                        help="user needed to run this script. If the "
+                        "current user is not this one, the script will try " +
+                        "to rerun itself using sudo.")
 
     subparsers = parser.add_subparsers()
 
@@ -300,6 +304,12 @@ def main():
     parser.error = unknown
 
     args = parser.parse_args()
+
+    if args.user and os.environ['USER'] != args.user:
+        import subprocess
+
+        retval = subprocess.call(["/usr/bin/sudo", "-u", args.user] + sys.argv)
+        os._exit(retval)
 
     from barman.config import Config
     from barman.server import Server
