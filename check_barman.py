@@ -17,10 +17,11 @@
 
 from __future__ import print_function
 
-import argparse
-import sys
-import os
 from datetime import datetime
+import argparse
+import getpass
+import os
+import sys
 
 OK = 0
 WARNING = 1
@@ -305,7 +306,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.user and os.environ['USER'] != args.user:
+    if args.user and getpass.getuser() = args.user:
         import subprocess
 
         retval = subprocess.call(["/usr/bin/sudo", "-u", args.user] + sys.argv)
