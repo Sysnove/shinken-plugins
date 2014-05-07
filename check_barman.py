@@ -306,7 +306,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.user and getpass.getuser() = args.user:
+    if args.user and getpass.getuser() == args.user:
         import subprocess
 
         retval = subprocess.call(["/usr/bin/sudo", "-u", args.user] + sys.argv)
