@@ -19,8 +19,8 @@ from __future__ import print_function
 
 from datetime import datetime
 import argparse
-import getpass
 import os
+import pwd
 import sys
 
 OK = 0
@@ -306,7 +306,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.user and getpass.getuser() == args.user:
+    user = pwd.getpwuid(os.getuid())[0]
+
+    if args.user and user != args.user:
         import subprocess
 
         retval = subprocess.call(["/usr/bin/sudo", "-u", args.user] + sys.argv)
