@@ -56,22 +56,22 @@ def get_perfdata_str(perfdata_key, perfdata_value,
 
 def ok(message, perfdata_str=None):
     print_message("OK - %s" % (message), perfdata_str)
-    os._exit(OK)
+    raise SystemExit(OK)
 
 
 def warning(message, perfdata_str=None):
     print_message("WARNING - %s" % (message), perfdata_str)
-    os._exit(WARNING)
+    raise SystemExit(WARNING)
 
 
 def critical(message, perfdata_str=None):
     print_message("CRITICAL - %s" % (message), perfdata_str)
-    os._exit(CRITICAL)
+    raise SystemExit(CRITICAL)
 
 
 def unknown(message):
     print("UNKNOWN - %s" % message)
-    os._exit(UNKNOWN)
+    raise SystemExit(UNKNOWN)
 
 
 def exit_check(value, warn, crit, message, under=False, message_ok=None,
@@ -309,7 +309,7 @@ def main():
         import subprocess
 
         retval = subprocess.call(["/usr/bin/sudo", "-u", args.user] + sys.argv)
-        os._exit(retval)
+        raise SystemExit(retval)
 
     from barman.config import Config
     from barman.server import Server
@@ -328,11 +328,7 @@ if __name__ == "__main__":
     try:
         main()
     except SystemExit:
-        exc_value = sys.exc_info()[1]
-
-        if exc_value.code != 0:
-            unknown(exc_value[1])
-
+        raise
     except:
         # Return UNKNOWN code if exception is catched.
         unknown(sys.exc_info()[1])
