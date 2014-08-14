@@ -28,7 +28,7 @@ def main():
 
     files = (f[8:] for f in os.listdir("/boot") if f.startswith("vmlinuz-"))
     latest = sorted(files, key=lambda x: LooseVersion(x), reverse=True)[0]
-    current = LooseVersion(os.uname().release)
+    current = LooseVersion(os.uname()[2])
 
     if latest > current:
         print("KERNEL WARNING - Running kernel %s but newer kernel available: %s;" % (current, latest))
