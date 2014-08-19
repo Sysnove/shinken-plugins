@@ -19,6 +19,7 @@ from __future__ import print_function
 
 from datetime import datetime
 import argparse
+import dateutil
 import os
 import pwd
 import sys
@@ -187,6 +188,7 @@ def last_backup_age(server, args):
     crit = args.critical
 
     from barman.infofile import BackupInfo
+
     backup_id = server.get_last_backup()
 
     status_filter = BackupInfo.STATUS_NOT_EMPTY
@@ -194,7 +196,7 @@ def last_backup_age(server, args):
 
     backup = backups[backup_id]
     begin_time = backup.begin_time
-    now = datetime.now()
+    now = datetime.now().replace(tzinfo=dateutil.tz.tzlocal())
 
     age = now - begin_time
 
