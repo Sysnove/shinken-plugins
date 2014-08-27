@@ -26,16 +26,19 @@ STATE_UNKNOWN=3
 def main():
     """ This program is used to check the kernel version. """
 
-    files = (f[8:] for f in os.listdir("/boot") if f.startswith("vmlinuz-"))
-    latest = sorted(files, key=lambda x: LooseVersion(x), reverse=True)[0]
     current = LooseVersion(os.uname()[2])
+    files = (f[8:] for f in os.listdir("/boot") if f.startswith("vmlinuz-"))
+    if files:
+        latest = sorted(files, key=lambda x: LooseVersion(x), reverse=True)[0]
 
-    if latest > current:
-        print("KERNEL WARNING - Running kernel %s but newer kernel available: %s;" % (current, latest))
-        return STATE_WARNING
+        if latest > current:
+            print("KERNEL WARNING - Running kernel %s but newer kernel available: %s;" % (current, latest))
+            return STATE_WARNING
+        else:
+            print("OK - Running kernel: %s;" % current)
+            return STATE_OK
     else:
-        print("OK - Running kernel: %s;" % current)
-        return STATE_OK
+        print("OK - No installed kernel (xen?). Running kernel: %s;" % current)
 
 if __name__ == "__main__":
     main()
