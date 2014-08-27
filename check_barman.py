@@ -19,6 +19,7 @@ from __future__ import print_function
 
 from datetime import datetime
 import argparse
+import dateutil
 import os
 import pwd
 import sys
@@ -187,6 +188,7 @@ def last_backup_age(server, args):
     crit = args.critical
 
     from barman.infofile import BackupInfo
+
     backup_id = server.get_last_backup()
 
     status_filter = BackupInfo.STATUS_NOT_EMPTY
@@ -194,7 +196,7 @@ def last_backup_age(server, args):
 
     backup = backups[backup_id]
     begin_time = backup.begin_time
-    now = datetime.now()
+    now = datetime.now().replace(tzinfo=dateutil.tz.tzlocal())
 
     age = now - begin_time
 
@@ -208,6 +210,8 @@ def last_wal_age(server, args):
     warn = args.warning
     crit = args.critical
 
+    from barman.infofile import WalFileInfo
+
     with server.xlogdb() as fxlogdb:
         line = None
         for line in fxlogdb:
@@ -216,9 +220,10 @@ def last_wal_age(server, args):
         if line is None:
             critical("No WAL received yet.")
 
-        name, size, time, compression = server.xlogdb_parse_line(line)
+    #name, size, time, compression = server.xlogdb_parse_line(line)
+    wal_info = WalFileInfo.from_xlogdb_line(server, line)
 
-    time = datetime.fromtimestamp(time)
+    time = datetime.fromtimestamp(wal_info.time)
     now = datetime.now()
 
     age = now - time
@@ -248,13 +253,17 @@ def missing_wals(server, args):
     crit = args.critical
 
     from barman.xlog import is_wal_file
+    from barman.infofile import WalFileInfo
 
     wals_directory = server.config.wals_directory
 
     missing_wals = 0
     with server.xlogdb() as fxlogdb:
         for line in fxlogdb:
-            name, size, time, compression = server.xlogdb_parse_line(line)
+            #name, size, time, compression = server.xlogdb_parse_line(line)
+            wal_info = WalFileInfo.from_xlogdb_line(server, line)
+            name = wal_info.name
+
             directory = name[0:16]
 
             if is_wal_file(name):
