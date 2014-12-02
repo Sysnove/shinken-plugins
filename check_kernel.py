@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# 
+#
 # Guillaume Subiron, Sysnove, 2014
 #
 # Description :
@@ -27,7 +27,7 @@ def main():
     """ This program is used to check the kernel version. """
 
     current = LooseVersion(os.uname()[2])
-    files = (f[8:] for f in os.listdir("/boot") if f.startswith("vmlinuz-"))
+    files = list(f[8:] for f in os.listdir("/boot") if f.startswith("vmlinuz-"))
     if files:
         latest = sorted(files, key=lambda x: LooseVersion(x), reverse=True)[0]
 
