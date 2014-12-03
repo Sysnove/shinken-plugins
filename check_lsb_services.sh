@@ -1,5 +1,19 @@
 #!/bin/sh
 
+#
+# Guillaume Subiron, Sysnove, 2014
+#
+# Description :
+#
+# This plugin checks if all installed daemons are running.
+# Works on Debian.
+#
+# Copyright 2014 Guillaume Subiron <guillaume@sysnove.fr>
+# This work is free. You can redistribute it and/or modify it under the
+# terms of the Do What The Fuck You Want To Public License, Version 2,
+# as published by Sam Hocevar. See the http://www.wtfpl.net/ file for more details.
+# 
+
 STATE_OK=0
 STATE_WARNING=1
 STATE_CRITICAL=2
@@ -15,6 +29,8 @@ for service in $services ; do
     fi
 done
 
+# Postgres special case : 4 means that postgresql-common is installed but not
+# postgresql-server, so it's OK if postgres is not running
 if [ -f /etc/init.d/postgresql ] ; then
     /usr/sbin/service postgresql status > /dev/null
     s=$?
