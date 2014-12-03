@@ -5,7 +5,7 @@ STATE_WARNING=1
 STATE_CRITICAL=2
 STATE_UNKNOWN=3
 
-services="amavis apache2 atd bind9 ceph cron dibbler-client dovecot exim4 fail2ban fcgiwrap glassfish gitlab lm-sensors mailgraph mdadm memcached mongodb nagios-nrpe-server nginx npcd ntp openvpn pgbouncer php5-fpm postfix pure-ftpd-mysql rabbitmq-server redis-server resolvconf rsyslog shinken shorewall shorewall6 slapd spamassassin ssh uwsgi"
+services="amavis apache2 atd bind9 ceph cron dibbler-client dovecot exim4 fail2ban fcgiwrap glassfish gitlab lm-sensors mailgraph memcached mongodb nagios-nrpe-server nginx npcd ntp openvpn pgbouncer php5-fpm postfix pure-ftpd-mysql rabbitmq-server redis-server resolvconf rsyslog shinken shorewall shorewall6 slapd spamassassin ssh uwsgi"
 
 down=""
 
