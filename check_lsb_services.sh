@@ -16,7 +16,9 @@ for service in $services ; do
 done
 
 if [ -f /etc/init.d/postgresql ] ; then
-    if ! [ $s -eq 0 -o $s -eq 4 ] ; then down="$down $service"; fi
+    /usr/sbin/service postgresql status > /dev/null
+    s=$?
+    [ $s -ne 0 -a $s -ne 4 ] && down="$down $service"
 fi
 
 if [ "$down" != "" ] ; then
