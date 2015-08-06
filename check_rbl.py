@@ -199,7 +199,7 @@ def main(argv, environ):
             pass
 
         if not addresses:
-            print "ERROR: Host '%s' not found - maybe try a FQDN?" % host
+            print "ERROR: Host '%s' not found" % host
             sys.exit(status['UNKNOWN'])
 
 # ##### Thread stuff:
