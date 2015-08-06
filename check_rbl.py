@@ -26,7 +26,8 @@ import sys
 import os
 import getopt
 import socket
-import string
+from dns import reversename
+import dns.resolver
 
 rv = (2, 6)
 if rv >= sys.version_info:
@@ -163,7 +164,7 @@ def main(argv, environ):
                                        ["warn=", "crit=", "host=", "address="])
     status = {'OK': 0, 'WARNING': 1, 'CRITICAL': 2, 'UNKNOWN': 3}
     host = None
-    addr = None
+    addresses = []
 
     if 3 != len(options):
         usage(argv[0])
@@ -177,26 +178,29 @@ def main(argv, environ):
         elif field in ('-h', '--host'):
             host = val
         elif field in ('-a', '--address'):
-            addr = val
+            addresses = val.split(',')
         else:
             usage(argv[0])
             sys.exit(status['UNKNOWN'])
 
-    if host and addr:
+    if host and addresses:
         print "ERROR: Cannot use both host and address, choose one."
         sys.exit(status['UNKNOWN'])
 
     if host:
         try:
-            addr = socket.gethostbyname(host)
-        except:
+            addresses.append(str(dns.resolver.query(host, 'A')[0]))
+        except Exception:
+            pass
+
+        try:
+            addresses.append(str(dns.resolver.query(host, 'AAAA')[0]))
+        except Exception:
+            pass
+
+        if not addresses:
             print "ERROR: Host '%s' not found - maybe try a FQDN?" % host
             sys.exit(status['UNKNOWN'])
-    addr_parts = string.split(addr, '.')
-    addr_parts.reverse()
-    check_name = string.join(addr_parts, '.')
-    # We set this to make sure the output is nice. It's not used except for the output after this point.
-    host = addr
 
 # ##### Thread stuff:
 
@@ -207,8 +211,9 @@ def main(argv, environ):
         t.start()
 
     # populate queue with data
-    for blhost in serverlist:
-        queue.put((check_name, blhost))
+    for name in [(a, str(reversename.from_address(a))) for a in addresses]:
+        for blhost in serverlist:
+            queue.put((name, blhost))
 
     # wait on the queue until everything has been processed
     queue.join()
@@ -216,9 +221,9 @@ def main(argv, environ):
 # ##### End Thread stuff
 
     if on_blacklist:
-        output = '%s on %s spam blacklists : %s' % (host,
-                                                    len(on_blacklist),
-                                                    ', '.join(on_blacklist))
+        output = '%s found on %s spam blacklists : %s' % (addresses,
+                                                          len(on_blacklist),
+                                                          ', '.join(on_blacklist))
         if len(on_blacklist) >= crit_limit:
             print 'CRITICAL: %s' % output
             sys.exit(status['CRITICAL'])
@@ -229,7 +234,7 @@ def main(argv, environ):
             print 'OK: %s' % output
             sys.exit(status['OK'])
     else:
-        print 'OK: %s not on known spam blacklists' % host
+        print 'OK: %s not found on known spam blacklists' % addresses
         sys.exit(status['OK'])
 
 
