@@ -14,7 +14,7 @@ if ! [ -e $maldetsessions ] ; then
     exit 3
 fi
 
-hits=$(cat $last | grep "TOTAL HITS:" | cut -d ' ' -f 3 | paste -sd+ | bc)
+hits=$(cat $last | grep "TOTAL HITS:" | grep -o '[[:digit:]]\+' | paste -sd+ | bc)
 
 if [ $hits -eq 0 ] ; then
     echo "OK: No malware found."
