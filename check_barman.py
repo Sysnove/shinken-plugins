@@ -118,8 +118,11 @@ def ssh(server, args):
     warn = args.warning
     crit = args.critical
 
+    from barman.backup_executor import _parse_ssh_command
     from barman.command_wrappers import Command
-    cmd = Command(server.ssh_command, server.ssh_options)
+
+    ssh_command, ssh_options = _parse_ssh_command(server.config.ssh_command)
+    cmd = Command(ssh_command, ssh_options)
 
     (retval, duration) = timed(cmd, 'true')
     milliseconds = get_milliseconds(duration)
