@@ -224,7 +224,7 @@ def last_wal_age(server, args):
             critical("No WAL received yet.")
 
     #name, size, time, compression = server.xlogdb_parse_line(line)
-    wal_info = WalFileInfo.from_xlogdb_line(server, line)
+    wal_info = WalFileInfo.from_xlogdb_line(line)
 
     time = datetime.fromtimestamp(wal_info.time)
     now = datetime.now()
@@ -264,7 +264,7 @@ def missing_wals(server, args):
     with server.xlogdb() as fxlogdb:
         for line in fxlogdb:
             #name, size, time, compression = server.xlogdb_parse_line(line)
-            wal_info = WalFileInfo.from_xlogdb_line(server, line)
+            wal_info = WalFileInfo.from_xlogdb_line(line)
             name = wal_info.name
 
             directory = name[0:16]
