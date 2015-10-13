@@ -34,7 +34,7 @@ done
 if [ -f /etc/init.d/postgresql ] ; then
     /usr/sbin/service postgresql status > /dev/null
     s=$?
-    [ $s -ne 0 -a $s -ne 4 ] && down="$down $service"
+    [ $s -ne 0 -a $s -ne 4 ] && down="$down postgresql"
 fi
 
 if [ "$down" != "" ] ; then
