@@ -38,7 +38,7 @@ def main():
 
     # Compare fstab entries to mount output
     for mount_point in [l.split(' ')[1] for l in fstab if not l.startswith('#')]:
-        if mount_point != 'none':
+        if mount_point and mount_point != 'none':
             # Try to find mount point in mount output
             mount_line = [l for l in mount if mount_point in l.split(' ')]
             if not mount_line:
