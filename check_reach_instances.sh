@@ -31,5 +31,5 @@ if [ "$errors" != "" ] ; then
     exit $STATE_CRITICAL
 else
     echo "OK - All instances are reachable."
-    exit $STATE_WARNING
+    exit $STATE_OK
 fi
