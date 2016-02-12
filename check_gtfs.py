@@ -138,6 +138,8 @@ def main():
             critdate = date.clone().replace(days=-crit)
             warndate = date.clone().replace(days=-warn)
 
+            if date <= arrow.utcnow():
+                critfiles.append('Files %s has expired: %s' % (file, datestr))
             if critdate <= arrow.utcnow():
                 critfiles.append('File %s expires in less than %d days: %s' % (
                     file, crit, datestr
