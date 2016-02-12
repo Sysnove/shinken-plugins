@@ -140,7 +140,7 @@ def main():
 
             if date <= arrow.utcnow():
                 critfiles.append('Files %s has expired: %s' % (file, datestr))
-            if critdate <= arrow.utcnow():
+            elif critdate <= arrow.utcnow():
                 critfiles.append('File %s expires in less than %d days: %s' % (
                     file, crit, datestr
                 ))
