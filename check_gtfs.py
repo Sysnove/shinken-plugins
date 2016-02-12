@@ -151,7 +151,7 @@ def main():
             else:
                 okfiles.append('File %s expires at %s' % (file, datestr))
 
-    message = "\n".join(critfiles + warnfiles + okfiles)
+    message = ", ".join(critfiles + warnfiles + okfiles)
 
     if critfiles:
         critical(message)
