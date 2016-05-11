@@ -2,18 +2,18 @@
 
 repository="backups:/srv/backups/sysnove/borg/$(hostname)"
 
-sudo borg info $repository::$(date +'%Y-%m-%d') > /dev/null
+borg info $repository::$(date +'%Y-%m-%d') > /dev/null
 
 if [ $? = 0 ]; then
     # OK
     echo "OK"
 else
-    sudo borg info $repository::$(date +'%Y-%m-%d' -d "yesterday") > /dev/null 2>&1
+    borg info $repository::$(date +'%Y-%m-%d' -d "yesterday") > /dev/null 2>&1
     if [ $? = 0 ]; then
         # WARNING
         echo "WARNING"
     else
-        list=$(sudo borg list --short $repository)
+        list=$(borg list --short $repository)
         if [ $? = 0 ]; then
             last=$(echo $list | tail -n 1)
             # Last backup is $last
