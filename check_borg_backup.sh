@@ -4,8 +4,6 @@ repository="backups:$(hostname)"
 
 list=$(borg list --short $repository 2>&1)
 
-echo $list
-
 if [ $? = 0 ]; then
     if echo $list | grep -q "^$(date +'%Y-%m-%d')$"; then
         # OK
