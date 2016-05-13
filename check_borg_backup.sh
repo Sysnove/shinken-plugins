@@ -1,6 +1,10 @@
 #!/bin/zsh
 
-repository="backups:$(hostname)"
+if [ -z $1 ]; then
+    repository="backups:$(hostname)"
+else
+    repository="backups:$1"
+fi
 
 list=$(borg list --short $repository 2>&1)
 
