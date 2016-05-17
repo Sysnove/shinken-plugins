@@ -12,7 +12,7 @@ list=$(borg list --short $repository 2>&1)
 
 if [ $? = 0 ]; then
     last=$(echo $list | tail -n 1)
-    stats=$(borg info backups:subiron-srv01::2016-05-17 2> /dev/null | grep "^This archive")
+    stats=$(borg info $repository::$last 2> /dev/null | grep "^This archive")
     compressed_size=$(echo "$stats" | awk '{print $5 $6}')
     dedup_size=$(echo "$stats" | awk '{print $7 $8}')
 
