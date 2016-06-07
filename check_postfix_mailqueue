@@ -36,13 +36,13 @@ print_help() {
     echo ""
     echo "$PROGNAME is a Nagios plugin which generates statistics"
     echo "for the postfix mailqueue and checks for corrupt messages."
-	echo "The following values will be checked:"
-	echo "maildrop: Localy posted mail"
-	echo "incoming: Processed local mail and received from network"
-	echo "active: Mails being delivered (should be small)"
-	echo "deferred: Stuck mails (that will be retried later)"
-	echo "corrupt: Messages found to not be in correct format (should be 0)"
-	echo "hold: Recent addition, messages put on hold indefinitly - delete of free"
+    echo "The following values will be checked:"
+    echo "maildrop: Localy posted mail"
+    echo "incoming: Processed local mail and received from network"
+    echo "active: Mails being delivered (should be small)"
+    echo "deferred: Stuck mails (that will be retried later)"
+    echo "corrupt: Messages found to not be in correct format (should be 0)"
+    echo "hold: Recent addition, messages put on hold indefinitly - delete of free"
     echo ""
     echo "Usage: $PROGNAME --deferred_warn Deferred-WARN-Level --deferred_crit Deferred-CRIT-Level --active_warn Active-WARN-Level […]"
     echo ""
@@ -83,65 +83,65 @@ print_help() {
 # Check for parameters
 while test -n "$1"; do
     case "$1" in
-		-h)
-			print_help
-			exit $STATE_OK;;
-		-v)
-			print_version
-			exit $STATE_OK;;
-		--deferred_warn)
-			deferred_warn=$2
-			shift
-			;;
-		--deferred_crit)
-			deferred_crit=$2
-			shift
-			;;
-		--active_warn)
-			active_warn=$2
-			shift
-			;;
-		--active_crit)
-			active_crit=$2
-			shift
-			;;
-		--maildrop_warn)
-			maildrop_warn=$2
-			shift
-			;;
-		--maildrop_crit)
-			maildrop_crit=$2
-			shift
-			;;
-		--incoming_warn)
-			incoming_warn=$2
-			shift
-			;;
-		--incoming_crit)
-			incoming_crit=$2
-			shift
-			;;
-		--corrupt_warn)
-			corrupt_warn=$2
-			shift
-			;;
-		--corrupt_crit)
-			corrupt_crit=$2
-			shift
-			;;
-		--hold_warn)
-			hold_warn=$2
-			shift
-			;;
-		--hold_crit)
-			hold_crit=$2
-			shift
-			;;
-		*)
-			check_postfix_mailqueue
-			;;
-	esac
-	shift
+        -h)
+            print_help
+            exit $STATE_OK;;
+        -v)
+            print_version
+            exit $STATE_OK;;
+        --deferred_warn)
+            deferred_warn=$2
+            shift
+            ;;
+        --deferred_crit)
+            deferred_crit=$2
+            shift
+            ;;
+        --active_warn)
+            active_warn=$2
+            shift
+            ;;
+        --active_crit)
+            active_crit=$2
+            shift
+            ;;
+        --maildrop_warn)
+            maildrop_warn=$2
+            shift
+            ;;
+        --maildrop_crit)
+            maildrop_crit=$2
+            shift
+            ;;
+        --incoming_warn)
+            incoming_warn=$2
+            shift
+            ;;
+        --incoming_crit)
+            incoming_crit=$2
+            shift
+            ;;
+        --corrupt_warn)
+            corrupt_warn=$2
+            shift
+            ;;
+        --corrupt_crit)
+            corrupt_crit=$2
+            shift
+            ;;
+        --hold_warn)
+            hold_warn=$2
+            shift
+            ;;
+        --hold_crit)
+            hold_crit=$2
+            shift
+            ;;
+        *)
+            check_postfix_mailqueue
+            ;;
+    esac
+    shift
 done
 
 if [ -z $corrupt_crit ]; then
@@ -152,20 +152,20 @@ check_postfix_mailqueue() {
     # Can be set via environment, but default is fetched by postconf (if available,
     # else /var/spool/postfix) 
     if which postconf > /dev/null ; then
-       SPOOLDIR=${spooldir:-`postconf -h queue_directory`}
+        SPOOLDIR=${spooldir:-`postconf -h queue_directory`}
     else
-       SPOOLDIR=${spooldir:-/var/spool/postfix}
+        SPOOLDIR=${spooldir:-/var/spool/postfix}
     fi
 
     cd $SPOOLDIR >/dev/null 2>/dev/null || {
-         echo -n "Cannot cd to $SPOOLDIR"
-         exit $STATE_CRITICAL
-    }
+    echo -n "Cannot cd to $SPOOLDIR"
+    exit $STATE_CRITICAL
+}
 
-    # Get values
-    for i in deferred active maildrop incoming corrupt hold; do
-        eval $i=`(test -d $i && find $i -type f ) | wc -l`
-    done
+# Get values
+for i in deferred active maildrop incoming corrupt hold; do
+    eval $i=`(test -d $i && find $i -type f ) | wc -l`
+done
 }
 
 print_output() {
@@ -191,24 +191,6 @@ for state in crit warn; do
         fi
     done
 done
-
-#if [ $corrupt -gt 0 ]; then
-#    print_output CRITICAL
-#	exit $STATE_CRITICAL
-#fi
-#
-#if [ $deferred_warn -gt 0 ] && [ $deferred_crit -gt 0 ]; then
-#    if [ $deferred -gt $deferred_crit ]; then
-#        print_output CRITICAL
-#        exit $STATE_CRITICAL
-#    elif [ $deferred -gt $deferred_warn ]; then
-#        print_output WARNING
-#        exit $STATE_WARNING
-#    else
-#        print_output OK
-#        exit $STATE_OK
-#    fi
-#fi
 
 print_output OK
 exit $STATE_OK
