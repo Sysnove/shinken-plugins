@@ -1,30 +1,21 @@
 #!/bin/bash
-###################################################################
-# check_postfix_mailqueue is developped with GPL Licence 2.0
 #
-# GPL License: http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+# Guillaume Subiron, Sysnove, 2016
+# Inspired by Bjoern Bongermino's check_postfix_mailqueue
 #
-# Developped by : Bjoern Bongermino
+# Copyright 2016 Guillaume Subiron <guillaume@sysnove.fr>
 #
-###################################################################
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-####################################################################
+# This work is free. You can redistribute it and/or modify it under the
+# terms of the Do What The Fuck You Want To Public License, Version 2,
+# as published by Sam Hocevar. See the http://www.wtfpl.net/ file for more
+# details.
 
 # Uncomment to enable debugging
 # set -x
 
 PROGNAME=`basename $0`
 VERSION="Version 1.0"
-AUTHOR="Bjoern Bongermino (http://www.bongermino.de)"
+AUTHOR="Guillaume Subiron (http://www.sysnove.fr/)"
 
 STATE_OK=0
 STATE_WARNING=1
@@ -50,16 +41,38 @@ print_help() {
 	echo "incoming: Processed local mail and received from network"
 	echo "active: Mails being delivered (should be small)"
 	echo "deferred: Stuck mails (that will be retried later)"
-	echo "corrupt: Messages found to not be in correct format (shold be 0)"
+	echo "corrupt: Messages found to not be in correct format (should be 0)"
 	echo "hold: Recent addition, messages put on hold indefinitly - delete of free"
     echo ""
-    echo "Usage: $PROGNAME -w WARN-Level -c CRIT-Level"
+    echo "Usage: $PROGNAME --deferred_warn Deferred-WARN-Level --deferred_crit Deferred-CRIT-Level --active_warn Active-WARN-Level […]"
+    echo ""
+    echo "By default, all thresholds are 0 except corrupt_crit"
     echo ""
     echo "Options:"
-    echo "  -w)"
+    echo "  --deferred_warn)"
     echo "     Warning level for deferred mails"
-    echo "  -c)"
-    echo "     Critical level for deferred mail"
+    echo "  --deferred_crit)"
+    echo "     Critical level for deferred mails"
+    echo "  --active_warn)"
+    echo "     Warning level for active mails"
+    echo "  --active_crit)"
+    echo "     Critical level for active mails"
+    echo "  --maildrop_warn)"
+    echo "     Warning level for maildrop mails"
+    echo "  --maildrop_crit)"
+    echo "     Critical level for maildrop mails"
+    echo "  --incoming_warn)"
+    echo "     Warning level for incoming mails"
+    echo "  --incoming_crit)"
+    echo "     Critical level for incoming mails"
+    echo "  --corrupt_warn)"
+    echo "     Warning level for corrupt mails"
+    echo "  --corrupt_crit)"
+    echo "     Critical level for corrupt mails (default=1)"
+    echo "  --hold_warn)"
+    echo "     Warning level for hold mails"
+    echo "  --hold_crit)"
+    echo "     Critical level for hold mails"
     echo "  -h)"
     echo "     This help"
     echo "  -v)"
@@ -76,12 +89,52 @@ while test -n "$1"; do
 		-v)
 			print_version
 			exit $STATE_OK;;
-		-w)
-			warning=$2
+		--deferred_warn)
+			deferred_warn=$2
 			shift
 			;;
-		-c)
-			critical=$2
+		--deferred_crit)
+			deferred_crit=$2
+			shift
+			;;
+		--active_warn)
+			active_warn=$2
+			shift
+			;;
+		--active_crit)
+			active_crit=$2
+			shift
+			;;
+		--maildrop_warn)
+			maildrop_warn=$2
+			shift
+			;;
+		--maildrop_crit)
+			maildrop_crit=$2
+			shift
+			;;
+		--incoming_warn)
+			incoming_warn=$2
+			shift
+			;;
+		--incoming_crit)
+			incoming_crit=$2
+			shift
+			;;
+		--corrupt_warn)
+			corrupt_warn=$2
+			shift
+			;;
+		--corrupt_crit)
+			corrupt_crit=$2
+			shift
+			;;
+		--hold_warn)
+			hold_warn=$2
+			shift
+			;;
+		--hold_crit)
+			hold_crit=$2
 			shift
 			;;
 		*)
@@ -91,50 +144,71 @@ while test -n "$1"; do
 	shift
 done
 
-check_postfix_mailqueue() {
-# Can be set via environment, but default is fetched by postconf (if available,
-# else /var/spool/postfix) 
-if which postconf > /dev/null ; then
-   SPOOLDIR=${spooldir:-`postconf -h queue_directory`}
-else
-   SPOOLDIR=${spooldir:-/var/spool/postfix}
+if [ -z $corrupt_crit ]; then
+    corrupt_crit=1
 fi
 
-cd $SPOOLDIR >/dev/null 2>/dev/null || {
-     echo -n "Cannot cd to $SPOOLDIR"
-     exit $STATE_CRITICAL
+check_postfix_mailqueue() {
+    # Can be set via environment, but default is fetched by postconf (if available,
+    # else /var/spool/postfix) 
+    if which postconf > /dev/null ; then
+       SPOOLDIR=${spooldir:-`postconf -h queue_directory`}
+    else
+       SPOOLDIR=${spooldir:-/var/spool/postfix}
+    fi
+
+    cd $SPOOLDIR >/dev/null 2>/dev/null || {
+         echo -n "Cannot cd to $SPOOLDIR"
+         exit $STATE_CRITICAL
+    }
+
+    # Get values
+    for i in deferred active maildrop incoming corrupt hold; do
+        eval $i=`(test -d $i && find $i -type f ) | wc -l`
+    done
 }
 
-# Get values
-deferred=`(test -d deferred && find deferred -type f ) | wc -l`
-active=`(test -d active && find active -type f ) | wc -l`
-maildrop=`(test -d maildrop && find maildrop -type f ) | wc -l`
-incoming=`(test -d incoming && find incoming -type f ) | wc -l`
-corrupt=`(test -d corrupt && find corrupt -type f ) | wc -l`
-hold=`( test -d hold && find hold -type f ) | wc -l`
+print_output() {
+    values=""
+    perfdata=""
+    for i in deferred active maildrop incoming corrupt hold; do
+        values="${values}${i^}=${!i} "
+        perfdata="$perfdata$i=${!i};; "
+    done
+    echo -n "Postfix Mailqueue $2 is $1 - $values| $perfdata"
 }
 
 check_postfix_mailqueue
-values="Deferred mails=$deferred Active deliveries=$active Locally posted mails=$maildrop Incoming mails=$incoming Corrupt mails=$corrupt Mails on hold=$hold"
-perfdata="deferred=$deferred;; active=$active;; maildrop=$maildrop;; incoming=$incoming;; corrupt=$corrupt;; hold=$hold;;"
 
-if [ $corrupt -gt 0 ]; then
-	echo -n "Postfix Mailqueue CRITICAL - $corrupt corrupt messages found! | $perfdata"
-	exit $STATE_CRITICAL
-fi
+for state in crit warn; do
+    for i in deferred active maildrop incoming corrupt hold; do
+        threshold_var="${i}_${state}"
+        value=${!i}
+        threshold=${!threshold_var}
+        if [ -n "$threshold" ] && [ $value -ge $threshold ]; then
+            print_output ${state^^} $i 
+            exit $STATE_CRITICAL
+        fi
+    done
+done
 
-if [ $warning -gt 0 ] && [ $critical -gt 0 ]; then
-   if [ $deferred -gt $critical ]; then
-      echo -n "Postfix Mailqueue CRITICAL - $values | $perfdata"
-      exit $STATE_CRITICAL
-   elif [ $deferred -gt $warning ]; then
-      echo -n "Postfix Mailqueue WARNING - $values | $perfdata"
-      exit $STATE_WARNING
-   else
-      echo -n "Postfix Mailqueue OK - $values | $perfdata"
-      exit $STATE_OK
-   fi
-else
-   echo -n "Postfix Mailqueue OK - $values | $perfdata"
-   exit $STATE_OK
-fi
+#if [ $corrupt -gt 0 ]; then
+#    print_output CRITICAL
+#	exit $STATE_CRITICAL
+#fi
+#
+#if [ $deferred_warn -gt 0 ] && [ $deferred_crit -gt 0 ]; then
+#    if [ $deferred -gt $deferred_crit ]; then
+#        print_output CRITICAL
+#        exit $STATE_CRITICAL
+#    elif [ $deferred -gt $deferred_warn ]; then
+#        print_output WARNING
+#        exit $STATE_WARNING
+#    else
+#        print_output OK
+#        exit $STATE_OK
+#    fi
+#fi
+
+print_output OK
+exit $STATE_OK
