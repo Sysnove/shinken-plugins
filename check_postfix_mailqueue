@@ -80,6 +80,16 @@ print_help() {
     exit $STATE_OK
 }
 
+print_output() {
+    values=""
+    perfdata=""
+    for i in deferred active maildrop incoming corrupt hold; do
+        values="${values}${i^}=${!i} "
+        perfdata="$perfdata$i=${!i};; "
+    done
+    echo -n "Postfix Mailqueue $2 is $1 - $values| $perfdata"
+}
+
 # Check for parameters
 while test -n "$1"; do
     case "$1" in
@@ -138,7 +148,7 @@ while test -n "$1"; do
             shift
             ;;
         *)
-            check_postfix_mailqueue
+            print_help
             ;;
     esac
     shift
@@ -148,16 +158,15 @@ if [ -z $corrupt_crit ]; then
     corrupt_crit=1
 fi
 
-check_postfix_mailqueue() {
-    # Can be set via environment, but default is fetched by postconf (if available,
-    # else /var/spool/postfix) 
-    if which postconf > /dev/null ; then
-        SPOOLDIR=${spooldir:-`postconf -h queue_directory`}
-    else
-        SPOOLDIR=${spooldir:-/var/spool/postfix}
-    fi
+# Can be set via environment, but default is fetched by postconf (if available,
+# else /var/spool/postfix) 
+if which postconf > /dev/null ; then
+    SPOOLDIR=${spooldir:-`postconf -h queue_directory`}
+else
+    SPOOLDIR=${spooldir:-/var/spool/postfix}
+fi
 
-    cd $SPOOLDIR >/dev/null 2>/dev/null || {
+cd $SPOOLDIR >/dev/null 2>/dev/null || {
     echo -n "Cannot cd to $SPOOLDIR"
     exit $STATE_CRITICAL
 }
@@ -166,19 +175,6 @@ check_postfix_mailqueue() {
 for i in deferred active maildrop incoming corrupt hold; do
     eval $i=`(test -d $i && find $i -type f ) | wc -l`
 done
-}
-
-print_output() {
-    values=""
-    perfdata=""
-    for i in deferred active maildrop incoming corrupt hold; do
-        values="${values}${i^}=${!i} "
-        perfdata="$perfdata$i=${!i};; "
-    done
-    echo -n "Postfix Mailqueue $2 is $1 - $values| $perfdata"
-}
-
-check_postfix_mailqueue
 
 for state in crit warn; do
     for i in deferred active maildrop incoming corrupt hold; do
