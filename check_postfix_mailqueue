@@ -25,8 +25,8 @@ VERSION="Version 1.0"
 AUTHOR="Guillaume Subiron (http://www.sysnove.fr/)"
 
 STATE_OK=0
-STATE_WARNING=1
-STATE_CRITICAL=2
+STATE_WARN=1
+STATE_CRIT=2
 STATE_UNKNOWN=3
 
 warning=0
@@ -175,7 +175,7 @@ fi
 
 cd $SPOOLDIR >/dev/null 2>/dev/null || {
     echo -n "Cannot cd to $SPOOLDIR"
-    exit $STATE_CRITICAL
+    exit $STATE_CRIT
 }
 
 # Get values
@@ -190,7 +190,8 @@ for state in crit warn; do
         threshold=${!threshold_var}
         if [ -n "$threshold" ] && [ $value -ge $threshold ]; then
             print_output ${state^^} $i 
-            exit $STATE_CRITICAL
+            return_var="STATE_${state^^}"
+            exit ${!return_var}
         fi
     done
 done
