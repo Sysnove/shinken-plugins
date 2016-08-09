@@ -1,8 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 
-dropped=$(sudo shorewall show dynamic | grep DROP | wc -l)
+which shorewall > /dev/null 2&>1
+
+if [ $? != 0 ] ; then
+    echo "UNKNOWN - shorewall command not found"
+    exit 3
+fi
+
+dropped=$(shorewall show dynamic | grep DROP | wc -l)
 
 echo "OK - $dropped IP address(es) currently dropped by Shorewall | dropped=$dropped"
 
 # Always return OK
-return 0
+exit 0
