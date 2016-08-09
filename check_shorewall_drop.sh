@@ -1,8 +1,6 @@
 #!/bin/bash
 
-which shorewall > /dev/null 2&>1
-
-if [ $? != 0 ] ; then
+if [ ! -e '/sbin/shorewall' ] ; then
     echo "UNKNOWN - shorewall command not found"
     exit 3
 fi
