@@ -29,16 +29,16 @@ def main():
     p = subprocess.Popen('pg_lsclusters', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     lsclusters, err = p.communicate()
 
+    lsclusters = lsclusters.splitlines()[1:]
+
     if p.returncode != 0 or not lsclusters:
         print("pg_lsclusters error: %s" % err)
         return STATUS_ERROR
 
-    lsclusters = lsclusters.splitlines()
-
     down = list()
     online = list()
 
-    for cluster in lsclusters[1:]:
+    for cluster in lsclusters:
         cluster = cluster.split()
         if cluster[3] == 'down':
             down.append(cluster[0])
