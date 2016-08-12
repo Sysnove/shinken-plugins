@@ -48,6 +48,9 @@ def main():
 
     if down:
         print("PG cluster %s is down" % ', '.join(down))
+        return STATUS_ERROR
+    if len(online) > 1:
+        print("PG cluster %s are both online" % ', '.join(online))
         return STATUS_WARNING
     else:
         print("PG cluster %s is online" % ', '.join(online))
