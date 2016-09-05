@@ -20,7 +20,7 @@ import re
 import traceback
 from os import listdir, path
 import sys
-from zipfile import ZipFile
+from zipfile import ZipFile, BadZipFile
 
 import arrow
 
@@ -129,27 +129,37 @@ def main():
     for f in listdir(directory):
         if p.match(f):
             file = path.join(directory, f)
-            date = expiration_date(path.join(file))
-            datestr = date.format('YYYY-MM-DD')
 
-            if not date:
-                warnfiles.append('Date not found in file %s' % file)
+            try:
+                date = expiration_date(path.join(file))
+                datestr = date.format('YYYY-MM-DD')
 
-            critdate = date.clone().replace(days=-crit)
-            warndate = date.clone().replace(days=-warn)
+                if not date:
+                    warnfiles.append('Date not found in file %s' % file)
 
-            if date <= arrow.utcnow():
-                critfiles.append('Files %s has expired: %s' % (file, datestr))
-            elif critdate <= arrow.utcnow():
-                critfiles.append('File %s expires in less than %d days: %s' % (
-                    file, crit, datestr
-                ))
-            elif warndate <= arrow.utcnow():
-                warnfiles.append('File %s expires in less than %d days: %s' % (
-                    file, warn, datestr
-                ))
-            else:
-                okfiles.append('File %s expires at %s' % (file, datestr))
+                critdate = date.clone().replace(days=-crit)
+                warndate = date.clone().replace(days=-warn)
+
+                if date <= arrow.utcnow():
+                    critfiles.append(
+                        'File %s has expired: %s' % (file, datestr)
+                    )
+                elif critdate <= arrow.utcnow():
+                    critfiles.append(
+                        'File %s expires in less than %d days: %s' % (
+                            file, crit, datestr
+                        )
+                    )
+                elif warndate <= arrow.utcnow():
+                    warnfiles.append(
+                        'File %s expires in less than %d days: %s' % (
+                            file, warn, datestr
+                        )
+                    )
+                else:
+                    okfiles.append('File %s expires at %s' % (file, datestr))
+            except BadZipFile:
+                critfiles.append('File %s is not a valid zip file.' % file)
 
     message = ", ".join(critfiles + warnfiles + okfiles)
 
