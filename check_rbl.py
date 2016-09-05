@@ -65,6 +65,7 @@ serverlist = [
     "dnsbl.njabl.org",
     "dnsbl.solid.net",
     "dnsbl.sorbs.net",
+    "dnsblchile.org",
     "drone.abuse.ch",
     "duinv.aupads.org",
     "dul.ru",
@@ -138,9 +139,9 @@ class ThreadRBL(threading.Thread):
     def run(self):
         while True:
             # grabs host from queue
-            hostname, root_name = self.queue.get()
+            reverse, root_name = self.queue.get()
 
-            check_host = "%s.%s" % (hostname, root_name)
+            check_host = "%s.%s" % (reverse, root_name)
             try:
                 check_addr = socket.gethostbyname(check_host)
             except socket.error:
@@ -211,9 +212,9 @@ def main(argv, environ):
         t.start()
 
     # populate queue with data
-    for name in [(a, str(reversename.from_address(a))) for a in addresses]:
+    for reverse in [str(reversename.from_address(a)).replace('.in-addr.arpa.', '').replace('.ip6.arpa.', '') for a in addresses]:
         for blhost in serverlist:
-            queue.put((name, blhost))
+            queue.put((reverse, blhost))
 
     # wait on the queue until everything has been processed
     queue.join()
