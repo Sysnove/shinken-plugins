@@ -30,7 +30,7 @@ def main():
         print("MOUNT ERROR: %s" % err)
         return STATUS_ERROR
 
-    mount = mount.splitlines()
+    mount = set(mount.splitlines())
 
     # Get fstab
     with open(FSTAB_PATH) as f:
