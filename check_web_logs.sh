@@ -60,7 +60,7 @@ now=$(date +%R)
 
 echo "$now" > $LAST_RUN_FILE
 
-$tmpfile="/tmp/$$.tmp"
+tmpfile="/tmp/$$.tmp"
 
 /usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS > $tmpfile
 
