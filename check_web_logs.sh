@@ -40,9 +40,13 @@ total=$(/usr/local/bin/dategrep -format apache --last-minutes 5 $LOGS | grep "" 
 e404=$(/usr/local/bin/dategrep -format apache --last-minutes 5 $LOGS | cut -d ' ' -f 9 | grep '404' -c)
 e50x=$(/usr/local/bin/dategrep -format apache --last-minutes 5 $LOGS | cut -d ' ' -f 9 | grep '50.' -c)
 
-# :TODO:maethor:161022: if $total > 0
-pourcent404=$((($e404 * 100) / $total))
-pourcent50x=$((($e50x * 100) / $total))
+pourcent404=0
+pourcent50x=0
+
+if [ $total -gt 0 ] ; then
+    pourcent404=$((($e404 * 100) / $total))
+    pourcent50x=$((($e50x * 100) / $total))
+fi
 
 RET_MSG="$total requests, $e404 404 ($pourcent404%), $e50x 50x ($pourcent50x%)"
 
