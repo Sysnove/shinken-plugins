@@ -20,7 +20,7 @@ show_help() {
 # process args
 while [ ! -z "$1" ]; do 
     case $1 in
-        -l)	shift; LOGS=$1 ;;
+        -l)	shift; LOGS=$(ls $1) ;;
         -W) shift; WARN_50x=$1 ;;
         -w) shift; WARN_404=$1 ;;
         -C) shift; CRIT_50x=$1 ;;
@@ -44,6 +44,8 @@ fi
 
 since=$(<$TMP_FILE)
 now=$(date +%R)
+
+echo "$ince" > $TMP_FILE
 
 total=$(/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep "" -c)
 
