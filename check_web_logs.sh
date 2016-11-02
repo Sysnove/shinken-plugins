@@ -17,10 +17,11 @@ show_help() {
 	echo "todo"
 }
 
+
 # process args
 while [ ! -z "$1" ]; do 
     case $1 in
-        -l)	shift; LOGS=$(ls $1) ;;
+        -l)	shift; LOGS_WITH_GLOB=$1 ;;
         -W) shift; WARN_50x=$1 ;;
         -w) shift; WARN_404=$1 ;;
         -C) shift; CRIT_50x=$1 ;;
@@ -31,14 +32,22 @@ while [ ! -z "$1" ]; do
 done
 
 # check args
-if [ -z "$LOGS" ]; then
+if [ -z "$LOGS_WITH_GLOB" ]; then
 	echo "Need log files"
     show_help
-exit $E_UNKNOWN
+    exit $E_UNKNOWN
+fi
+
+LOGS=$(ls $LOGS_WITH_GLOB 2>/dev/null)
+
+# check logs
+if [ -z "$LOGS" ]; then
+    echo "File(s) not found : $LOGS_WITH_GLOB"
+    exit $E_UNKNOWN
 fi
 
 # find last check
-if [ ! -f $TMP_FILE -o $(<$TMP_FILE) == "" ]; then
+if [ ! -f $TMP_FILE ]; then
     echo "$(date +%R -d '5 min ago')" > $TMP_FILE
 fi
 
