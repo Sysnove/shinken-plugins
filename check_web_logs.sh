@@ -35,10 +35,10 @@ if [ -z "$LOGS" ]; then
 exit $E_UNKNOWN
 fi
 
-total=$(cat $LOGS | grep "" -c)
+total=$(cat $LOGS 2>/dev/null | grep "" -c)
 
-e404=$(cat $LOGS | cut -d ' ' -f 9 | grep '404' -c)
-e50x=$(cat $LOGS | cut -d ' ' -f 9 | grep '50.' -c)
+e404=$(cat $LOGS 2>/dev/null | cut -d ' ' -f 9 | grep '404' -c)
+e50x=$(cat $LOGS 2>/dev/null | cut -d ' ' -f 9 | grep '50.' -c)
 
 # :TODO:maethor:161022: if $total > 0
 pourcent404=$((($e404 * 100) / $total))
