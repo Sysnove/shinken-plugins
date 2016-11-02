@@ -35,10 +35,10 @@ if [ -z "$LOGS" ]; then
 exit $E_UNKNOWN
 fi
 
-total=$(/usr/local/bin/dategrep -format apache --last-minutes 5 $LOGS | grep "" -c)
+total=$(/usr/local/bin/dategrep --sort-files -format apache --last-minutes 5 $LOGS | grep "" -c)
 
-e404=$(/usr/local/bin/dategrep -format apache --last-minutes 5 $LOGS | cut -d ' ' -f 9 | grep '404' -c)
-e50x=$(/usr/local/bin/dategrep -format apache --last-minutes 5 $LOGS | cut -d ' ' -f 9 | grep '50.' -c)
+e404=$(/usr/local/bin/dategrep --sort-files -format apache --last-minutes 5 $LOGS | cut -d ' ' -f 9 | grep '404' -c)
+e50x=$(/usr/local/bin/dategrep --sort-files -format apache --last-minutes 5 $LOGS | cut -d ' ' -f 9 | grep '50.' -c)
 
 pourcent404=0
 pourcent50x=0
