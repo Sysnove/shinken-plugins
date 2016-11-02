@@ -11,6 +11,8 @@ E_WARNING=1
 E_CRITICAL=2
 E_UNKNOWN=3
 
+TMP_FILE=/var/tmp/check_web_logs_last_run
+
 show_help() {
 	echo "todo"
 }
@@ -35,10 +37,18 @@ if [ -z "$LOGS" ]; then
 exit $E_UNKNOWN
 fi
 
-total=$(/usr/local/bin/dategrep --sort-files -format apache --last-minutes 5 $LOGS | grep "" -c)
+# find last check
+if [ -z $TMP_FILE ]; then
+    echo "$(date +%R -d '5 min ago')" > $TMP_FILE
+fi
 
-e404=$(/usr/local/bin/dategrep --sort-files -format apache --last-minutes 5 $LOGS | cut -d ' ' -f 9 | grep '404' -c)
-e50x=$(/usr/local/bin/dategrep --sort-files -format apache --last-minutes 5 $LOGS | cut -d ' ' -f 9 | grep '50.' -c)
+since=$(<$TMP_FILE)
+now=$(date +%R)
+
+total=$(/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep "" -c)
+
+e404=$(/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | cut -d ' ' -f 9 | grep '404' -c)
+e50x=$(/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | cut -d ' ' -f 9 | grep '50.' -c)
 
 pourcent404=0
 pourcent50x=0
@@ -48,7 +58,11 @@ if [ $total -gt 0 ] ; then
     pourcent50x=$((($e50x * 100) / $total))
 fi
 
-RET_MSG="$total requests, $e404 404 ($pourcent404%), $e50x 50x ($pourcent50x%)"
+now_s=$(date -d $now +%s)
+since_s=$(date -d $since +%s)
+period=$(( $now_s - $since_s ))
+
+RET_MSG="$total requests in $period seconds, $e404 404 ($pourcent404%), $e50x 50x ($pourcent50x%)"
 
 if [ $pourcent404 -gt $WARN_404 -o $pourcent50x -gt $WARN_50x ]; then
     if [ $pourcent404 -gt $CRIT_404 -o $pourcent50x -gt $CRIT_50x ]; then
