@@ -45,7 +45,7 @@ fi
 since=$(<$TMP_FILE)
 now=$(date +%R)
 
-echo "$ince" > $TMP_FILE
+echo "$since" > $TMP_FILE
 
 total=$(/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep "" -c)
 
