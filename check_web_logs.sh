@@ -1,17 +1,19 @@
 #!/bin/bash
 
 LOGS=
-WARN_404=100
-WARN_50x=100
-CRIT_404=100
-CRIT_50x=100
+WARN_3=100
+WARN_4=100
+WARN_5=100
+CRIT_3=100
+CRIT_4=100
+CRIT_5=100
 
 E_OK=0
 E_WARNING=1
 E_CRITICAL=2
 E_UNKNOWN=3
 
-TMP_FILE=/var/tmp/check_web_logs_last_run
+LAST_RUN_FILE=/var/tmp/check_web_logs_last_run
 
 show_help() {
 	echo "todo"
@@ -22,10 +24,12 @@ show_help() {
 while [ ! -z "$1" ]; do 
     case $1 in
         -l)	shift; LOGS_WITH_GLOB=$1 ;;
-        -W) shift; WARN_50x=$1 ;;
-        -w) shift; WARN_404=$1 ;;
-        -C) shift; CRIT_50x=$1 ;;
-        -c) shift; CRIT_404=$1 ;;
+        -w3) shift; WARN_3=$1 ;;
+        -w4) shift; WARN_4=$1 ;;
+        -w5) shift; WARN_5=$1 ;;
+        -c3) shift; CRIT_3=$1 ;;
+        -c4) shift; CRIT_4=$1 ;;
+        -c5) shift; CRIT_5=$1 ;;
         -h)	show_help; exit 1 ;;
     esac
     shift
@@ -47,36 +51,53 @@ if [ -z "$LOGS" ]; then
 fi
 
 # find last check
-if [ ! -f $TMP_FILE ]; then
-    echo "$(date +%R -d '5 min ago')" > $TMP_FILE
+if [ ! -f $LAST_RUN_FILE ]; then
+    echo "$(date +%R -d '5 min ago')" > $LAST_RUN_FILE
 fi
 
-since=$(<$TMP_FILE)
+since=$(<$LAST_RUN_FILE)
 now=$(date +%R)
 
-echo "$now" > $TMP_FILE
+echo "$now" > $LAST_RUN_FILE
 
-total=$(/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep "" -c)
+$tmpfile="/tmp/$$.tmp"
 
-e404=$(/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | cut -d ' ' -f 9 | grep '404' -c)
-e50x=$(/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | cut -d ' ' -f 9 | grep '50.' -c)
+/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS > $tmpfile
 
-pourcent404=0
-pourcent50x=0
+total=$(wc -l $tmpfile)
+count2=$(cat $tmpfile | cut -d ' ' -f 9 | grep '2..' -c)
+count3=$(cat $tmpfile | cut -d ' ' -f 9 | grep '3..' -c)
+count4=$(cat $tmpfile | cut -d ' ' -f 9 | grep '4..' -c)
+count5=$(cat $tmpfile | cut -d ' ' -f 9 | grep '5..' -c)
+
+rm $tmpfile
+
+pourcent2=0
+pourcent3=0
+pourcent4=0
+pourcent5=0
 
 if [ $total -gt 0 ] ; then
-    pourcent404=$((($e404 * 100) / $total))
-    pourcent50x=$((($e50x * 100) / $total))
+    pourcent2=$((($count2 * 100) / $total))
+    pourcent3=$((($count3 * 100) / $total))
+    pourcent4=$((($count4 * 100) / $total))
+    pourcent5=$((($count5 * 100) / $total))
 fi
 
 now_s=$(date -d $now +%s)
 since_s=$(date -d $since +%s)
 period=$(( $now_s - $since_s ))
 
-RET_MSG="$total requests in $period seconds, $e404 404 ($pourcent404%), $e50x 50x ($pourcent50x%)"
+ratetotal=$(($total / $period))
+rate2=$(($count2 / $period))
+rate3=$(($count3 / $period))
+rate4=$(($count4 / $period))
+rate5=$(($count5 / $period))
 
-if [ $pourcent404 -gt $WARN_404 -o $pourcent50x -gt $WARN_50x ]; then
-    if [ $pourcent404 -gt $CRIT_404 -o $pourcent50x -gt $CRIT_50x ]; then
+RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) | total=$total;;;;0;100 2xx=$rate2;;;;0;100 3xx=$rate3;;;;0;100 4xx=$rate4;;;;0;100 5xx=$rate5;;;;0;100"
+
+if [ $pourcent3 -gt $WARN_3 -o $pourcent4 -gt $WARN_4 -o $pourcent4 -gt $WARN_4 -o $pourcent5 -gt $WARN_5 ]; then
+    if [ $pourcent3 -gt $CRIT_3 -o $pourcent4 -gt $CRIT_4 -o $pourcent5 -gt $CRIT_5 ]; then
         RET_MSG="CRITICAL - $RET_MSG"
         RET_CODE=$E_CRITICAL
     else
