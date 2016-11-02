@@ -52,11 +52,11 @@ fi
 
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
-    echo "$(date +%H:%M:%s -d '5 min ago')" > $LAST_RUN_FILE
+    echo "$(date +%H:%M:%S -d '5 min ago')" > $LAST_RUN_FILE
 fi
 
 since=$(<$LAST_RUN_FILE)
-now=$(date +%H:%M:%s)
+now=$(date +%H:%M:%S)
 
 echo "$now" > $LAST_RUN_FILE
 
@@ -64,7 +64,7 @@ tmpfile="/tmp/$$.tmp"
 
 /usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS > $tmpfile
 
-total=$(wc -l $tmpfile)
+total=$(cat $tmpfile | wc -l)
 count2=$(cat $tmpfile | cut -d ' ' -f 9 | grep '2..' -c)
 count3=$(cat $tmpfile | cut -d ' ' -f 9 | grep '3..' -c)
 count4=$(cat $tmpfile | cut -d ' ' -f 9 | grep '4..' -c)
