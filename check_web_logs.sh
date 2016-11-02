@@ -38,7 +38,7 @@ exit $E_UNKNOWN
 fi
 
 # find last check
-if [ -z $TMP_FILE ]; then
+if [ ! -f $TMP_FILE ]; then
     echo "$(date +%R -d '5 min ago')" > $TMP_FILE
 fi
 
