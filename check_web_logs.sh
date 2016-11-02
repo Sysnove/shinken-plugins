@@ -52,11 +52,11 @@ fi
 
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
-    echo "$(date +%R -d '5 min ago')" > $LAST_RUN_FILE
+    echo "$(date +%H:%M:%s -d '5 min ago')" > $LAST_RUN_FILE
 fi
 
 since=$(<$LAST_RUN_FILE)
-now=$(date +%R)
+now=$(date +%H:%M:%s)
 
 echo "$now" > $LAST_RUN_FILE
 
