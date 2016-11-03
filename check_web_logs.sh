@@ -62,7 +62,7 @@ echo "$now" > $LAST_RUN_FILE
 
 tmpfile="/tmp/$$.tmp"
 
-/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS > $tmpfile
+/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep -v check_http > $tmpfile
 
 total=$(cat $tmpfile | wc -l)
 count2=$(cat $tmpfile | cut -d ' ' -f 9 | grep '2..' -c)
