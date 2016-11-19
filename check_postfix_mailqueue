@@ -32,6 +32,8 @@ STATE_UNKNOWN=3
 warning=0
 critical=0
 
+config_dir="/etc/postfix"
+
 print_version() {
     echo "$PROGNAME $VERSION $AUTHOR"
 }
@@ -80,6 +82,8 @@ print_help() {
     echo "     Warning level for hold mails"
     echo "  --hold_crit)"
     echo "     Critical level for hold mails"
+    echo "  --config_dir)"
+    echo "     Postfix config directory (default=/etc/postfix)"
     echo "  -h)"
     echo "     This help"
     echo "  -v)"
@@ -106,6 +110,10 @@ while test -n "$1"; do
         -v)
             print_version
             exit $STATE_OK;;
+        --config_dir)
+            config_dir=$2
+            shift
+            ;;
         --deferred_warn)
             deferred_warn=$2
             shift
@@ -168,7 +176,7 @@ fi
 # Can be set via environment, but default is fetched by postconf (if available,
 # else /var/spool/postfix) 
 if which postconf > /dev/null ; then
-    SPOOLDIR=${spooldir:-`postconf -h queue_directory`}
+    SPOOLDIR=${spooldir:-`postconf -c "$config_dir" -h queue_directory`}
 else
     SPOOLDIR=${spooldir:-/var/spool/postfix}
 fi
