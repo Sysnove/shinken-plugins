@@ -2,7 +2,7 @@
 
 LOGS=
 
-MIN=5
+MIN=2
 
 WARN_3=100
 WARN_4=100
@@ -101,21 +101,16 @@ rate5=$(($count5 / $period))
 
 RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) | total=$total;;;;0;100 2xx=$rate2;;;;0;100 3xx=$rate3;;;;0;100 4xx=$rate4;;;;0;100 5xx=$rate5;;;;0;100"
 
-if [ $total -gt $MIN ]; then
-    if [ $pourcent3 -gt $WARN_3 -o $pourcent4 -gt $WARN_4 -o $pourcent4 -gt $WARN_4 -o $pourcent5 -gt $WARN_5 ]; then
-        if [ $pourcent3 -gt $CRIT_3 -o $pourcent4 -gt $CRIT_4 -o $pourcent5 -gt $CRIT_5 ]; then
-            RET_MSG="CRITICAL - $RET_MSG"
-            RET_CODE=$E_CRITICAL
-        else
-            RET_MSG="WARNING - $RET_MSG"
-            RET_CODE=$E_WARNING
-        fi
+if [ ($pourcent3 -gt $WARN_3 -a $count3 -ge $MIN) -o ($pourcent4 -gt $WARN_4 -a $count4 -ge $MIN) -o ($pourcent5 -gt $WARN_5 -a $count5 -ge $MIN) ]; then
+    if [ $pourcent3 -gt $CRIT_3 -o $pourcent4 -gt $CRIT_4 -o $pourcent5 -gt $CRIT_5 ]; then
+        RET_MSG="CRITICAL - $RET_MSG"
+        RET_CODE=$E_CRITICAL
     else
-        RET_MSG="OK - $RET_MSG"
-        RET_CODE=$E_OK
+        RET_MSG="WARNING - $RET_MSG"
+        RET_CODE=$E_WARNING
     fi
 else
-    RET_MSG="OK (Less than $MIN lines) - $RET_MSG"
+    RET_MSG="OK - $RET_MSG"
     RET_CODE=$E_OK
 fi
 
