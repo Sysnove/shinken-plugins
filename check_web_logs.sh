@@ -1,6 +1,9 @@
 #!/bin/bash
 
 LOGS=
+
+MIN=5
+
 WARN_3=100
 WARN_4=100
 WARN_5=100
@@ -24,6 +27,7 @@ show_help() {
 while [ ! -z "$1" ]; do 
     case $1 in
         -l)	shift; LOGS_WITH_GLOB=$1 ;;
+        -m) shift; MIN=$1 ;;
         -w3) shift; WARN_3=$1 ;;
         -w4) shift; WARN_4=$1 ;;
         -w5) shift; WARN_5=$1 ;;
@@ -65,6 +69,7 @@ tmpfile="/tmp/$$.tmp"
 /usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep -v check_http > $tmpfile
 
 total=$(cat $tmpfile | wc -l)
+
 count2=$(cat $tmpfile | cut -d ' ' -f 9 | grep '2..' -c)
 count3=$(cat $tmpfile | cut -d ' ' -f 9 | grep '3..' -c)
 count4=$(cat $tmpfile | cut -d ' ' -f 9 | grep '4..' -c)
@@ -96,16 +101,21 @@ rate5=$(($count5 / $period))
 
 RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) | total=$total;;;;0;100 2xx=$rate2;;;;0;100 3xx=$rate3;;;;0;100 4xx=$rate4;;;;0;100 5xx=$rate5;;;;0;100"
 
-if [ $pourcent3 -gt $WARN_3 -o $pourcent4 -gt $WARN_4 -o $pourcent4 -gt $WARN_4 -o $pourcent5 -gt $WARN_5 ]; then
-    if [ $pourcent3 -gt $CRIT_3 -o $pourcent4 -gt $CRIT_4 -o $pourcent5 -gt $CRIT_5 ]; then
-        RET_MSG="CRITICAL - $RET_MSG"
-        RET_CODE=$E_CRITICAL
+if [ $total -gt $MIN ]; then
+    if [ $pourcent3 -gt $WARN_3 -o $pourcent4 -gt $WARN_4 -o $pourcent4 -gt $WARN_4 -o $pourcent5 -gt $WARN_5 ]; then
+        if [ $pourcent3 -gt $CRIT_3 -o $pourcent4 -gt $CRIT_4 -o $pourcent5 -gt $CRIT_5 ]; then
+            RET_MSG="CRITICAL - $RET_MSG"
+            RET_CODE=$E_CRITICAL
+        else
+            RET_MSG="WARNING - $RET_MSG"
+            RET_CODE=$E_WARNING
+        fi
     else
-        RET_MSG="WARNING - $RET_MSG"
-        RET_CODE=$E_WARNING
+        RET_MSG="OK - $RET_MSG"
+        RET_CODE=$E_OK
     fi
 else
-    RET_MSG="OK - $RET_MSG"
+    RET_MSG="OK (Less than $MIN lines) - $RET_MSG"
     RET_CODE=$E_OK
 fi
 
