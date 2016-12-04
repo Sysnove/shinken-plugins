@@ -188,7 +188,8 @@ cd $SPOOLDIR >/dev/null 2>/dev/null || {
 
 # Get values
 for i in deferred active maildrop incoming corrupt hold; do
-    eval $i=`(test -d $i && find $i -type f ) | wc -l`
+    test -d $i && test -r $i || { echo -n "unable to check queue $i"; exit $STATE_CRIT; }
+    eval $i=$(qshape $i | grep "TOTAL" | awk '{print $2}')
 done
 
 for state in crit warn; do
