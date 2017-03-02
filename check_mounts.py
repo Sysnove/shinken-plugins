@@ -40,7 +40,7 @@ def main():
     for mount_point in [l.replace('\t', ' ').split(' ')[1] for l in fstab if not l.startswith('#') and l != '\n']:
         if mount_point and mount_point != 'none' and mount_point != 'swap':
             # Try to find mount point in mount output
-            mount_line = [l for l in mount if mount_point in l.split(' ')]
+            mount_line = [l for l in mount if mount_point in l.split(' ') and not l.startswith('rootfs')]
             if not mount_line:
                 print("%s is not mounted" % mount_point)
                 return STATUS_ERROR
