@@ -15,7 +15,7 @@ fi
 
 echo ${RESULT} | jq -e '.[0].State.Running' >/dev/null || critical "Container '${CONTAINER}' is stopped."
 
-SINCE=$(/usr/bin/docker container inspect ${CONTAINER} | jq '.[0].State.StartedAt')
+SINCE=$(echo ${RESULT} | jq -re '.[0].State.StartedAt')
 
-echo "Container '${CONTAINER} is running since ${SINCE}."
+echo "Container '${CONTAINER}' is running since ${SINCE}."
 exit 0
