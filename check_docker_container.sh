@@ -7,7 +7,7 @@ critical(){
     exit 2
 }
 
-RESULT=$(/usr/bin/docker container inspect ${CONTAINER})
+RESULT=$(/usr/bin/docker container inspect ${CONTAINER} 2>/dev/null)
 
 if [ $? -ne 0 ]; then
     critical "Container with name '${CONTAINER}' does not exist."
