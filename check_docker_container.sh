@@ -13,7 +13,7 @@ if [ $? -ne 0 ]; then
     critical "Container with name '${CONTAINER}' does not exist."
 fi
 
-echo ${RESULT} | jq -e '.[0].State.Running' || critical "Container '${CONTAINER}' is stopped."
+echo ${RESULT} | jq -e '.[0].State.Running' >/dev/null || critical "Container '${CONTAINER}' is stopped."
 
 SINCE=$(/usr/bin/docker container inspect ${CONTAINER} | jq '.[0].State.StartedAt')
 
