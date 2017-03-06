@@ -3,7 +3,7 @@
 CONTAINER=$1
 
 critical(){
-    echo $*
+    echo CRITICAL: $*
     exit 2
 }
 
@@ -17,5 +17,5 @@ echo ${RESULT} | jq -e '.[0].State.Running' >/dev/null || critical "Container '$
 
 SINCE=$(echo ${RESULT} | jq -r -e '.[0].State.StartedAt')
 
-echo "Container '${CONTAINER}' is running since ${SINCE}."
+echo "OK: Container '${CONTAINER}' is running since ${SINCE}."
 exit 0
