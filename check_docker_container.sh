@@ -7,6 +7,11 @@ critical(){
     exit 2
 }
 
+ok(){
+    echo OK: $*
+    exit 0
+}
+
 RESULT=$(/usr/bin/docker container inspect ${CONTAINER} 2>/dev/null)
 
 if [ $? -ne 0 ]; then
@@ -17,5 +22,4 @@ echo ${RESULT} | jq -e '.[0].State.Running' >/dev/null || critical "Container '$
 
 SINCE=$(echo ${RESULT} | jq -r -e '.[0].State.StartedAt')
 
-echo "OK: Container '${CONTAINER}' is running since ${SINCE}."
-exit 0
+ok "Container '${CONTAINER}' is running since ${SINCE}."
