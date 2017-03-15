@@ -5,10 +5,10 @@ not_processed=$(/var/qmail/bin/qmail-qstat | grep 'messages in queue but not yet
 
 msg="$total messages in queue ($not_processed not processed) | total=$total;;;;; notprocessed=$not_processed;;;;;"
 
-if [[ $total < '10' ]] ; then
+if [ $total -lt 10 ] ; then
     echo "OK: $msg"
     exit 0
-elif [[ $total < '50' ]] ; then
+elif [ $total -lt 50 ] ; then
     echo "WARNING: $msg"
     exit 1
 else
