@@ -2,7 +2,7 @@
 
 total=$(find / -name 'sess_*' -ctime +15 2>/dev/null | grep -v /usr/share/man/man1/sess_id.1ssl.gz | wc -l)
 
-msg="$total PHP session files found | total=$total;;;;;"
+msg="$total PHP old session files found | total=$total;;;;;"
 
 if [ $total -lt 10000 ] ; then
     echo "OK: $msg"

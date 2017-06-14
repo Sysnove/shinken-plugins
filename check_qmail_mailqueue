@@ -1,14 +1,36 @@
 #!/bin/bash
 
+
+if [ $# -eq 0 ]; then
+    warn=10
+    crit=50
+elif [ $# -eq 2 ]; then
+    warn=$1
+    crit=$2
+    if [ $warn -gt $crit ]; then
+        echo "WARN has to be lower than CRIT"
+        exit 4
+    fi
+else
+    echo "USAGE : $0 [WARN CRIT]"
+    echo "You have to specify both WARN and CRIT, or no argument (defaults 10 50)"
+    exit 4
+fi
+
+if [ ! -e "/var/qmail/bin/qmail-qstat" ]; then
+    echo "/var/qmail/bin/qmail-qstat not found"
+    exit 4
+fi
+
 total=$(/var/qmail/bin/qmail-qstat | grep 'messages in queue:' | cut -d ':' -f 2)
 not_processed=$(/var/qmail/bin/qmail-qstat | grep 'messages in queue but not yet preprocessed:' | cut -d ':' -f 2)
 
 msg="$total messages in queue ($not_processed not processed) | total=$total;;;;; notprocessed=$not_processed;;;;;"
 
-if [ $total -lt 10 ] ; then
+if [ $total -lt $warn ] ; then
     echo "OK: $msg"
     exit 0
-elif [ $total -lt 50 ] ; then
+elif [ $total -lt $crit] ; then
     echo "WARNING: $msg"
     exit 1
 else
