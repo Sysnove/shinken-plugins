@@ -16,7 +16,7 @@ warnings=""
 errors=""
 oks=""
 
-for f in $(ls $DIR); do
+for f in $(find $DIR -maxdepth 1 -type f); do
     /usr/lib/nagios/plugins/check_file_age -w 90000 -c 180000 -f $DIR/$f > /dev/null
     ret=$?
     if [ $ret -gt 1 ]; then
