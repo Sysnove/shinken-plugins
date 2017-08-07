@@ -42,7 +42,7 @@ function convert_readable {
 for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
     name=$(echo $line | awk '{print $1}' | cut -d ':' -f 1)
 
-    if [[ ! $name =~ (eth|en) ]] ; then
+    if [[ ! $name =~ (eth|en|tun|br) ]] ; then
         continue
     fi
 
