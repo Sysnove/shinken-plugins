@@ -75,8 +75,14 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
     perfdata="$perfdata '${name}_in_bps'=${inspeed}bps;$WARN;$CRIT;0;$MAX '${name}_out_bps'=${outspeed}bps;$WARN;$CRIT;0;$MAX"
 done
 
+data="${data::-2}"
+
 mv $RUN_FILE $LAST_RUN_FILE
 
-echo "${data}and $notrunning not running | $perfdata"
+if [ $notrunning -gt 0 ]; then
+    echo "${data} and $notrunning not running | $perfdata"
+else
+    echo "${data} | $perfdata"
+fi
 
 exit $RET
