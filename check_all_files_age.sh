@@ -17,7 +17,11 @@ errors=""
 oks=""
 
 for f in $(find $DIR -maxdepth 1 -type f); do
-    /usr/lib/nagios/plugins/check_file_age -w 90000 -c 180000 -f $f > /dev/null
+    if [ -e /usr/lib64/nagios/plugins/check_file_age ] ; then
+        /usr/lib64/nagios/plugins/check_file_age -w 90000 -c 180000 -f $f > /dev/null
+    else
+        /usr/lib/nagios/plugins/check_file_age -w 90000 -c 180000 -f $f > /dev/null
+    fi
     ret=$?
     if [ $ret -gt 1 ]; then
         errors="$errors $f"
