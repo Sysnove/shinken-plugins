@@ -25,14 +25,14 @@ down=""
 
 for service in $services ; do
     if [ -f /etc/init.d/$service -o -f /lib/systemd/system/${service}.service ] ; then
-        /usr/sbin/service $service status > /dev/null || down="$down $service"
+        service $service status > /dev/null || down="$down $service"
     fi
 done
 
 # Postgres special case : 4 means that postgresql-common is installed but not
 # postgresql-server, so it's OK if postgres is not running
 if [ -f /etc/init.d/postgresql ] ; then
-    /usr/sbin/service postgresql status > /dev/null
+    service postgresql status > /dev/null
     s=$?
     [ $s -ne 0 -a $s -ne 4 ] && down="$down postgresql"
 fi
