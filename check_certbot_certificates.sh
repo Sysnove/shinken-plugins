@@ -6,14 +6,14 @@ CRITICAL=2
 
 CERTS_DIR=/etc/letsencrypt/live
 
-THRESHOLD=30
+THRESHOLD=20
 
 warnings=""
 errors=""
 
 nb_certs=0
 
-for cert in $(sudo find /etc/letsencrypt/live -name "cert.pem"); do
+for cert in $(find /etc/letsencrypt/live -name "cert.pem"); do
     nb_certs=$[$nb_certs + 1]
     domain=$(basename $(dirname $cert))
 
