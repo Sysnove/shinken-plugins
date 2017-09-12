@@ -96,7 +96,9 @@ print_output() {
     perfdata=""
     for i in deferred active maildrop incoming corrupt hold; do
         values="${values}${i^}=${!i} "
-        perfdata="$perfdata$i=${!i};; "
+        warn_var="${i}_warn"
+        crit_var="${i}_crit"
+        perfdata="$perfdata$i=${!i};${!warn_var};${!crit_var}; "
     done
     echo -n "Postfix Mailqueue $2 is $1 - $values| $perfdata"
 }
