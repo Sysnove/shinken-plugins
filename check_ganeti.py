@@ -38,7 +38,7 @@ def main():
         if match:
             status = match.group(1)
             msg = match.group(2)
-            if status == "WARNING":
+            if status == "WARNING" and 'DRBD version mismatch' not in msg:
                 ret_code = max(ret_code, STATUS_WARNING)
             if status == "ERROR":
                 ret_code = max(ret_code, STATUS_ERROR)
