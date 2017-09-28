@@ -34,18 +34,20 @@ def main():
     ret_level = 0
     ret_print = []
 
-    for row in reader:
-        if int(row['BlockHardLimit']) != 0:
-            percent = int(row['BlockUsed']) * 100 / int(row['BlockHardLimit'])
-            if percent > 90:
-                ret_level = max(ret_level, STATUS_ERROR)
-            elif percent >= 80:
-                ret_level = max(ret_level, STATUS_WARNING)
-            else:
-                ret_level = max(ret_level, STATUS_OK)
-            ret_print.append('%s: %s%% (%s/%s)' %
-        (row['Utilisateur'], percent, hbytes(row['BlockUsed']), hbytes(row['BlockHardLimit'])))
-
+    try:
+        for row in reader:
+            if int(row['BlockHardLimit']) != 0:
+                percent = int(row['BlockUsed']) * 100 / int(row['BlockHardLimit'])
+                if percent >= 90:
+                    ret_level = max(ret_level, STATUS_ERROR)
+                elif percent >= 80:
+                    ret_level = max(ret_level, STATUS_WARNING)
+                else:
+                    ret_level = max(ret_level, STATUS_OK)
+                ret_print.append('%s: %s%% (%s/%s)' %
+            (row['Utilisateur'], percent, hbytes(row['BlockUsed']), hbytes(row['BlockHardLimit'])))
+    except KeyError:
+        return STATUS_UNKNOWN, ['Cannot parse quotas from repquota output']
     return ret_level, ret_print
 
 
