@@ -10,6 +10,10 @@ STATUS_WARNING = 1
 STATUS_ERROR = 2
 STATUS_UNKNOWN = 3
 
+# Thresholds
+THRESHOLD_WARNING = 80
+THRESHOLD_ERROR = 90
+
 
 def hbytes(num):
     i = int(num)
@@ -38,9 +42,9 @@ def main():
         for row in reader:
             if int(row['BlockHardLimit']) != 0:
                 percent = int(row['BlockUsed']) * 100 / int(row['BlockHardLimit'])
-                if percent >= 90:
+                if percent >= THRESHOLD_ERROR:
                     ret_level = max(ret_level, STATUS_ERROR)
-                elif percent >= 80:
+                elif percent >= THRESHOLD_WARNING:
                     ret_level = max(ret_level, STATUS_WARNING)
                 else:
                     ret_level = max(ret_level, STATUS_OK)
