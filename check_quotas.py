@@ -3,6 +3,7 @@
 import subprocess
 import csv
 import sys
+import os
 
 # nagios exit code
 STATUS_OK = 0
@@ -14,6 +15,9 @@ STATUS_UNKNOWN = 3
 THRESHOLD_WARNING = 80
 THRESHOLD_ERROR = 90
 
+# Force C locale
+myenv = dict(os.environ)
+myenv['LC_ALL'] = 'C'
 
 def hbytes(num):
     i = int(num)
@@ -29,7 +33,7 @@ def main():
         return STATUS_UNKNOWN, ['No path given']
     try:
         quotas = subprocess.check_output(['repquota', '-u', '-O', 'csv', sys.argv[1]],
-                                         stderr=subprocess.STDOUT).split('\n')
+                                         stderr=subprocess.STDOUT, env=myenv).split('\n')
     except subprocess.CalledProcessError as e:
         if e.returncode != 0:
             return STATUS_UNKNOWN, ['Cannot find quotas on given path']
@@ -49,7 +53,7 @@ def main():
                 else:
                     ret_level = max(ret_level, STATUS_OK)
                 ret_print.append('%s: %s%% (%s/%s)' %
-            (row['Utilisateur'], percent, hbytes(row['BlockUsed']), hbytes(row['BlockHardLimit'])))
+            (row['User'], percent, hbytes(row['BlockUsed']), hbytes(row['BlockHardLimit'])))
     except KeyError:
         return STATUS_UNKNOWN, ['Cannot parse quotas from repquota output']
     return ret_level, ret_print
