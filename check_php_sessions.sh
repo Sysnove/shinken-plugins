@@ -1,6 +1,6 @@
 #!/bin/bash
 
-total=$(find / -name 'sess_*' -ctime +15 2>/dev/null | grep -v /usr/share/man/man1/sess_id.1ssl.gz | wc -l)
+total=$(nice -n 19 find / -name 'sess_*' -ctime +15 2>/dev/null | grep -v /usr/share/man/man1/sess_id.1ssl.gz | wc -l)
 
 msg="$total PHP old session files found | total=$total;;;;;"
 

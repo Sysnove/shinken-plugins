@@ -1,6 +1,6 @@
 #!/bin/bash
 
-files=$(find / -size +1G \( -name "*.log" -o -name catalina.out \))
+files=$(nice -n 19 find / -size +1G \( -name "*.log" -o -name catalina.out \))
 
 if [ -z "$files" ]; then
     echo "OK: No crazy log file found."
