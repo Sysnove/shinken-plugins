@@ -80,6 +80,14 @@ total_m=$(($total_k/1024))
 free_m=$(($free_k/1024))
 used_m=$(($total_m-$free_m))
 
+if [ $total_m > 1000 ]; then
+    total_g=$(bc <<< "scale=1; $total_m/1024")
+    used_g=$(bc <<< "scale=1; $used_m/1024")
+    ratio_txt="$used_g/$total_g GB"
+else
+    ratio_txt="$used_m/$total_m MB"
+fi
+
 warn_m=$((($total_m*$WARN)/100))
 crit_m=$((($total_m*$CRIT)/100))
 
@@ -89,7 +97,7 @@ else
     used_pct=$((($used_k*100)/$total_k))
 fi
 
-message="$used_pct% used ($used_m/$total_m MB) | swap=${used_m}MB;$warn_m;$crit_m;0;$total_m"
+message="$used_pct% used ($ratio_txt) | swap=${used_m}MB;$warn_m;$crit_m;0;$total_m"
 
 
 if [ $used_pct -ge $CRIT ]; then
