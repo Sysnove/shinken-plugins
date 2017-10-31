@@ -1,15 +1,11 @@
 #!/bin/bash
 
+LOGFILE=$1
+
 SLOW_WARNING=1
 SLOW_CRITICAL=5
 
-
 MINUTES=5
-
-# Get pg version
-PG_VERSION=$(ps faux | grep postgresql.conf | egrep -o 'postgresql/.*/main' | cut -d '/' -f 2)
-
-LOGFILE=/var/log/postgresql/postgresql-$PG_VERSION-main.log
 
 # Try pgbadger
 pgbadger=$(pgbadger -x text -o - -v $LOGFILE -x text --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" 2>/dev/null)
