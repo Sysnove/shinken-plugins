@@ -47,7 +47,7 @@ nb_slow=$(dategrep $LOGFILE --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S'
 slow_per_s=$(echo "scale=1;$nb_slow/5/60" | bc)
 
 
-msg="$total queries loggued on last $MINUTES minutes | select=${select_per_m}req/m insert=${insert_per_m}req/m update=${update_per_m}req/m delete=${delete_per_m}req/m others=${others_per_m}req/m peak=${peak}req/s slow=${slow_per_s}req/s;$SLOW_WARNING;$SLOW_CRITICAL;"
+msg="$total queries loggued on last $MINUTES minutes | select=${select_per_m}req_per_m insert=${insert_per_m}req_per_m update=${update_per_m}req_per_m delete=${delete_per_m}req_per_m others=${others_per_m}req_per_m peak=${peak}req_per_s slow=${slow_per_s}req_per_s;$SLOW_WARNING;$SLOW_CRITICAL;"
 
 
 if [ "$slow_per_s" -gt "$SLOW_CRITICAL" ]; then
