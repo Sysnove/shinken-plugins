@@ -19,31 +19,29 @@ fi
 
 # Get counters
 total=$(echo "$pgbadger" | grep '^Number of queries:' | cut -d ' ' -f 4 | sed 's/,//')
-if [ "$total" = "0" -o "$total" = "" ]; then
-    total=0
-    select_per_m=0
-    insert_per_m=0
-    update_per_m=0
-    delete_per_m=0
-    others_per_m=0
-    peak=0
-else
-    nb_select=$(echo "$pgbadger" | grep '^SELECT:'| cut -d ' ' -f 2 | sed 's/,//')
-    nb_insert=$(echo "$pgbadger" | grep '^INSERT:'| cut -d ' ' -f 2 | sed 's/,//')
-    nb_update=$(echo "$pgbadger" | grep '^UPDATE:'| cut -d ' ' -f 2 | sed 's/,//')
-    nb_delete=$(echo "$pgbadger" | grep '^DELETE:'| cut -d ' ' -f 2 | sed 's/,//')
-    nb_others=$(echo "$pgbadger" | grep '^OTHERS:'| cut -d ' ' -f 2 | sed 's/,//')
+[ -z "$total" ] && total=0
 
-    # Convert to frequency per minute
-    select_per_m=$(echo "scale=1;$nb_select/5" | bc)
-    insert_per_m=$(echo "scale=1;$nb_insert/5" | bc)
-    update_per_m=$(echo "scale=1;$nb_update/5" | bc)
-    delete_per_m=$(echo "scale=1;$nb_delete/5" | bc)
-    others_per_m=$(echo "scale=1;$nb_others/5" | bc)
+nb_select=$(echo "$pgbadger" | grep '^SELECT:'| cut -d ' ' -f 2 | sed 's/,//')
+nb_insert=$(echo "$pgbadger" | grep '^INSERT:'| cut -d ' ' -f 2 | sed 's/,//')
+nb_update=$(echo "$pgbadger" | grep '^UPDATE:'| cut -d ' ' -f 2 | sed 's/,//')
+nb_delete=$(echo "$pgbadger" | grep '^DELETE:'| cut -d ' ' -f 2 | sed 's/,//')
+nb_others=$(echo "$pgbadger" | grep '^OTHERS:'| cut -d ' ' -f 2 | sed 's/,//')
 
-    peak=$(echo "$pgbadger" | grep '^Query peak:' | cut -d ' ' -f 3 | sed 's/,//')
-fi
+[ -z "$nb_select" ] && nb_select=0
+[ -z "$nb_insert" ] && nb_insert=0
+[ -z "$nb_update" ] && nb_update=0
+[ -z "$nb_delete" ] && nb_delete=0
+[ -z "$nb_others" ] && nb_others=0
 
+# Convert to frequency per minute
+select_per_m=$(echo "scale=1;$nb_select/5" | bc)
+insert_per_m=$(echo "scale=1;$nb_insert/5" | bc)
+update_per_m=$(echo "scale=1;$nb_update/5" | bc)
+delete_per_m=$(echo "scale=1;$nb_delete/5" | bc)
+others_per_m=$(echo "scale=1;$nb_others/5" | bc)
+
+peak=$(echo "$pgbadger" | grep '^Query peak:' | cut -d ' ' -f 3 | sed 's/,//')
+[ -z "$peak" ] && peak=0
 
 # Count slow queries (more than 1000ms)
 nb_slow=$(dategrep $LOGFILE --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | egrep 'duration: [0-9]{4,}\.' -o | wc -l)
