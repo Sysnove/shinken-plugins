@@ -8,13 +8,16 @@ SLOW_CRITICAL=5
 MINUTES=5
 
 # Try pgbadger
-pgbadger=$(pgbadger -x text -o - -v $LOGFILE -x text --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" 2>/dev/null)
+pgbadger=$(pgbadger -x text -o - -v $LOGFILE --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" 2>/dev/null)
 
 ret=$?
 
 if [ $ret -gt 1 ]; then
     if [ $ret -eq 2 ]; then
         echo "UNKNOWN: $LOGFILE doesn't exist"
+        exit 3
+    elif [ $ret -eq 13 ]; then
+        echo "UNKNOWN: Can't open file $LOGFILE, permission denied"
         exit 3
     elif [ $ret -eq 127 ]; then
         echo "UNKNOWN: pgbadger command not found"
