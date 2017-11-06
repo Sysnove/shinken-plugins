@@ -12,7 +12,7 @@ pgbadger=$(pgbadger -x text -o - -v $LOGFILE -x text --begin "$(date --date="$MI
 
 ret=$?
 
-if ! [ $ret -gt 1 ]; then
+if [ $ret -gt 1 ]; then
     if [ $ret -eq 2 ]; then
         echo "UNKNOWN: $LOGFILE doesn't exist"
         exit 3
