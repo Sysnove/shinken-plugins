@@ -8,7 +8,7 @@ SLOW_CRITICAL=5
 MINUTES=5
 
 # Try pgbadger
-pgbadger=$(pgbadger -x text -o - -v $LOGFILE --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" 2>/dev/null)
+pgbadger=$(pgbadger -x text -o - -v $LOGFILE -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" 2>/dev/null)
 
 ret=$?
 
