@@ -61,7 +61,7 @@ peak=$(echo "$pgbadger" | grep '^Query peak:' | cut -d ' ' -f 3 | sed 's/,//')
 # Count slow queries (more than 1000ms)
 # We begin by the grep because it is a lot more efficient than dategrep
 nb_slow=$(egrep 'duration: [0-9]{4,}\.' $LOGFILE | dategrep --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | wc -l)
-slow_per_s=$(echo "scale=3;$nb_slow/5/60" | bc | awk '{printf "%.3f", $0}')
+slow_per_s=$(echo "scale=3;$nb_slow/300" | bc | awk '{printf "%.3f", $0}')
 
 
 msg="$total queries logged on last $MINUTES minutes | select=${select_per_m}rpm;;;;; insert=${insert_per_m}rpm;;;;; update=${update_per_m}rpm;;;;; delete=${delete_per_m}rpm;;;;; others=${others_per_m}rpm;;;;; peak=${peak}rps;;;;; slow=${slow_per_s}rps;$SLOW_WARNING;$SLOW_CRITICAL;;;"
