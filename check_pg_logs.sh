@@ -48,18 +48,18 @@ nb_others=$(echo "$pgbadger" | grep '^OTHERS:'| cut -d ' ' -f 2 | sed 's/,//')
 [ -z "$nb_others" ] && nb_others=0
 
 # Convert to frequency per minute
-select_per_m=$(echo "scale=1;$nb_select/5" | bc)
-insert_per_m=$(echo "scale=1;$nb_insert/5" | bc)
-update_per_m=$(echo "scale=1;$nb_update/5" | bc)
-delete_per_m=$(echo "scale=1;$nb_delete/5" | bc)
-others_per_m=$(echo "scale=1;$nb_others/5" | bc)
+select_per_m=$(echo "scale=2;$nb_select/5" | bc)
+insert_per_m=$(echo "scale=2;$nb_insert/5" | bc)
+update_per_m=$(echo "scale=2;$nb_update/5" | bc)
+delete_per_m=$(echo "scale=2;$nb_delete/5" | bc)
+others_per_m=$(echo "scale=2;$nb_others/5" | bc)
 
 peak=$(echo "$pgbadger" | grep '^Query peak:' | cut -d ' ' -f 3 | sed 's/,//')
 [ -z "$peak" ] && peak=0
 
 # Count slow queries (more than 1000ms)
 nb_slow=$(dategrep $LOGFILE --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | egrep 'duration: [0-9]{4,}\.' -o | wc -l)
-slow_per_s=$(echo "scale=1;$nb_slow/5/60" | bc)
+slow_per_s=$(echo "scale=3;$nb_slow/5/60" | bc)
 
 
 msg="$total queries logged on last $MINUTES minutes | select=${select_per_m}rpm;;;;; insert=${insert_per_m}rpm;;;;; update=${update_per_m}rpm;;;;; delete=${delete_per_m}rpm;;;;; others=${others_per_m}rpm;;;;; peak=${peak}rps;;;;; slow=${slow_per_s}rps;$SLOW_WARNING;$SLOW_CRITICAL;;;"
