@@ -8,7 +8,8 @@ SLOW_CRITICAL=5
 MINUTES=5
 
 # Try pgbadger
-pgbadger=$(pgbadger -x text -o - -v $LOGFILE -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" 2>/dev/null)
+# We use tail to avoid parsing too many lines. Some servers can log millions of lines per day, which can take 30s to parse.
+pgbadger=$(tail -n 100000 $LOGFILE | pgbadger -x text -o - - -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" --disable-query --disable-hourly 2>/dev/null)
 
 ret=$?
 
@@ -58,7 +59,8 @@ peak=$(echo "$pgbadger" | grep '^Query peak:' | cut -d ' ' -f 3 | sed 's/,//')
 [ -z "$peak" ] && peak=0
 
 # Count slow queries (more than 1000ms)
-nb_slow=$(dategrep $LOGFILE --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | egrep 'duration: [0-9]{4,}\.' -o | wc -l)
+# We begin by the grep because it is a lot more efficient than dategrep
+nb_slow=$(egrep 'duration: [0-9]{4,}\.' $LOGFILE | dategrep --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | wc -l)
 slow_per_s=$(echo "scale=3;$nb_slow/5/60" | bc)
 
 
