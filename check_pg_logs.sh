@@ -2,8 +2,8 @@
 
 LOGFILE=$1
 
-SLOW_WARNING=1
-SLOW_CRITICAL=5
+SLOW_WARNING=.1
+SLOW_CRITICAL=1
 
 MINUTES=5
 
@@ -67,10 +67,10 @@ slow_per_s=$(echo "scale=3;$nb_slow/5/60" | bc | awk '{printf "%f", $0}')
 msg="$total queries logged on last $MINUTES minutes | select=${select_per_m}rpm;;;;; insert=${insert_per_m}rpm;;;;; update=${update_per_m}rpm;;;;; delete=${delete_per_m}rpm;;;;; others=${others_per_m}rpm;;;;; peak=${peak}rps;;;;; slow=${slow_per_s}rps;$SLOW_WARNING;$SLOW_CRITICAL;;;"
 
 
-if [ "$slow_per_s" > "$SLOW_CRITICAL" ]; then
+if [[ $slow_per_s > $SLOW_CRITICAL ]]; then
     echo "CRITICAL - $slow_per_s slow queries over $msg"
     exit 2
-elif [ "$slow_per_s" > "$SLOW_WARNING" ]; then
+elif [[ $slow_per_s > $SLOW_WARNING ]]; then
     echo "WARNING - $slow_per_s slow queries over $msg"
     exit 1
 else
