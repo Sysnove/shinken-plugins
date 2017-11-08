@@ -68,12 +68,16 @@ shift $((OPTIND-1))
 
 
 
-array=( $(cat /proc/meminfo | egrep 'MemTotal|MemFree|Buffers|Cached|SwapTotal|SwapFree' |awk '{print $1 " " $2}' |tr '\n' ' ' |tr -d ':' |awk '{ printf("%i %i %i %i %i %i %i", $2, $4, $6, $8, $10, $12, $14) }') )
+array=( $(cat /proc/meminfo | egrep 'MemTotal|MemFree|Buffers|Cached|SReclaimable|SUnreclaim' |awk '{print $1 " " $2}' |tr '\n' ' ' |tr -d ':' |awk '{ printf("%i %i %i %i %i %i %i", $2, $4, $6, $8, $10, $12, $14) }') )
 
 total_k=${array[0]}
 free_k=${array[1]}
 buffer_k=${array[2]}
 cache_k=${array[3]}
+slab_reclaimable_k=${array[5]}
+#slab_unreclaimable_k=${array[6]}
+# We consided reclaimable slab as cache
+cache_k=$(($cache_k+$slab_reclaimable_k))
 used_k=$(($total_k-$free_k-$buffer_k-$cache_k))
 total_m=$(($total_k/1024))
 free_m=$(($free_k/1024))
