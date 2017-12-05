@@ -9,10 +9,12 @@ SLOW_WARNING=$2
 SLOW_CRITICAL=$3
 
 MINUTES=5
+# :WARNING:maethor:171205: This can be a bug if you have more than 100000 lines of logs on the last 5 minutes.
+# But we need to use tail to avoid parsing too many lines. Some servers can log millons of lines per day, which can take more than 30s to parse.
+LINES=100000
 
 # Try pgbadger
-# We use tail to avoid parsing too many lines. Some servers can log millions of lines per day, which can take 30s to parse.
-pgbadger=$(tail -n 100000 $LOGFILE | pgbadger -x text -o - - -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" --disable-query --disable-hourly 2>/dev/null)
+pgbadger=$(tail -n $LINES $LOGFILE | pgbadger -x text -o - - -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" --disable-query --disable-hourly 2>/dev/null)
 
 ret=$?
 
@@ -63,7 +65,7 @@ peak=$(echo "$pgbadger" | grep '^Query peak:' | cut -d ' ' -f 3 | sed 's/,//')
 
 # Count slow queries (more than 1000ms)
 # We begin by the grep because it is a lot more efficient than dategrep
-nb_slow=$(egrep 'duration: [0-9]{4,}\.' $LOGFILE | dategrep --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | wc -l)
+nb_slow=$(tail -n $LINES $LOGFILE | egrep 'duration: [0-9]{4,}\.' | dategrep --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | wc -l)
 slow_per_s=$(echo "scale=3;$nb_slow/300" | bc | awk '{printf "%.3f", $0}')
 
 
