@@ -54,7 +54,7 @@ if [ $nb_pools_unknown -gt 0 ] ; then
 fi
 
 if [ $nb_pools_max_children_reached -gt 0 ] ; then
-    echo "WARNING - $nb_pools_max_children_reached/$nb_pools have reached max_children ($pools_max_children_reached) | $perfdata"
+    echo "WARNING - $nb_pools_max_children_reached/$nb_pools pools have reached max_children ($pools_max_children_reached) | $perfdata"
     exit 1
 fi
 
