@@ -136,10 +136,10 @@ for DEVICE in `ls /sys/block`; do
         # check TPS
         if [ $PCT_BUSY -gt $WARNING ]; then
             if [ $PCT_BUSY -gt $CRITICAL ]; then
-                OUTPUT="CRITICAL : $DEVICE I/O business is $PCT_BUSY% (>$CRITICAL%)"
+                OUTPUT="CRITICAL : $DEVICE I/O utilization is $PCT_BUSY% (>$CRITICAL%)"
                 EXITCODE=$E_CRITICAL
             elif [ $EXITCODE -lt $E_WARNING ]; then
-                OUTPUT="WARNING : $DEVICE I/O business is $PCT_BUSY% (>$WARNING%)"
+                OUTPUT="WARNING : $DEVICE I/O utilization is $PCT_BUSY% (>$WARNING%)"
                 EXITCODE=$E_WARNING
             fi
         fi
