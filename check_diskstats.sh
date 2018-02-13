@@ -122,7 +122,7 @@ for DEVICE in `ls /sys/block`; do
         #let "PCT_BUSY_WRITING = 100 * ($TIME_WRITING) / ($TIME * 1000)"
 
         let "READS_PER_SEC=($NEW_READ - $OLD_READ) / $TIME"
-        let "WRITES_PER_SEC=($NEW_READ - $OLD_READ) / $TIME"
+        let "WRITES_PER_SEC=($NEW_WRITE - $OLD_WRITE) / $TIME"
         
         let "BYTES_READ_PER_SEC = $SECTORS_READ * $SECTORBYTESIZE / $TIME"
         let "BYTES_WRITTEN_PER_SEC = $SECTORS_WRITE * $SECTORBYTESIZE / $TIME"
