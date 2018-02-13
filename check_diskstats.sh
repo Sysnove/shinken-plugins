@@ -98,10 +98,12 @@ for DEVICE in `ls /sys/block`; do
         OLD_WRITE=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $8}')
         NEW_WRITE=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $8}')
 
-        OLD_TIME_READING=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $7}')
-        NEW_TIME_READING=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $7}')
-        OLD_TIME_WRITING=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $11}')
-        NEW_TIME_WRITING=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $11}')
+        #OLD_TIME_READING=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $7}')
+        #NEW_TIME_READING=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $7}')
+        #OLD_TIME_WRITING=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $11}')
+        #NEW_TIME_WRITING=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $11}')
+        OLD_TIME_IO=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $13}')
+        NEW_TIME_IO=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $13}')
 
         OLD_SECTORS_READ=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $6}')
         NEW_SECTORS_READ=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $6}')
@@ -111,12 +113,13 @@ for DEVICE in `ls /sys/block`; do
         let "SECTORS_READ = $NEW_SECTORS_READ - $OLD_SECTORS_READ"
         let "SECTORS_WRITE = $NEW_SECTORS_WRITTEN - $OLD_SECTORS_WRITTEN"
 
-        let "TIME_READING = $NEW_TIME_READING - $OLD_TIME_READING"
-        let "TIME_WRITING = $NEW_TIME_WRITING - $OLD_TIME_WRITING"
+        #let "TIME_READING = $NEW_TIME_READING - $OLD_TIME_READING"
+        #let "TIME_WRITING = $NEW_TIME_WRITING - $OLD_TIME_WRITING"
+        let "TIME_IO = $NEW_TIME_IO - $OLD_TIME_IO"
 
-        let "PCT_BUSY = 100 * ($TIME_READING + $TIME_WRITING) / ($TIME * 1000)"
-        let "PCT_BUSY_READING = 100 * ($TIME_READING) / ($TIME * 1000)"
-        let "PCT_BUSY_WRITING = 100 * ($TIME_WRITING) / ($TIME * 1000)"
+        let "PCT_BUSY = 100 * ($TIME_IO + $TIME_IO) / ($TIME * 1000)"
+        #let "PCT_BUSY_READING = 100 * ($TIME_READING) / ($TIME * 1000)"
+        #let "PCT_BUSY_WRITING = 100 * ($TIME_WRITING) / ($TIME * 1000)"
 
         let "READS_PER_SEC=($NEW_READ - $OLD_READ) / $TIME"
         let "WRITES_PER_SEC=($NEW_READ - $OLD_READ) / $TIME"
@@ -126,7 +129,7 @@ for DEVICE in `ls /sys/block`; do
         let "KBYTES_READ_PER_SEC = $BYTES_READ_PER_SEC / 1024"
         let "KBYTES_WRITTEN_PER_SEC = $BYTES_WRITTEN_PER_SEC / 1024"
 
-        PERFDATA="$PERFDATA ${DEVICE}_pct_reading=$PCT_BUSY_READING% ${DEVICE}_pct_writing=$PCT_BUSY_WRITING% ${DEVICE}_read=${BYTES_READ_PER_SEC}bps ${DEVICE}_write=${BYTES_WRITTEN_PER_SEC}bps ${DEVICE}_rps=${READS_PER_SEC}r/s ${DEVICE}_wps=${WRITES_PER_SEC}w/s"
+        PERFDATA="$PERFDATA ${DEVICE}_pct_busy=$PCT_BUSY% ${DEVICE}_read=${BYTES_READ_PER_SEC}bps ${DEVICE}_write=${BYTES_WRITTEN_PER_SEC}bps ${DEVICE}_rps=${READS_PER_SEC}r/s ${DEVICE}_wps=${WRITES_PER_SEC}w/s"
 
         DATA="$DATA$DEVICE=$PCT_BUSY% "
 
