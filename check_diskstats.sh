@@ -117,7 +117,7 @@ for DEVICE in `ls /sys/block`; do
         #let "TIME_WRITING = $NEW_TIME_WRITING - $OLD_TIME_WRITING"
         let "TIME_IO = $NEW_TIME_IO - $OLD_TIME_IO"
 
-        let "PCT_BUSY = 100 * ($TIME_IO + $TIME_IO) / ($TIME * 1000)"
+        let "PCT_BUSY = 100 * ($TIME_IO) / ($TIME * 1000)"
         #let "PCT_BUSY_READING = 100 * ($TIME_READING) / ($TIME * 1000)"
         #let "PCT_BUSY_WRITING = 100 * ($TIME_WRITING) / ($TIME * 1000)"
 
