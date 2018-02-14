@@ -4,7 +4,7 @@ perfdata=""
 
 nb_pools=0
 nb_pools_down=0
-sockets_down=""
+pools_down=""
 nb_pools_unknown=0
 pool_unknown=""
 nb_pools_max_children_reached=0
@@ -28,7 +28,7 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
 
     if [ $? -ne 0 ] ; then
         nb_pools_down=$(($nb_pools_down + 1))
-        sockets_down="$sockets_down $socket_name "
+        pools_down="$pools_down $socket_name "
     fi
 
     pool_name=$(echo "$output" | grep '^pool:' | awk '{print $2}')
@@ -50,8 +50,12 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
     fi
 done
 
+if [ $nb_pools -eq 0 ] ; then
+    echo "UNKNOWN - 0 FPM pool found, please check your configuration."
+fi
+
 if [ $nb_pools_down -gt 0 ] ; then
-    echo "CRITICAL - $nb_pools_down/$nb_pools pools down ($sockets_down) | $perfdata"
+    echo "CRITICAL - $nb_pools_down/$nb_pools pools down ($pools_down) | $perfdata"
     exit 2
 fi
 
@@ -65,6 +69,6 @@ if [ $nb_pools_max_children_reached -gt 0 ] ; then
     exit 1
 fi
 
-echo "OK - $nb_pools PHP-FPM sockets found | $perfdata"
+echo "OK - $nb_pools PHP-FPM pools found | $perfdata"
 
 exit $ret
