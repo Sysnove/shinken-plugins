@@ -24,14 +24,15 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
 
     nb_pools=$((nb_pools+1))
 
-    output=$(SCRIPT_NAME=/status SCRIPT_FILENAME=/status REQUEST_METHOD=GET cgi-fcgi -bind -connect $sock)
+    output=$(SCRIPT_NAME=/status SCRIPT_FILENAME=/status REQUEST_METHOD=GET cgi-fcgi -bind -connect $sock 2> /dev/null)
 
     if [ $? -ne 0 ] ; then
-        output=$(SCRIPT_NAME=/fpm_status SCRIPT_FILENAME=/fpm_status REQUEST_METHOD=GET cgi-fcgi -bind -connect $sock)
-        if [ $? -ne 0 ] ; then
-            nb_pools_down=$(($nb_pools_down + 1))
-            pools_down="$pools_down $socket_name "
-        fi
+        nb_pools_down=$(($nb_pools_down + 1))
+        pools_down="$pools_down $socket_name "
+    fi
+
+    if echo $output | grep -q "File not found"; then
+        output=$(SCRIPT_NAME=/fpm_status SCRIPT_FILENAME=/fpm_status REQUEST_METHOD=GET cgi-fcgi -bind -connect $sock 2> /dev/null)
     fi
 
     pool_name=$(echo "$output" | grep '^pool:' | awk '{print $2}')
