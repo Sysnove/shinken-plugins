@@ -12,7 +12,7 @@ pools_max_children_reached=""
 
 ret=0
 
-for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '=' -f 2 | egrep -v 'web[0-9]+') ; do
+for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '=' -f 2) ; do
     if [[ $sock =~ .*\.sock ]]; then
         # It is a socket file
         socket_name=${$(basename $sock)%.*}
