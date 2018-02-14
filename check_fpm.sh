@@ -13,7 +13,14 @@ pools_max_children_reached=""
 ret=0
 
 for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '=' -f 2) ; do
-    socket_name=${$(basename $sock)%.*}
+    if [[ $sock =~ .*\.sock ]]; then
+        # It is a socket file
+        socket_name=${$(basename $sock)%.*}
+    else
+        # It is an IP/Port
+        config_file=$(grep -l "listen = $sock" /etc/php*/**/fpm/pool.d/*.conf)
+        socket_name=${$(basename $config_file)%.*}
+    fi
 
     nb_pools=$((nb_pools+1))
 
