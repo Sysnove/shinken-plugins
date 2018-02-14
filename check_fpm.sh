@@ -52,6 +52,7 @@ done
 
 if [ $nb_pools -eq 0 ] ; then
     echo "UNKNOWN - 0 FPM pool found, please check your configuration."
+    exit 3
 fi
 
 if [ $nb_pools_down -gt 0 ] ; then
