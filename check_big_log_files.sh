@@ -1,6 +1,22 @@
 #!/bin/bash
 
-files=$(nice -n 19 find / -size +1G \( -name "*.log" -o -name catalina.out \))
+while getopts "e:" option; do
+    case $option in
+        e)
+            EXCLUDES="${EXCLUDES} ${OPTARG}"
+            ;;
+    esac
+done
+
+FIND_OPTS='/'
+
+for EXCLUDE in ${EXCLUDES}; do
+    FIND_OPTS="${FIND_OPTS} -path ${EXCLUDE} -prune -o"
+done
+
+FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name catalina.out ) -size +1G -print"
+
+files=$(nice -n 19 find ${FIND_OPTS})
 
 if [ -z "$files" ]; then
     echo "OK: No crazy log file found."
