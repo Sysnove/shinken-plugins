@@ -70,10 +70,6 @@ in_ratelimit=$(cat $tmpfile_in | grep 'Rate limit exceeded' -c)
 in_greylist=$(cat $tmpfile_in | grep 'Try again later' -c)
 in_reject=$(cat $tmpfile | grep postfix/smtpd | grep 'NOQUEUE: reject' -c)
 
-rm $tmpfile
-rm $tmpfile_in
-rm $tmpfile_out
-
 now_s=$(date -d $now +%s)
 since_s=$(date -d $since +%s)
 period=$(( $now_s - $since_s ))
@@ -95,13 +91,18 @@ RET_MSG="$in_accepted messages received and $out_sent messages sent in the last 
 
 #RET_MSG="in the last $period seconds : out_sent=$out_sent ($rate_out_sent/min) out_bounced=$out_bounced  ($rate_out_bounced/min) out_deferred=$out_deferred ($rate_out_deferred/min) in_accepted=$in_accepted ($rate_in_accepted/min) in_virus=$in_virus ($rate_in_virus/min) in_spam=$in_spam ($rate_in_spam/min) in_ratelimit=$in_ratelimit ($rate_in_ratelimit/min) in_greylist=$in_greylist ($rate_in_greylist/min) in_reject=$in_reject ($rate_in_reject/min) | $PERFDATA"
 
+
 RET_MSG="OK - $RET_MSG"
 RET_CODE=$E_OK
 
-if egrep -q 'warning: database .* is older than source file' /var/log/mail.log; then
+if cat $tmpfile | egrep -q 'warning: database .* is older than source file'; then
     RET_MSG="WARNING - Old postfix database file - $RET_MSG"
     RET_CODE=$E_WARNING
 fi
+
+rm $tmpfile
+rm $tmpfile_in
+rm $tmpfile_out
 
 echo $RET_MSG
 exit $RET_CODE
