@@ -98,5 +98,10 @@ RET_MSG="$in_accepted messages received and $out_sent messages sent in the last 
 RET_MSG="OK - $RET_MSG"
 RET_CODE=$E_OK
 
+if egrep -q 'warning: database .* is older than source file' /var/log/mail.log; then
+    RET_MSG="WARNING - Old postfix database file - $RET_MSG"
+    RET_CODE=$E_WARNING
+fi
+
 echo $RET_MSG
 exit $RET_CODE
