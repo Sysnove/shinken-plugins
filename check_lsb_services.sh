@@ -19,7 +19,7 @@ STATE_WARNING=1
 STATE_CRITICAL=2
 STATE_UNKNOWN=3
 
-services="addok addok-wrapper apache2 atd bind9 ceph clamav-daemon couchdb cron dibbler-client dovecot exim4 fail2ban fcgiwrap glassfish lm-sensors mailgraph memcached mongodb mongod nagios-nrpe-server nginx npcd ntp openvpn pgbouncer php5-fpm php7.0-fpm php7.1-fpm postfix pure-ftpd-mysql rabbitmq-server redis-server repmgrd resolvconf rspamd rsyslog shorewall shorewall6 slapd ssh uwsgi openconcerto_import openconcerto_picking"
+services="addok addok-wrapper apache2 atd bind9 ceph clamav-daemon couchdb cron dibbler-client dovecot elasticsearch exim4 fail2ban fcgiwrap glassfish lm-sensors mailgraph memcached mongodb mongod nagios-nrpe-server nginx npcd ntp openvpn pgbouncer php5-fpm php7.0-fpm php7.1-fpm postfix pure-ftpd-mysql rabbitmq-server redis-server repmgrd resolvconf rspamd rsyslog shorewall shorewall6 slapd ssh uwsgi openconcerto_import openconcerto_picking"
 
 down=""
 
