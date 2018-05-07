@@ -16,14 +16,14 @@ for pkg in $(apt-mark showhold); do
 done
 
 if [[ $nb_security_updates -gt 0 ]]; then
-    echo "CRITICAL: $nb_updates holded packages available for upgrade ($nb_security_updates security)."
+    echo "CRITICAL: $nb_updates packages on hold are available for upgrade ($nb_security_updates security)."
     exit 2
 fi
 
 if [[ $nb_updates -gt 0 ]]; then
-    echo "WARNING: $nb_updates holded packages available for upgrade."
+    echo "WARNING: $nb_updates packages on hold are available for upgrade."
     exit 1
 fi
 
-echo "OK: Holded packages are up to date."
+echo "OK: Packages on hold are up to date."
 exit 0
