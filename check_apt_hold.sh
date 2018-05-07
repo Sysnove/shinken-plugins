@@ -1,9 +1,11 @@
 #!/bin/bash
 
+nb_on_hold=0
 nb_updates=0
 nb_security_updates=0
 
 for pkg in $(apt-mark showhold); do
+    nb_on_hold=$((nb_on_hold + 1))
     policy="$(apt-cache policy $pkg)"
     installed=$(echo "$policy" | head -n 2 | tail -n 1 | cut -d ':' -f 2)
     candidate=$(echo "$policy" | head -n 3 | tail -n 1 | cut -d ':' -f 2)
@@ -25,5 +27,10 @@ if [[ $nb_updates -gt 0 ]]; then
     exit 1
 fi
 
-echo "OK: Packages on hold are up to date."
+if [[ $nb_on_hold -gt 0 ]]; then
+    echo "OK: $nb_on_hold packages on hold are up to date."
+    exit 0
+fi
+
+echo "OK: No package on hold."
 exit 0
