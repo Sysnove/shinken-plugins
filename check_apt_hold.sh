@@ -3,7 +3,7 @@
 nb_updates=0
 nb_security_updates=0
 
-for pkg in $(sudo apt-mark showhold); do
+for pkg in $(apt-mark showhold); do
     policy="$(apt-cache policy $pkg)"
     installed=$(echo "$policy" | head -n 2 | tail -n 1 | cut -d ':' -f 2)
     candidate=$(echo "$policy" | head -n 3 | tail -n 1 | cut -d ':' -f 2)
