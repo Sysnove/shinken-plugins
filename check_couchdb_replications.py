@@ -14,7 +14,7 @@ import tempfile
 # Nagios status codes
 OK, WARNING, CRITICAL, UNKNOWN = range(4)
 
-def main(host, replicator, auth, age_timeout):
+def main(host, replicator, replication, auth, age_timeout):
     headers = {
         'Content-type': 'application/json'
     }
@@ -42,6 +42,9 @@ def main(host, replicator, auth, age_timeout):
     reps = filter(lambda x: 'source' in x, [x['doc'] for x in replications.json()['rows']])
     reps = sorted(reps, key=itemgetter('source'))
 
+    if replication is not None:
+        reps = [r for r in reps if r['_id'] == replication]
+
     tasks = {}
     for at in active_tasks.json():
         rep_id = at.get('replication_id', '')
@@ -56,9 +59,9 @@ def main(host, replicator, auth, age_timeout):
     problems = []
     for rep in reps:
         if '_replication_id' in rep:
-            task = tasks.get(rep['_replication_id'])
-            if task:
-                rep.update(task)
+	    task = tasks.get(rep['_replication_id'])
+	    if task:
+	        rep.update(task)
 
         doc_id = rep['_id']
         rep_state = rep.get('_replication_state', 'N/A')
@@ -89,6 +92,9 @@ def main(host, replicator, auth, age_timeout):
                 problem_list.append('%s: %s' % (k, v))
             problems.append('%s (%s)' % (doc_id, '; '.join(problem_list)))
 
+    if replication is not None and not reps:
+        status = CRITICAL
+
     # Build the output string
     if status == OK:
         s = 'OK'
@@ -115,10 +121,11 @@ if __name__ == '__main__':
                         help='Warning time for stale replications, in s')
     parser.add_argument('--auth', '-a',
                         help='Basic HTTP authentication string as "username:password"')
+    parser.add_argument('--replication', '-r', default=None)
     args = parser.parse_args()
 
     try:
-        status = main(args.host, args.replicator, args.auth, args.age_timeout)
+        status = main(args.host, args.replicator, args.replication, args.auth, args.age_timeout)
     except Exception as e:
         print 'REPLICATION STATUS UNKNOWN - Python exception %s' % str(e)
         status = UNKNOWN
