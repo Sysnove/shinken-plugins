@@ -92,9 +92,6 @@ def main(host, replicator, replication, auth, age_timeout):
                 problem_list.append('%s: %s' % (k, v))
             problems.append('%s (%s)' % (doc_id, '; '.join(problem_list)))
 
-    if replication is not None and not reps:
-        status = CRITICAL
-
     # Build the output string
     if status == OK:
         s = 'OK'
@@ -105,7 +102,15 @@ def main(host, replicator, replication, auth, age_timeout):
     else:
         s = 'UNKNOWN'
 
-    output = 'REPLICATION STATUS %s - %i replications, %i problems' % (s, len(reps), len(problems))
+    if replication is None:
+        output = 'REPLICATION STATUS %s - %i replications, %i problems' % (s, len(reps), len(problems))
+    else:
+        if not reps:
+            status = CRITICAL
+            output = 'REPLICATION STATUS CRITICAL - Replication %s not found' % replication
+        else:
+            output = 'REPLICATION STATUS %s - Replication %s is %s' % (s, replication, s)
+
     if len(problems) > 0:
         output += ': ' + ', '.join(problems)
 
