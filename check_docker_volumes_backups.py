@@ -41,7 +41,7 @@ for volume in volumes[:-1]:
         critical_volumes.append(volume)
 
 # Prepare reporting
-num_volumes = len(volumes) - len(ignored_volumes)
+num_volumes = len(volumes) - len(ignored_volumes) - 1
 global_status = ''
 report = ''
 
