@@ -16,6 +16,7 @@ volumes = subprocess.check_output(['docker', 'volume', 'list', '-q'],
 # Set empty lists to gather problematic backup states
 warning_volumes = []
 critical_volumes = []
+ignored_volumes = []
 
 # Set yesterday time
 yesterday = datetime.now() - timedelta(days=1)
@@ -27,10 +28,9 @@ for volume in volumes[:-1]:
 
     # Ignore anonymous volumes
     if re.match('[a-f0-9]{64}', volume):
-        continue
-
+        ignored_volumes.append(volume)
     # If file exists
-    if backup.is_file():
+    elif backup.is_file():
         # Backup exists, is it outdated?
         mtime = datetime.fromtimestamp(os.path.getmtime(str(backup)))
         if mtime < yesterday:
@@ -41,7 +41,7 @@ for volume in volumes[:-1]:
         critical_volumes.append(volume)
 
 # Prepare reporting
-num_volumes = len(volumes) - 1
+num_volumes = len(volumes) - len(ignored_volumes)
 global_status = ''
 report = ''
 
@@ -62,7 +62,8 @@ if warning_volumes:
 if not global_status:
     global_status = 'OK'
     retcode = 0
-    report = 'All %s volumes backed up' % num_volumes
+    report = 'All %s volumes backed up (%d ignored)' % (num_volumes,
+                                                        len(ignored_volumes))
 
 
 # Time to report
