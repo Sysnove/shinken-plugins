@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 # Get services ant databases list
 databases = subprocess.check_output(['docker_swarm_pg_list_db.sh'],
-                                    stderr=subprocess.STDOUT,
+                                    stderr=subprocess.DEVNULL,
                                     ).decode('utf-8').split('\n')
 # Set empty lists to gather problematic backup states
 warning_databases = []
