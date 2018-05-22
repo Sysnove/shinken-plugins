@@ -3,6 +3,7 @@
 import subprocess
 import sys
 import os
+import re
 
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -24,10 +25,9 @@ for volume in volumes[:-1]:
     # Get volume backup path
     backup = Path('/var/backups/docker/volumes/%s.tar.bz2' % volume)
 
-    # For readability sake, truncate hash names
-    volname = volume
-    if len(volname) == 64:
-        volname = volname[:8]
+    # Ignore anonymous volumes
+    if re.match('[a-f0-9]{64}', volume):
+        continue
 
     # If file exists
     if backup.is_file():
@@ -35,10 +35,10 @@ for volume in volumes[:-1]:
         mtime = datetime.fromtimestamp(os.path.getmtime(str(backup)))
         if mtime < yesterday:
             # Backup outdated, warning
-            warning_volumes.append(volname)
+            warning_volumes.append(volume)
     else:
         # Backup does not exist, critical
-        critical_volumes.append(volname)
+        critical_volumes.append(volume)
 
 # Prepare reporting
 num_volumes = len(volumes) - 1
