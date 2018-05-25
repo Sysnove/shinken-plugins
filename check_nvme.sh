@@ -7,9 +7,11 @@
 # nvme-cli - git clone https://github.com/linux-nvme/nvme-cli
 #
 # Usage:
-# ./check_nvme.sh
+# ./check_nvme.sh [device name]
 
-DISKS=$(lsblk -e 11,253 -dn -o NAME | grep nvme)
+device=$1
+
+DISKS=${device:=$(lsblk -e 11,253 -dn -o NAME | grep nvme)}
 CRIT=false
 MESSAGE=""
 
