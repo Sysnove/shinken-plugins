@@ -160,6 +160,8 @@ def main():
                     okfiles.append('File %s expires at %s' % (file, datestr))
             except BadZipFile:
                 critfiles.append('File %s is not a valid zip file.' % file)
+            except ValueError:
+                critfiles.append('File %s is not a valid GTFS file (no expiration date).' % file)
 
     message = ", ".join(critfiles + warnfiles + okfiles)
 
