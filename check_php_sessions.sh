@@ -24,7 +24,7 @@ for EXCLUDE in ${EXCLUDES}; do
 done
 
 FIND_OPTS="${FIND_OPTS} -path /usr/share -prune -o"
-FIND_OPTS="${FIND_OPTS} -name sess_* -ctime +${AGE} -print"
+FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex .*/(ci_session|sess_).* -ctime +${AGE} -print"
 
 total=$(nice -n 19 find ${FIND_OPTS} 2>/dev/null | wc -l)
 
