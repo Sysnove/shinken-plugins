@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
 
 if [ -z $1 ]; then
     repository="backups:$(hostname)"
