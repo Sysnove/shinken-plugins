@@ -1,0 +1,152 @@
+#!/usr/bin/perl
+#
+# check_cups_server
+#
+# This software must be redistributed under the terms of Artistic License 2.0
+#
+# (c) 2011 Carlos Peñas San José
+# Warp Networks S.L.
+# http://warp.es
+
+
+use Monitoring::Plugin;
+use Net::CUPS;
+use Data::Dumper;
+
+use strict;
+
+my $is_critical = 0;
+my $is_warning = 0;
+my $is_ok = 0;
+my $is_unknow = 1;
+
+my $ok_message ='';
+my $critical_message ='';
+my $warning_message = '';
+my $perf_data ='';
+my $unknow_message = 'Exited abnormally';
+
+
+my $n_plugin  =  Monitoring::Plugin->new (
+    shortname => 'CUPS',
+    version => '0.1',
+    license => 'artistic 2.0',
+    usage => 'Usage: %s (-H|--host)=<master host> [(-p|--printers)=<printer to check>]+ [(-s| --sum)] (-c|--jobs_crit)=<Critical jobs level> (-w|--jobs_warn)=<Warning jobs level>',
+);
+# Plugin arguments
+$n_plugin->add_arg(
+    spec => 'host|H=s',
+    help => "-H, --host=<master host>\n   Host server to check for cups daemon",
+    required => 1,
+);
+
+$n_plugin->add_arg(
+    spec => 'printers|p=s@',
+    help => "-p, --printers=<printer to check>\n   Printer to check for jobqueue, multiple values allowed",
+    required => 0,
+);
+
+$n_plugin->add_arg(
+    spec => 'sum|s',
+    help => "-s, --sum\n   Treat the sum of all queues of the printers specified as one",
+    required => 0,
+);
+
+$n_plugin->add_arg(
+    spec => 'jobs_crit|c=i',
+    help => "-c, --jobs_crit=<Critical jobs level>\n   Enqueued jobs to be conidered critical",
+    required => 1,
+);
+
+$n_plugin->add_arg(
+    spec => 'jobs_warn|w=i',
+    help => "-w, --jobs_warn=<Warning jobs level>\n   Enqueued jobs to be conidered warning",
+    required => 1,
+);
+
+## Add arguments here
+
+$n_plugin->getopts;
+
+sub debug{
+    my ($message,$level) = @_;
+    $level = 1 unless $level;
+    if ($n_plugin->opts->verbose >= $level){
+        print STDERR "debug:($level):$message\n";
+    }
+}
+sub end_plugin {
+    $n_plugin->nagios_exit(CRITICAL, $critical_message. $perf_data) if ($is_critical);
+    $n_plugin->nagios_exit(WARNING, $warning_message . $perf_data) if ($is_warning);
+    $n_plugin->nagios_exit(OK, $ok_message . $perf_data ) if ($is_ok);
+    $n_plugin->nagios_exit(UNKNOWN,$unknow_message);
+}
+debug('Plugin started');
+
+debug('printers: '. join('/',@{$n_plugin->opts->printers})) if (defined($n_plugin->opts->printers));
+
+if ($n_plugin->opts->jobs_warn > $n_plugin->opts->jobs_crit) {
+    $unknow_message = "Bad usage, critical level lesser than warning level";
+    end_plugin();
+}
+
+my $cups = Net::CUPS->new();
+
+$cups->setServer($n_plugin->opts->host);
+
+my @printers = $cups->getDestinations();
+
+unless (@printers){
+    $unknow_message = "Can't contact server or server hasn't any printers";
+    end_plugin();
+}
+my $ALL_USERS = 0;
+my $PENDING_JOBS = 0;
+if (defined($n_plugin->opts->printers)){
+    @printers=();
+    for my $name (@{$n_plugin->opts->printers}){
+        my $dest = $cups->getDestination($name);
+        unless ($dest){
+            $unknow_message = "Server hasn't printer $name";
+            end_plugin();
+        }
+        push(@printers,$dest)
+    }
+}
+
+my $sum = 0;
+$perf_data = '|';
+for my $printer (@printers){
+    my $name = $printer->getName();
+    my @jobs = $printer->getJobs($ALL_USERS,$PENDING_JOBS);
+    $sum += scalar(@jobs);
+    unless (defined($n_plugin->opts->sum)){
+        $perf_data .= $name.'='.scalar(@jobs).',';
+        if (scalar(@jobs) >= $n_plugin->opts->jobs_crit ){
+            $is_critical = 1;
+            $critical_message .= $name . ' has ' . scalar(@jobs) . ' pending jobs '; 
+        } elsif (scalar(@jobs) >= $n_plugin->opts->jobs_warn ) {
+            $is_warning = 1;
+            $warning_message .= $name . ' has ' . scalar(@jobs) . ' pending jobs ';             
+        }
+    }
+}
+
+end_plugin() if ($is_critical || $is_warning);
+
+if (defined($n_plugin->opts->sum)) {
+    $perf_data = '|jobs='. $sum. ',';
+    if ($sum >= $n_plugin->opts->jobs_crit ){
+            $is_critical = 1;
+            $critical_message .= 'printers have ' . $sum . ' pending jobs'; 
+        } elsif ($sum >= $n_plugin->opts->jobs_crit ) {
+            $is_warning = 1;
+            $warning_message .= 'printers have ' . $sum . ' pending jobs';             
+        }
+}
+
+end_plugin() if ($is_critical || $is_warning);
+$ok_message = $sum. ' jobs';
+$is_ok=1;
+
+end_plugin();
