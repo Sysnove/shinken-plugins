@@ -16,7 +16,7 @@ done
 FIND_OPTS='/'
 
 for EXCLUDE in ${EXCLUDES}; do
-    FIND_OPTS="${FIND_OPTS} \! -path ${EXCLUDE}"
+    FIND_OPTS="${FIND_OPTS} ! -path ${EXCLUDE}"
 done
 
 FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name catalina.out ) -size +${SIZE} -print"
