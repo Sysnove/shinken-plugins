@@ -43,7 +43,7 @@ else
 
 
 
-    if ! test $(find /var/log/shinken/shinken-test.log -mmin -15); then
+    if ! test $(find /var/log/shinken/shinken-test.log -mmin -15 2>/dev/null); then
         echo "CRITICAL - Shinken log has not been updated in the last 15 minutes."
         exit $STATE_CRITICAL
     fi
