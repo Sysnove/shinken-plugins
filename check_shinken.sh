@@ -16,6 +16,16 @@ if [ "$down" != "" ] ; then
     echo "CRITICAL - Daemons down:$down"
     exit $STATE_CRITICAL
 else
+    # :TODO:maethor:180816: Test ports
+
+
+
+
+    if ! test $(find /var/log/shinken/shinken-test.log -mmin -15); then
+        echo "CRITICAL - Shinken log has not been updated in the last 15 minutes."
+        exit $STATE_CRITICAL
+    fi
+
     echo "OK - All daemons are running."
     exit $STATE_OK
 fi
