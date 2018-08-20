@@ -1,5 +1,25 @@
 #!/bin/bash
 
+
+usage () {
+	echo ""
+	echo "USAGE: "
+	echo "  $PROGNAME [-w GB -c GB]"
+    echo "     -w Warning threshold"
+    echo "     -c Critical threshold"
+	echo "     -w and -c values in GB"
+	exit $STATE_UNKNOWN
+}
+
+while getopts "w:c:" opt; do
+	case $opt in
+	w) WARN=${OPTARG} ;;
+	c) CRIT=${OPTARG} ;;
+	*) usage ;;
+	esac
+done
+
+
 unset message
 unset freespace
 
@@ -20,7 +40,7 @@ for volume in ${volumes}; do
   freegb=9999999
   nb_online_bricks=0
   # Le nombre de bricks que l'on devrait trouver
-  nb_bricks=$(gluster volume info ${volume} | grep "Number of Bricks" | cut -d ' ' -f -1)
+  nb_bricks=$(gluster volume info ${volume} | grep "Number of Bricks" | rev |cut -d ' ' -f1 | rev)
 
   # Itération sur la sortie de status detail pour récupérer les valeurs du
   # runtime
@@ -75,11 +95,26 @@ for volume in ${volumes}; do
     errors=("${errors[@]}" "found ${nb_online_bricks} bricks, expected ${nb_bricks}")
   fi
 
+  if [ -n "$CRIT" -a -n "$WARN" ]; then
+	if [ $CRIT -ge $WARN ]; then
+	  echo "UNKNOWN: critical free space threshold above warning"
+	  exit 3
+	elif [ $freegb -lt $CRIT ]; then
+        errors=("${errors[@]}" "very low free space (${freegb}GB)")
+	    exit_status="CRITICAL"
+	elif [ $freegb -lt $WARN ]; then
+        errors=("${errors[@]}" "low free space (${freegb}GB)")
+        if [[ ${exit_status} != "CRITICAL" ]]; then
+          exit_status="WARNING"
+        fi
+	fi
+  fi
+
   if [ -n "$errors" ]; then
     sep="; "
     msg=$(printf "${sep}%s" "${errors[@]}")
     msg=${msg:${#sep}}
-    message=("${message[@]}" "${volume}: ${msg}")
+    message=("${message[@]}" "-- ${volume}: ${msg}")
   fi
   freespace=("${freespace[@]}" "${volume}: ${freegb}GB")
 done #for
