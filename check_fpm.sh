@@ -23,7 +23,7 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
     fi
 
     # ISPConfig
-    if [[ $socket_name == 'ispconfig' -o $socket_name == 'apps' ]] ; then
+    if [[ $socket_name = 'ispconfig' || $socket_name = 'apps' ]] ; then
         continue;
     fi
 
