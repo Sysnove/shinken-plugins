@@ -22,6 +22,11 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
         socket_name=${$(basename $config_file)%.*}
     fi
 
+    # ISPConfig
+    if [[ $socket_name == 'ispconfig' -o $socket_name == 'apps' ]] ; then
+        continue;
+    fi
+
     nb_pools=$((nb_pools+1))
 
     output=$(SCRIPT_NAME=/status SCRIPT_FILENAME=/status REQUEST_METHOD=GET cgi-fcgi -bind -connect $sock 2> /dev/null)
