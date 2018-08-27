@@ -46,7 +46,10 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
         pool_unknown="$pool_unknown $socket_name "
     fi
 
-    perfdata="$perfdata ${socket_name}_listen_queue=${pool_listen_queue:-0} ${socket_name}_idle_procs=${pool_idle_processes:-0} ${socket_name}_active_procs=${pool_active_processes:-0}"
+    # ISPConfig
+    if ! [[ $socket_name == 'web'* ]] ; then
+        perfdata="$perfdata ${socket_name}_listen_queue=${pool_listen_queue:-0} ${socket_name}_idle_procs=${pool_idle_processes:-0} ${socket_name}_active_procs=${pool_active_processes:-0}"
+    fi
 
     if [[ $pool_max_children_reached > 0 ]] ; then
         nb_pools_max_children_reached=$(($nb_pools_max_children_reached + 1))
