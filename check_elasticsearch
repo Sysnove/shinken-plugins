@@ -167,8 +167,11 @@ get_vals() {
         NAGSTATUS="CRITICAL"
         EXST=$ST_CR
     elif [ "$status" = "yellow" ]; then
-        NAGSTATUS="WARNING"
-        EXST=$ST_WR
+        #NAGSTATUS="WARNING"
+        #EXST=$ST_WR
+        # :COMMENT:maethor:180917: Because we don't care about yellow : http://chrissimpson.co.uk/elasticsearch-yellow-cluster-status-explained.html
+        NAGSTATUS="OK"
+        EXST=$ST_OK
     elif [ "$status" = "green" ]; then
         NAGSTATUS="OK"
         EXST=$ST_OK
