@@ -13,7 +13,7 @@ if [ $ret -eq 0 ]; then
         exit 0
     fi
 else
-    if [ $ret -eq 0 ]; then
+    if [ $ret -eq 124 ]; then
         echo "CRITICAL - 'docker ps' timed out after 5 seconds"
         exit 2
     else
