@@ -1,6 +1,6 @@
 #!/bin/sh
 
-docker="$(docker ps -q 2>/dev/null)"
+docker="$(timeout 5 docker ps -q 2>/dev/null)"
 ret=$?
 
 if [ $ret -eq 0 ]; then
@@ -13,6 +13,11 @@ if [ $ret -eq 0 ]; then
         exit 0
     fi
 else
-    echo "CRITICAL - 'docker ps' returned $ret"
-    exit 2
+    if [ $ret -eq 0 ]; then
+        echo "CRITICAL - 'docker ps' timed out after 5 seconds"
+        exit 2
+    else
+        echo "CRITICAL - 'docker ps' returned $ret"
+        exit 2
+    fi
 fi
