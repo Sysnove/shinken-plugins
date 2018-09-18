@@ -35,10 +35,10 @@ O_SSL=0					 # are we using ssl
 }
 
 # Check that curl is exists
-[ -z $XMLSTARLET ] && {
-	echo "Could not find 'xmlstarlet' utility in the PATH."
-	exit $STATE_UNKNOWN
-}
+#[ -z $XMLSTARLET ] && {
+#	echo "Could not find 'xmlstarlet' utility in the PATH."
+#	exit $STATE_UNKNOWN
+#}
 
 # Usage syntax
 USAGE="usage: $SCRIPT_NAME [-H host] [-P <port>] [-T <seconds>] [-h]"
