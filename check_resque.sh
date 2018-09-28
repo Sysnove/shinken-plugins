@@ -58,6 +58,10 @@ while getopts ":w:c:" option; do
 done
 shift $((OPTIND-1))
 
+if [ ! -x /usr/bin/jq ]; then
+    unknown "Please install jq."
+fi
+
 if [ ${PENDING_WARN} -gt ${PENDING_CRIT} ]; then
     unknown "Pending warning threshold must be below critical one."
 fi
