@@ -96,4 +96,4 @@ if [ ${PENDING} -ge ${PENDING_WARN} ]; then
     warning "There are at least ${PENDING_WARN} pending jobs (${PENDING})."
 fi
 
-ok "Resque is fine."
+ok "Resque is fine with ${PENDING} pending jobs and ${WORKING} working queues over ${WORKERS} total."
