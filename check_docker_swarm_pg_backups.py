@@ -24,7 +24,7 @@ for item in databases[:-1]:
     service, database = item.split(':')
 
     # Get postgres backup path
-    backup = Path('/var/backups/postgres/%s/%s.pg_dump.gz' %
+    backup = Path('/var/backups/docker-postgres/%s/%s.pg_dump.gz' %
                   (service, database))
 
     # If file exists
