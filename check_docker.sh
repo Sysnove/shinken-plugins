@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ibash
 
 docker="$(timeout 5 docker ps -q 2>/dev/null)"
 ret=$?
@@ -7,7 +7,7 @@ ret=$?
 if [ $ret -eq 124 ]; then
     echo "CRITICAL - 'docker ps' timed out after 5 seconds"
     exit 2
-elif [ $ret -ne 0 ];
+elif [ $ret -ne 0 ]; then
     echo "CRITICAL - 'docker ps' returned $ret"
     exit 2
 fi
