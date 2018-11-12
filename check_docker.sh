@@ -1,4 +1,4 @@
-#!/bin/ibash
+#!/bin/bash
 
 docker="$(timeout 5 docker ps -q 2>/dev/null)"
 ret=$?
