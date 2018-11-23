@@ -14,7 +14,7 @@ elif [ $ret -ne 0 ]; then
     exit 2
 fi
 
-count=$(echo "$images" | egrep '(postgres|postgis)' | wc -l)
+count=$(echo "$images" | egrep '(postgres|postgis|mysql)' | wc -l)
 
 if [ $count -gt 0 ]; then
     echo "WARNING - $count dangerous containers running in docker"
