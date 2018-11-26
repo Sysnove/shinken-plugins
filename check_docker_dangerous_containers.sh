@@ -18,9 +18,9 @@ count=$(echo "$images" | egrep '(postgres|postgis|mysql|mariadb)' | wc -l)
 
 count_pg=$(echo "$images" | egrep '(postgres|postgis)' | wc -l)
 count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | wc -l)
-count_couchbase=$(echo "$images" | egrep '(couchbase)' | wc -l)
-count_couchdb=$(echo "$images" | egrep '(couchdb)' | wc -l)
-count_mongo=$(echo "$images" | egrep '(mongo' | wc -l)
+count_couchbase=$(echo "$images" | grep 'couchbase' | wc -l)
+count_couchdb=$(echo "$images" | grep 'couchdb' | wc -l)
+count_mongo=$(echo "$images" | grep 'mongo' | wc -l)
 
 count=$(($count_pg+$count_mysql+$count_couchbase+$count_couchdb+$count_mongo))
 
