@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Find docker containers based on dangerous images, like postgresql
 
@@ -14,10 +14,35 @@ elif [ $ret -ne 0 ]; then
     exit 2
 fi
 
-count=$(echo "$images" | egrep '(postgres|postgis|mysql)' | wc -l)
+count=$(echo "$images" | egrep '(postgres|postgis|mysql|mariadb)' | wc -l)
+
+count_pg=$(echo "$images" | egrep '(postgres|postgis)' | wc -l)
+count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | wc -l)
+count_couchbase=$(echo "$images" | egrep '(couchbase)' | wc -l)
+count_couchdb=$(echo "$images" | egrep '(couchdb)' | wc -l)
+count_mongo=$(echo "$images" | egrep '(mongo' | wc -l)
+
+count=$(($count_pg+$count_mysql+$count_couchbase+$count_couchdb+$count_mongo))
+
+msg=''
+if [ $count_pg -gt 0 ]; then
+    msg = "$msg$count_pg postgres "
+fi
+if [ $count_mysql -gt 0 ]; then
+    msg = "$msg$count_mysql mysql "
+fi
+if [ $count_couchbase -gt 0 ]; then
+    msg = "$msg$count_couchbase couchbase "
+fi
+if [ $count_couchdb -gt 0 ]; then
+    msg = "$msg$count_couchdb couchdb "
+fi
+if [ $count_mongo -gt 0 ]; then
+    msg = "$msg$count_mongo mongo "
+fi
 
 if [ $count -gt 0 ]; then
-    echo "WARNING - $count dangerous containers running in docker"
+    echo "WARNING - $count dangerous containers running in docker ($msg)"
     exit 1
 fi
 
