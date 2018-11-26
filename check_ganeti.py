@@ -41,7 +41,10 @@ def main():
             if status == "WARNING" and 'DRBD version mismatch' not in msg:
                 ret_code = max(ret_code, STATUS_WARNING)
             if status == "ERROR":
-                ret_code = max(ret_code, STATUS_ERROR)
+                if 'not enough memory to accomodate instance failovers should node' in msg:
+                    ret_code = max(ret_code, STATUS_WARNING)
+                else:
+                    ret_code = max(ret_code, STATUS_ERROR)
             ret_out.append('%s: %s' % (status, msg))
 
     if ret_code == STATUS_OK:
