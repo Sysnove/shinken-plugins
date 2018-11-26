@@ -26,19 +26,19 @@ count=$(($count_pg+$count_mysql+$count_couchbase+$count_couchdb+$count_mongo))
 
 msg=''
 if [ $count_pg -gt 0 ]; then
-    msg = "$msg$count_pg postgres "
+    msg="$msg$count_pg postgres "
 fi
 if [ $count_mysql -gt 0 ]; then
-    msg = "$msg$count_mysql mysql "
+    msg="$msg$count_mysql mysql "
 fi
 if [ $count_couchbase -gt 0 ]; then
-    msg = "$msg$count_couchbase couchbase "
+    msg="$msg$count_couchbase couchbase "
 fi
 if [ $count_couchdb -gt 0 ]; then
-    msg = "$msg$count_couchdb couchdb "
+    msg="$msg$count_couchdb couchdb "
 fi
 if [ $count_mongo -gt 0 ]; then
-    msg = "$msg$count_mongo mongo "
+    msg="$msg$count_mongo mongo "
 fi
 
 if [ $count -gt 0 ]; then
