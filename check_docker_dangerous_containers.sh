@@ -2,7 +2,7 @@
 
 # Find docker containers based on dangerous images, like postgresql
 
-images="$(timeout 5 docker ps --format {{.Image}} 2>/dev/null)"
+images="$(timeout 5 docker ps --format "{{.Image}} {{.Names}}" 2>/dev/null)"
 ret=$?
 
 # Check if daemon is reachable
@@ -17,7 +17,7 @@ fi
 count=$(echo "$images" | egrep '(postgres|postgis|mysql|mariadb)' | wc -l)
 
 count_pg=$(echo "$images" | egrep '(postgres|postgis)' | wc -l)
-count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | wc -l)
+count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | grep -v 'registry_portus_mariadb' | wc -l)
 count_couchbase=$(echo "$images" | grep 'couchbase' | wc -l)
 count_couchdb=$(echo "$images" | grep 'couchdb' | wc -l)
 count_mongo=$(echo "$images" | grep 'mongo' | wc -l)
@@ -26,19 +26,19 @@ count=$(($count_pg+$count_mysql+$count_couchbase+$count_couchdb+$count_mongo))
 
 msg=''
 if [ $count_pg -gt 0 ]; then
-    msg="$msg$count_pg postgres "
+    msg="$msg$count_pg postgres, "
 fi
 if [ $count_mysql -gt 0 ]; then
-    msg="$msg$count_mysql mysql "
+    msg="$msg$count_mysql mysql, "
 fi
 if [ $count_couchbase -gt 0 ]; then
-    msg="$msg$count_couchbase couchbase "
+    msg="$msg$count_couchbase couchbase, "
 fi
 if [ $count_couchdb -gt 0 ]; then
-    msg="$msg$count_couchdb couchdb "
+    msg="$msg$count_couchdb couchdb, "
 fi
 if [ $count_mongo -gt 0 ]; then
-    msg="$msg$count_mongo mongo "
+    msg="$msg$count_mongo mongo, "
 fi
 
 if [ $count -gt 0 ]; then
