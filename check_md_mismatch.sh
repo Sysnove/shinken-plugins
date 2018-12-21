@@ -14,10 +14,6 @@ else
     MD_NAME=`echo $file | awk 'BEGIN { FS = "/" } ; { print $4 }'`
     PERF_DATA+="$MD_NAME=`cat $file` "
   done
-  if [ $DATA -eq -1 ]; then
-    echo "UNKNOWN - software raid mismatch_cnts not found | $PERF_DATA"
-    exit 3;
-  fi
   if [ $DATA -lt $WARN_LIMIT ]; then
     echo "OK - all software raid mismatch_cnts are smaller than $WARN_LIMIT | $PERF_DATA"
     exit 0;
