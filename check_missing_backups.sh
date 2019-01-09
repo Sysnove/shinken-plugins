@@ -10,7 +10,7 @@ if pgrep mongo > /dev/null; then
     fi
 fi
 
-if pgrep postgres > /dev/null; then
+if pgrep postgres -u postgres > /dev/null; then
     databases="$databases postgres"
     if [ ! -e /etc/backup.d/20.pgsql ]; then
         echo "CRITICAL : Missing postgresql backup"
@@ -18,7 +18,7 @@ if pgrep postgres > /dev/null; then
     fi
 fi
 
-if pgrep mysql > /dev/null; then
+if pgrep mysql -u mysql > /dev/null; then
     databases="$databases mysql"
     if [ ! -e /etc/backup.d/20.mysql ]; then
         echo "CRITICAL : Missing mysql backup"
