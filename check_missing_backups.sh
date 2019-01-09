@@ -2,7 +2,7 @@
 
 databases=""
 
-if pgrep mongo > /dev/null; then
+if pgrep -f /usr/bin/mongod > /dev/null; then
     databases="$databases mongodb"
     if [ ! -e /etc/backup.d/30.mongodb ]; then
         echo "CRITICAL : Missing mongodb backup"
