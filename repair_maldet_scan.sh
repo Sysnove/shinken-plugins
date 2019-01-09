@@ -1,11 +1,12 @@
 #!/bin/bash
 #
 # Event handler script for running maldet-scan when maldet turns unknown
+# Should be run as root
 #
 
 function try_to_fix {
     echo -n "Rescan maldet"
-    sudo /usr/local/bin/maldet-scan
+    /usr/local/bin/maldet-scan
 }
 
 # What state is the service in?
