@@ -56,7 +56,7 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
         perfdata="$perfdata ${socket_name}_listen_queue=${pool_listen_queue:-0} ${socket_name}_idle_procs=${pool_idle_processes:-0} ${socket_name}_active_procs=${pool_active_processes:-0}"
     fi
 
-    if [[ $pool_max_children_reached > 0 ]] ; then
+    if [[ $pool_max_children_reached > 1 ]] ; then
         nb_pools_max_children_reached=$(($nb_pools_max_children_reached + 1))
         pools_max_children_reached="$pools_max_children_reached $socket_name:$pool_max_children_reached "
     fi
