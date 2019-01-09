@@ -12,17 +12,21 @@ fi
 
 if pgrep postgres -u postgres > /dev/null; then
     databases="$databases postgres"
-    if [ ! -e /etc/backup.d/20.pgsql ] and ! grep -q postgres /etc/backup.d/.backupninja_ignores; then
-        echo "CRITICAL : Missing postgresql backup"
-        exit 2
+    if [ ! -e /etc/backup.d/20.pgsql ]; then
+        if ! grep -q postgres /etc/backup.d/.backupninja_ignores; then
+            echo "CRITICAL : Missing postgresql backup"
+            exit 2
+        fi
     fi
 fi
 
 if pgrep mysql -u mysql > /dev/null; then
     databases="$databases mysql"
-    if [ ! -e /etc/backup.d/20.mysql ] and ! grep -q mysql /etc/backup.d/.backupninja_ignores; then
-        echo "CRITICAL : Missing mysql backup"
-        exit 2
+    if [ ! -e /etc/backup.d/20.mysql ]; then
+        if ! grep -q mysql /etc/backup.d/.backupninja_ignores; then
+            echo "CRITICAL : Missing mysql backup"
+            exit 2
+        fi
     fi
 fi
 
