@@ -6,7 +6,7 @@ if pgrep mongo > /dev/null; then
     databases="$databases mongodb"
     if [ ! -e /etc/backup.d/30.mongodb ]; then
         echo "CRITICAL : Missing mongodb backup"
-        exit 3
+        exit 2
     fi
 fi
 
@@ -14,7 +14,7 @@ if pgrep postgres > /dev/null; then
     databases="$databases postgres"
     if [ ! -e /etc/backup.d/20.pgsql ]; then
         echo "CRITICAL : Missing postgresql backup"
-        exit 3
+        exit 2
     fi
 fi
 
@@ -22,7 +22,7 @@ if pgrep mysql > /dev/null; then
     databases="$databases mysql"
     if [ ! -e /etc/backup.d/20.mysql ]; then
         echo "CRITICAL : Missing mysql backup"
-        exit 3
+        exit 2
     fi
 fi
 
@@ -30,7 +30,7 @@ if pgrep slapd > /dev/null; then
     databases="$databases slapd"
     if [ ! -e /etc/backup.d/30.ldap ]; then
         echo "CRITICAL : Missing ldap backup"
-        exit 3
+        exit 2
     fi
 fi
 
