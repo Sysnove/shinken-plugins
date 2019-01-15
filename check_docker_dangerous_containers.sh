@@ -18,7 +18,7 @@ count_pg=$(echo "$images" | egrep '(postgres|postgis)' | wc -l)
 count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | grep -v 'registry_portus_mariadb' | wc -l)
 count_couchbase=$(echo "$images" | grep 'couchbase' | wc -l)
 count_couchdb=$(echo "$images" | grep 'couchdb' | wc -l)
-count_mongo=$(echo "$images" | grep 'mongo' | grep -v 'base_mongo_proxy' | wc -l)
+count_mongo=$(echo "$images" | grep 'mongo' | grep -v 'base_mongo_proxy' | grep -v 'mongo-express' | wc -l)
 
 count=$(($count_pg+$count_mysql+$count_couchbase+$count_couchdb+$count_mongo))
 
