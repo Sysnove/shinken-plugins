@@ -1,45 +1,40 @@
 #!/bin/bash
 
-OK=0
-WARNING=1
-CRITICAL=2
-UNKNOWN=3
-
-WORKERS=0
-WORKING=0
-PENDING=0
-
+REDIS_CLI="redis-cli --raw"
 
 PENDING_WARN=10
 PENDING_CRIT=20
 
+resque(){
+    APP_ENV=production /usr/bin/bundle exec ruby -e "require 'resque'; puts $*.to_json"
+}
+
 output() {
-    echo "$* | workers=${WORKERS};;;0; working=${WORKING};;;0;${WORKKERS} pending=${PENDING};${PENDING_WARN};${PENDING_CRIT};0;"
+    echo "$* |${PERFDATA}"
 }
 
 ok() {
     output "OK: $*"
-    exit ${OK}
+    exit 0
 }
 
 warning() {
     output "WARNING: $*"
-    exit ${WARNING}
+    exit 1
 }
 
 critical() {
     output "CRITICAL: $*"
-    exit ${CRITICAL}
+    exit 2
 }
 
 unknown() {
     output "UNKNOWN: $*"
-    exit ${UNKNOWN}
+    exit 3
 }
 
 usage() {
-    echo "Usage: $0 [-w warn_threshold] [-c crit_threshold]"
-    exit ${UNKNOWN}
+    unknown "Usage: $0 [-w warn_threshold] [-c crit_threshold]"
 }
 
 
@@ -72,28 +67,34 @@ fi
 
 cd /srv/mapotempo/optimizer-api
 
-RESULT=$(env APP_ENV=production RAILS_ENV=production QUEUE=SMALL /usr/bin/bundle exec ruby -e "require 'resque'; puts Resque.info.to_json")
+#QUEUES=$(${REDIS_CLI} smembers resque:queues)
+QUEUES="SMALL LARGE"
 
-if [ $? -ne 0 ]; then
-    critical "Failed to execute command: ${RESULT}"
-fi
+PERFDATA=""
 
-# {"pending":0,"processed":0,"queues":0,"workers":4,"working":0,"failed":0,"servers":["redis://127.0.0.1:6379/0"],"environment":"production"}
+# Get queues
+for QUEUE in ${QUEUES}; do
+    PENDING=$(resque "Resque.size('${QUEUE}')")
+    WORKING=$(resque "Resque::Worker.working().select{ |v| v.queues().include? '${QUEUE}' }.size")
+    WORKERS=$(resque "Resque::Worker.all().select{ |v| v.queues().include? '${QUEUE}' }.size")
 
-WORKERS=$(echo ${RESULT} | jq .workers)
-WORKING=$(echo ${RESULT} | jq .working)
-PENDING=$(echo ${RESULT} | jq .pending)
+    if [ ${PENDING} -gt 0 -a ${WORKING} -lt ${WORKERS}  ]; then
+        CRITICAL="There are pending jobs and idle workers for queue ${QUEUE}, something is wrong, please check."
+    fi
 
-if [ ${PENDING} -gt 0 -a ${WORKING} -lt ${WORKERS}  ]; then
-    critical "There are pending jobs and idle workers, something is wrong, please check."
-fi
+    if [ ${PENDING} -ge ${PENDING_CRIT} ]; then
+        CRITICAL="There are at least ${PENDING_CRIT} pending jobs (${PENDING}) for queue ${QUEUE}."
+    fi
 
-if [ ${PENDING} -ge ${PENDING_CRIT} ]; then
-    critical "There are at least ${PENDING_CRIT} pending jobs (${PENDING})."
-fi
+    if [ ${PENDING} -ge ${PENDING_WARN} ]; then
+        WARNING="There are at least ${PENDING_WARN} pending jobs (${PENDING}) for queue ${QUEUE}."
+    fi
 
-if [ ${PENDING} -ge ${PENDING_WARN} ]; then
-    warning "There are at least ${PENDING_WARN} pending jobs (${PENDING})."
-fi
+    PERFDATA="${PERFDATA} ${QUEUE}.workers=${WORKING};;;0;${WORKERS}"
+    PERFDATA="${PERFDATA} ${QUEUE}.pending=${PENDING};${PENDING_WARN};${PENDING_CRIT};0;;"
+done
 
-ok "Resque is fine with ${PENDING} pending jobs and ${WORKING} working queues over ${WORKERS} total."
+[ -n "${CRITICAL}" ] && critical ${CRITICAL}
+[ -n "${WARNING}" ] && warning ${WARNING}
+
+ok "All queues are fine."
