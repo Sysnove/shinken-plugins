@@ -7,6 +7,6 @@ if [ -z "$pid" ] ; then
     return 3
 fi
 
-mem=$(cat /proc/$pid)/status | grep VmRSS | awk '{print $2}')
+mem=$(cat /proc/$pid/status | grep VmRSS | awk '{print $2}')
 
 echo "GlusterFS Memory : ${mem}kB | memory=${mem}kB"
