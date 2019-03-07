@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ -d /etc/glusterfs ] ;
+if [ -d /etc/glusterfs ] ; then
     pid=$(pgrep -a -x glusterfs | grep /srv/docker-data | cut -d ' ' -f 1)
 
     if [ -z "$pid" ] ; then
