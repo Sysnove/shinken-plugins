@@ -1,6 +1,11 @@
 #!/bin/bash
 
-NUMBER=10000
+if [ -d /usr/local/ispconfig ] ; then
+    NUMBER=30000
+else
+    NUMBER=10000
+fi
+
 AGE=15
 
 while getopts "e:n:a:" option; do
