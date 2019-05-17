@@ -46,6 +46,7 @@ def main():
         fstab_lines = [re.sub(' +', ' ', l.replace('\t', ' ')) for l in fstab_lines]
         fstab_lines = [l for l in fstab_lines if l and (l.startswith("/") or l.startswith('UUID') or ":/" in l) and not (l.startswith('#') or l.startswith("/var/log/ispconfig/httpd"))]
         fstab_lines = [l for l in fstab_lines if l.split(' ')[1] not in ['none', 'swap', '/media/cdrom0']]
+        fstab_lines = [l for l in fstab_lines if l.split(' ')[2] not in ['swap', 'tmpfs']]
 
     # Compare fstab entries to mount output
     for fstab_line in fstab_lines:
