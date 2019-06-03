@@ -33,8 +33,10 @@ fi
 if pgrep slapd > /dev/null; then
     databases="$databases slapd"
     if [ ! -e /etc/backup.d/30.ldap ]; then
-        echo "CRITICAL : Missing ldap backup"
-        exit 2
+        if ! grep -q ldap /etc/backup.d/.backupninja_ignores; then
+            echo "CRITICAL : Missing ldap backup"
+            exit 2
+        fi
     fi
 fi
 
