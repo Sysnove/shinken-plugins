@@ -68,7 +68,7 @@ EOF
 )
 
 if [ ${ZOMBIES} -gt 0 ]; then
-    echo "WARNING - Found ${result} zombie jobs."
+    echo "WARNING - Found ${ZOMBIES} zombie jobs."
     exit 1
 fi
 
