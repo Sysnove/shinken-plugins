@@ -72,5 +72,5 @@ if [ ${ZOMBIES} -gt 0 ]; then
     exit 1
 fi
 
-echo "OK - Found ${RUNNING} jobs over ${PID_COUNT} wokers and ${WAITING} waiting jobs."
+echo "OK - Found ${RUNNING} jobs over ${PID_COUNT} workers and ${WAITING} waiting jobs."
 exit 0
