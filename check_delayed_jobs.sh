@@ -72,5 +72,5 @@ if [ ${ZOMBIES} -gt 0 ]; then
     exit 1
 fi
 
-echo "OK - delayed_job is working well."
+echo "OK - Found ${RUNNING} jobs and ${WAITING} ones."
 exit 0
