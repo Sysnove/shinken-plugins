@@ -60,14 +60,14 @@ if [ ${WAITING} -ge ${WARN_THRESHOLD} ]; then
 fi
 
 # Check zombie jobs
-result=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
+ZOMBIES=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
 select count(1)
 from delayed_jobs
 where locked_by not in (${PIDS})
 EOF
 )
 
-if [ $result -gt 0 ]; then
+if [ ${ZOMBIES} -gt 0 ]; then
     echo "WARNING - Found ${result} zombie jobs."
     exit 1
 fi
