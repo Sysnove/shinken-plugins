@@ -12,7 +12,7 @@ select count(1)
 from delayed_jobs
 where locked_by is null
   and failed_at is null
-  and created_at < now() - interval '0:0${CRIT_THRESHOLD}:00'
+  and created_at < now() - interval '${CRIT_THRESHOLD} minutes'
 EOF
 )
 
@@ -30,7 +30,7 @@ select count(1)
 from delayed_jobs
 where locked_by is null
   and failed_at is null
-  and created_at < now() - interval '0:0${CRIT_THRESHOLD}:00'
+  and created_at < now() - interval '${CRIT_THRESHOLD} minutes'
   and locked_by in (${PIDS})
 EOF
 )
@@ -46,7 +46,7 @@ select count(1)
 from delayed_jobs
 where locked_by is not null
   and failed_at is null
-  and created_at < now() - interval '0:0${WARN_THRESHOLD}:00'
+  and created_at < now() - interval '${WARN_THRESHOLD} minutes'
   and locked_by in (${PIDS})
 EOF
 )
