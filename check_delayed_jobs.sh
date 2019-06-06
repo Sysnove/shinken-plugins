@@ -40,6 +40,21 @@ if [ $result -gt 0 ]; then
     exit 2
 fi
 
+# Check jobs waiting for a long time
+result=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
+select count(1)
+from delayed_jobs
+where locked_by is null
+  and failed_at is null
+  and created_at < now() - interval '${WARN_THRESHOLD} minutes'
+EOF
+)
+
+if [ $result -gt 0 ]; then
+    echo "WARNING - Found ${result} jobs waiting for more than ${WARN_THRESHOLD} minutes."
+    exit 1
+fi
+
 # Check jobs running for a long time
 result=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
 select count(1)
