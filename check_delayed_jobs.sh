@@ -17,7 +17,7 @@ EOF
 )
 
 if [ $result -gt 0 ]; then
-    echo "CRITICAL - Found ${result} jobs waiting for more than ${CRIT_THRESHOLD}."
+    echo "CRITICAL - Found ${result} jobs waiting for more than ${CRIT_THRESHOLD} minutes."
     exit 2
 fi
 
@@ -36,7 +36,7 @@ EOF
 )
 
 if [ $result -gt 0 ]; then
-    echo "CRITICAL - Found ${result} jobs waiting for more than ${CRIT_THRESHOLD}."
+    echo "CRITICAL - Found ${result} jobs waiting for more than ${CRIT_THRESHOLD} minutes."
     exit 2
 fi
 
@@ -52,7 +52,7 @@ EOF
 )
 
 if [ $result -gt 0 ]; then
-    echo "WARNING - Found ${result} jobs waiting for more than ${WARN_THRESHOLD}."
+    echo "WARNING - Found ${result} jobs waiting for more than ${WARN_THRESHOLD} minutes."
     exit 1
 fi
 
