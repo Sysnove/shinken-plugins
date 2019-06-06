@@ -63,7 +63,7 @@ fi
 ZOMBIES=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
 select count(1)
 from delayed_jobs
-where locked_by not in (${PIDS})
+where locked_by not in (${PID_ARRAY})
 EOF
 )
 
