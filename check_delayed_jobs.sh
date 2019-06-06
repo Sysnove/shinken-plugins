@@ -1,73 +1,59 @@
 #!/bin/sh
 
 DATABASE="$1"
+EXPECTED_WORKERS=2
+
 cd /
 
-WARN_THRESHOLD=2
-CRIT_THRESHOLD=5
+WARN_THRESHOLD=1
+CRIT_THRESHOLD=3
 
-# Check jobs waiting for too long
-result=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
+# Check count of waiting jobs.
+WAITING=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
 select count(1)
 from delayed_jobs
 where locked_by is null
   and failed_at is null
-  and created_at < now() - interval '${CRIT_THRESHOLD} minutes'
 EOF
 )
-
-if [ $result -gt 0 ]; then
-    echo "CRITICAL - Found ${result} jobs waiting for more than ${CRIT_THRESHOLD} minutes."
-    exit 2
-fi
 
 # Get delayed_job PIDs.
-PIDS=$(pgrep -fa delayed_job -u mapotempo | sed -re ":a;s/([0-9]+)\\s+(delayed_job\\.[0-9]+)\\s+/'\\2 host:$(hostname) pid:\\1'/;N;s/\\n/, /;ta")
+PIDS=$(pgrep -fa delayed_job -u mapotempo)
 
-# Check jobs running for too long
-result=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
-select count(1)
-from delayed_jobs
-where locked_by is null
-  and failed_at is null
-  and created_at < now() - interval '${CRIT_THRESHOLD} minutes'
-  and locked_by in (${PIDS})
-EOF
-)
+PID_ARRAY=$(echo ${PIDS} | sed -re ":a;s/([0-9]+)\\s+(delayed_job\\.[0-9]+)\\s+/'\\2 host:$(hostname) pid:\\1'/;N;s/\\n/, /;ta")
 
-if [ $result -gt 0 ]; then
-    echo "CRITICAL - Found ${result} jobs waiting for more than ${CRIT_THRESHOLD} minutes."
+PID_COUNT=$(echo ${PIDS} | wc -l)
+
+if [ ${PID_COUNT} -ne ${EXPECTED_WORKERS} ]; then
+    echo "CRITICAL - Found ${PID_COUNT} workers but ${EXPECTED_WORKERS} are expected."
     exit 2
 fi
 
-# Check jobs waiting for a long time
-result=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
+# Get count of running jobs.
+RUNNING=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
 select count(1)
 from delayed_jobs
 where locked_by is null
   and failed_at is null
-  and created_at < now() - interval '${WARN_THRESHOLD} minutes'
+  and locked_by in (${PID_ARRAY})
 EOF
 )
 
-if [ $result -gt 0 ]; then
-    echo "WARNING - Found ${result} jobs waiting for more than ${WARN_THRESHOLD} minutes."
-    exit 1
+if [ ${WAITING} -ge ${CRIT_THRESHOLD} ]; then
+    echo "CRITICAL - Found ${WAITING} jobs waiting."
+    exit 2
 fi
 
-# Check jobs running for a long time
-result=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
-select count(1)
-from delayed_jobs
-where locked_by is not null
-  and failed_at is null
-  and created_at < now() - interval '${WARN_THRESHOLD} minutes'
-  and locked_by in (${PIDS})
-EOF
-)
+if [ ${WAITING} -gt 0 ]; then
 
-if [ $result -gt 0 ]; then
-    echo "WARNING - Found ${result} jobs waiting for more than ${WARN_THRESHOLD} minutes."
+    if [ ${RUNNING} -lt ${EXPECTED_WORKERS} ]; then
+        echo "CRITICAL - Found ${WAITING} jobs and only ${RUNNING} running jobs (expected ${EXPECTED_WORKERS})"
+        exit 2
+    fi
+fi
+
+if [ ${WAITING} -ge ${WARN_THRESHOLD} ]; then
+    echo "WARNING - Found ${WAITING} jobs waiting."
     exit 1
 fi
 
