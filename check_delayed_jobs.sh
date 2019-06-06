@@ -18,11 +18,8 @@ EOF
 )
 
 # Get delayed_job PIDs.
-PIDS=$(pgrep -fa delayed_job -u mapotempo)
-
-PID_ARRAY=$(echo ${PIDS} | sed -re ":a;s/([0-9]+)\\s+(delayed_job\\.[0-9]+)\\s+/'\\2 host:$(hostname) pid:\\1'/;N;s/\\n/, /;ta")
-
-PID_COUNT=$(echo ${PIDS} | wc -l)
+PID_ARRAY=$(pgrep -fa delayed_job -u mapotempo | sed -re ":a;s/([0-9]+)\\s+(delayed_job\\.[0-9]+)\\s+/'\\2 host:$(hostname) pid:\\1'/;N;s/\\n/, /;ta")
+PID_COUNT=$(pgrep -f delayed_job -u mapotempo | wc -l)
 
 if [ ${PID_COUNT} -ne ${EXPECTED_WORKERS} ]; then
     echo "CRITICAL - Found ${PID_COUNT} workers but ${EXPECTED_WORKERS} are expected."
