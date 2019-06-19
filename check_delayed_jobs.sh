@@ -55,23 +55,36 @@ where locked_by is null
 EOF
 )
 
-# Get count of running jobs.
-RUNNING=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
+if [ "${PID_COUNT}" -gt 0 ]; then
+    # Get count of running jobs.
+    RUNNING=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
 select count(1)
 from delayed_jobs
 where locked_by is null
   and failed_at is null
   and locked_by in (${PID_ARRAY})
 EOF
-)
+    )
 
-# Get count of zombie jobs
-ZOMBIES=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
+    # Get count of zombie jobs
+    ZOMBIES=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
 select count(1)
 from delayed_jobs
-where locked_by not in (${PID_ARRAY})
+where locked_by is not null
+  and locked_by not in (${PID_ARRAY})
 EOF
-)
+    )
+else
+    RUNNING=0
+
+    # Get count of zombie jobs
+    ZOMBIES=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
+select count(1)
+from delayed_jobs
+where locked_by is not null
+EOF
+    )
+fi
 
 if [ ${PID_COUNT} -ne ${EXPECTED_WORKERS} ]; then
     critical "Found ${PID_COUNT} workers but ${EXPECTED_WORKERS} are expected."
