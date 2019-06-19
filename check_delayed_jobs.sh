@@ -4,7 +4,7 @@ DATABASE="$1"
 EXPECTED_WORKERS="$2"
 
 if [ -z "${DATABASE}" -o -z "${EXPECTED_WORKERS}" ]; then
-    CRITICAL - Please provide two parameters : database and expected workers
+    echo "CRITICAL - Please provide two parameters : database and expected workers"
     exit 2
 fi
 
