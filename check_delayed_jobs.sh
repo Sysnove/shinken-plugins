@@ -60,7 +60,7 @@ if [ "${PID_COUNT}" -gt 0 ]; then
     RUNNING=$(sudo -u postgres psql "${DATABASE}" -A -t <<EOF
 select count(1)
 from delayed_jobs
-where locked_by is null
+where locked_by is not null
   and failed_at is null
   and locked_by in (${PID_ARRAY})
 EOF
