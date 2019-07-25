@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 
-import subprocess
+import pickle
+import redis
 import sys
 import os
 
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# Get services ant databases list
-databases = subprocess.check_output(['docker_swarm_pg_list_db.sh'],
-                                    stderr=subprocess.DEVNULL,
-                                    ).decode('utf-8').split('\n')
+CLE = 'docker_pg_list_db'
+
+r = redis.StrictRedis()
+dump = r.get(CLE)
+if not dump:
+    print("UNKNOWN: Can't read database list cache")
+    sys.exit(3)
+databases = pickle.loads(dump)
+
 # Set empty lists to gather problematic backup states
 warning_databases = []
 critical_databases = []
