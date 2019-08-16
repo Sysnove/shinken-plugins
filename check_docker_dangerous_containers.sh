@@ -2,7 +2,8 @@
 
 # Find docker containers based on dangerous images, like postgresql
 
-images="$(timeout 5 docker ps --format "{{.Image}} {{.Names}}" 2>/dev/null)"
+# Get containers
+containers="$(timeout 5 docker ps --format "{{.Names}}" 2>/dev/null)"
 ret=$?
 
 # Check if daemon is reachable
@@ -14,11 +15,17 @@ elif [ $ret -ne 0 ]; then
     exit 2
 fi
 
+# Filter out known wanted containers
+containers=$(echo "$containers" | egrep -v "(base_mongo_proxy|registry_portus_mariadb)")
+
+# Get images
+images=$(echo "$containers" | xargs -l docker container inspect --format "{{ .Image }}")
+
 count_pg=$(echo "$images" | egrep '(postgres|postgis)' | wc -l)
-count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | grep -v 'registry_portus_mariadb' | wc -l)
+count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | wc -l)
 count_couchbase=$(echo "$images" | grep 'couchbase' | wc -l)
 count_couchdb=$(echo "$images" | grep 'couchdb' | wc -l)
-count_mongo=$(echo "$images" | grep 'mongo' | grep -v 'base_mongo_proxy' | grep -v 'mongo-express' | wc -l)
+count_mongo=$(echo "$images" | grep 'mongo' | grep -v 'mongo-express' | wc -l)
 
 count=$(($count_pg+$count_mysql+$count_couchbase+$count_couchdb+$count_mongo))
 
