@@ -51,7 +51,7 @@ if [ "${AGE_IN_DAYS}" -gt 1 ]; then
     exit 1
 fi
 
-END_TIME=$(echo "${RESULT}" | jq '.[0].end_time')
+END_TIME=$(echo "${RESULT}" | jq -r '.[0].end_time')
 
 echo "OK - Last snapshot finished at ${END_TIME}"
 exit 0
