@@ -24,7 +24,14 @@ function curl(){
     /usr/bin/curl ${PARAMS} "$@"
 }
 
-RESULT=$(curl -X GET http://localhost:9200/_snapshot/dump/_all | jq '.snapshots | map(select(.state == "SUCCESS")) | sort_by(-.end_time_in_millis)')
+RESULT=$(curl -X GET http://localhost:9200/_snapshot/dump/_all)
+
+if [ $? -ne 0 ]; then
+    echo "CRITICAL - Impossible to connect to ElasticSearch."
+    exit 2
+fi
+
+RESULT=$(echo "${RESULT}" | jq '.snapshots | map(select(.state == "SUCCESS")) | sort_by(-.end_time_in_millis)')
 
 NB_SNAPSHOTS=$(echo "${RESULT}" | jq 'length')
 
