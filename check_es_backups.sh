@@ -33,6 +33,13 @@ fi
 
 RESULT=$(echo "${RESULT}" | jq '.snapshots | map(select(.state == "SUCCESS")) | sort_by(-.end_time_in_millis)')
 
+ERROR=$(echo "${RESULT}" | jq '.error')
+
+if [ -n "${ERROR}" ]; then
+    echo "CRITICAL - An error occured while getting snapshot information: "$(echo ${ERROR} | jq -r '.reason')
+    exit 2
+fi
+
 NB_SNAPSHOTS=$(echo "${RESULT}" | jq 'length')
 
 if [ "${NB_SNAPSHOTS}" -eq 0 ]; then
