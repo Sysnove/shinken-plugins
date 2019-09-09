@@ -13,8 +13,6 @@ AGE_WARNING_THRESHOLD=1
 
 CURL="/usr/bin/curl"
 
-set -e
-
 function curl(){
     PARAMS="-s -H 'Content-Type: application/json'"
     if [ -n "$USER" ]; then
@@ -31,14 +29,15 @@ if [ $? -ne 0 ]; then
     exit 2
 fi
 
-RESULT=$(echo "${RESULT}" | jq '.snapshots | map(select(.state == "SUCCESS")) | sort_by(-.end_time_in_millis)')
+ERROR=$(echo "${RESULT}" | jq -e '.error')
 
-ERROR=$(echo "${RESULT}" | jq '.error')
-
-if [ -n "${ERROR}" ]; then
+# Return code with -e is 1 if query result is null.
+if [ $? -ne 1 ]; then
     echo "CRITICAL - An error occured while getting snapshot information: "$(echo ${ERROR} | jq -r '.reason')
     exit 2
 fi
+
+RESULT=$(echo "${RESULT}" | jq '.snapshots | map(select(.state == "SUCCESS")) | sort_by(-.end_time_in_millis)')
 
 NB_SNAPSHOTS=$(echo "${RESULT}" | jq 'length')
 
