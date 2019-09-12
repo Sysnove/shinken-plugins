@@ -43,5 +43,5 @@ if [ "${DURATION}" -gt "${THRESHOLD}" ]; then
     exit 2
 fi
 
-echo "OK - Builder is running since ${STARTED_AT} on region ${REGION} and profile ${PROFILE}."
+echo "OK - Builder is running since $(date -d ${STARTED_AT} +%c) on region ${REGION} and profile ${PROFILE}."
 exit 0
