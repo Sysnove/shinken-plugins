@@ -60,7 +60,10 @@ def main():
         except:
             pass
 
-    version = values["ServerVersion"].split(" ")[0]
+    try:
+        version = values["ServerVersion"].split(" ")[0]
+    except KeyError:
+        version = "Apache2"
 
     values["MaxWorkers"] = len(values["Scoreboard"])
     values["WarnWorkers"] = int(values["MaxWorkers"] * (args.total_warning / 100.0))
