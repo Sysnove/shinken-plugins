@@ -9,16 +9,16 @@ CONTAINER=$(docker container inspect ${CONTAINER_NAME})
 
 if [ $? -eq 1 ]; then
     # No container running, it's OK
-    echo "CRITICAL - No build currently running."
-    return 0
+    echo "OK - No build currently running."
+    exit 0
 fi
 
 RUNNING=$(echo "${CONTAINER}" | jq -r '.[0].State.Running')
 
 if [ "${RUNNING}" != "true" ]; then
     # Container is not running
-    echo "CRITICAL - No build currently running."
-    return 0
+    echo "OK - No build currently running."
+    exit 0
 fi
 
 # Retrieve region
