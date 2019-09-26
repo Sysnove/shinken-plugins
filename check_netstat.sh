@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 20190926: Added maxinspeed and maxoutspeed in persistence file.
+# Will be used in future work to guess right thresholds depending on the interface.
+
 OK=0
 WARNING=1
 CRITICAL=2
@@ -8,9 +11,8 @@ UNKNOWN=3
 LAST_RUN_FILE=/var/tmp/check_netstat_last_run
 RUN_FILE=$LAST_RUN_FILE.new
 
-WARN=800000000
+WARN=100000000
 CRIT=900000000
-MAX=1000000000
 
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
@@ -54,16 +56,23 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
         continue
     fi
 
-    echo "$name|$rbytes|$tbytes" >> $RUN_FILE
-
     lastrbytes=$(grep $name $LAST_RUN_FILE | cut -d '|' -f 2)
     lasttbytes=$(grep $name $LAST_RUN_FILE | cut -d '|' -f 3)
+    maxinspeed=$(grep $name $LAST_RUN_FILE | cut -d '|' -f 4)
+    maxoutspeed=$(grep $name $LAST_RUN_FILE | cut -d '|' -f 5)
 
     [ -z "$lastrbytes" ] && lastrbytes=$rbytes
     [ -z "$lasttbytes" ] && lasttbytes=$tbytes
+    [ -z "$maxinspeed" ] && maxinspeed=0
+    [ -z "$maxoutspeed" ] && maxoutspeed=0
 
     inspeed=$((($rbytes - $lastrbytes) * 8 / ($now - $since)))
     outspeed=$((($tbytes - $lasttbytes) * 8 / ($now - $since)))
+
+    [ $inspeed -gt $maxinspeed ] && maxinspeed=$inspeed
+    [ $outspeed -gt $maxoutspeed ] && maxoutspeed=$outspeed
+
+    echo "$name|$rbytes|$tbytes|$maxinspeed|$maxoutspeed" >> $RUN_FILE
 
     if [ $inspeed -gt $CRIT -a $outspeed -gt $CRIT ] ; then
         RET=$WARN
@@ -72,7 +81,7 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
     fi
 
     data="$data$name:UP (in=$(convert_readable $inspeed)bps/out=$(convert_readable $outspeed)bps), "
-    perfdata="$perfdata '${name}_in_bps'=${inspeed}bps;$WARN;$CRIT;0;$MAX '${name}_out_bps'=${outspeed}bps;$WARN;$CRIT;0;$MAX"
+    perfdata="$perfdata '${name}_in_bps'=${inspeed}bps;$WARN;$CRIT;0 '${name}_out_bps'=${outspeed}bps;$WARN;$CRIT;0"
 done
 
 data="${data::-2}"
