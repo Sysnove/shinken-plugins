@@ -75,10 +75,10 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
     echo "$name|$rbytes|$tbytes|$maxinspeed|$maxoutspeed" >> $RUN_FILE
 
     if [ $inspeed -gt $CRIT -o $outspeed -gt $CRIT ] ; then
-        RET=$CRIT
+        RET=$CRITICAL
     elif [ $inspeed -gt $WARN -o $outspeed -gt $WARN ] ; then
-        if [ $RET -lt $CRIT ] ; then
-            RET=$WARN
+        if [ $RET -lt $CRITICAL ] ; then
+            RET=$WARNING
         fi
     fi
 
