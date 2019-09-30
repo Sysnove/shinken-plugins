@@ -74,10 +74,12 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
 
     echo "$name|$rbytes|$tbytes|$maxinspeed|$maxoutspeed" >> $RUN_FILE
 
-    if [ $inspeed -gt $CRIT -a $outspeed -gt $CRIT ] ; then
-        RET=$WARN
-    elif [ $inspeed -gt $WARN -a $outspeed -gt $CRIT -a $RET -lt $CRIT ] ; then
+    if [ $inspeed -gt $CRIT -o $outspeed -gt $CRIT ] ; then
         RET=$CRIT
+    elif [ $inspeed -gt $WARN -o $outspeed -gt $WARN ] ; then
+        if [ $RET -lt $CRIT ] ; then
+            RET=$WARN
+        fi
     fi
 
     data="$data$name:UP (in=$(convert_readable $inspeed)bps/out=$(convert_readable $outspeed)bps), "
