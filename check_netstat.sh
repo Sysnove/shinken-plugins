@@ -11,7 +11,7 @@ UNKNOWN=3
 LAST_RUN_FILE=/var/tmp/check_netstat_last_run
 RUN_FILE=$LAST_RUN_FILE.new
 
-WARN=100000000
+WARN=200000000
 CRIT=900000000
 
 # find last check
