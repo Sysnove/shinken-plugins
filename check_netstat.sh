@@ -3,16 +3,75 @@
 # 20190926: Added maxinspeed and maxoutspeed in persistence file.
 # Will be used in future work to guess right thresholds depending on the interface.
 
-OK=0
-WARNING=1
-CRITICAL=2
-UNKNOWN=3
+RET_OK=0
+RET_WARNING=1
+RET_CRITICAL=2
+RET_UNKNOWN=3
 
 LAST_RUN_FILE=/var/tmp/check_netstat_last_run
 RUN_FILE=$LAST_RUN_FILE.new
 
-WARN=200000000
-CRIT=900000000
+WARN=80
+CRIT=95
+MAX=100
+
+function printHelp {
+    echo -e \\n"Help for $0"\\n
+    echo -e "Basic usage: $0 -m {maximum} -w {warning} -c {critical}"\\n
+    echo "Command switches are optional."
+    echo "maximum is at least 100Mbps, but can be computed using the persistence file."
+    echo "-w - Sets warning value for bandwidth. Default is 80% of maximum bandwidth"
+    echo "-c - Sets critical value for bandwidth. Default is 95% of maximum bandwidth"
+    echo "-m - Sets maximum bandwidth, in Mbps. Default is 100 or maximum registered bandwith"
+    echo "-h - Displays this help message"
+    echo "Example: $0 -m 300 -w 80 -c 90"
+    exit 1
+}
+
+re='^[0-9]+$'
+
+while getopts :w:c:m:h FLAG; do
+    case $FLAG in
+        w)
+            if ! [[ $OPTARG =~ $re ]] ; then
+                echo "error: Not a number" >&2; exit 1
+            else
+                WARN=$OPTARG
+            fi
+            ;;
+        c)
+            if ! [[ $OPTARG =~ $re ]] ; then
+                echo "error: Not a number" >&2; exit 1
+            else
+                CRIT=$OPTARG
+            fi
+            ;;
+        m)
+            echo $OPTARG
+            if ! [[ $OPTARG =~ $re ]] ; then
+                echo "error: Not a number" >&2; exit 1
+            else
+                MAX=$OPTARG
+            fi
+            ;;
+        h)
+            printHelp
+            ;;
+        \?)
+            echo -e \\n"Option - $OPTARG not allowed."
+            printHelp
+            exit $RET_CRITICAL
+            ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+
+MAXBPS=$((MAX*1000000))
+WARNBPS=$(((WARN*MAXBPS)/100))
+CRITBPS=$(((CRIT*MAXBPS)/100))
+
 
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
@@ -27,7 +86,7 @@ IFS=$'\n'
 
 notrunning=0
 
-RET=$OK
+RET=$RET_OK
 
 function convert_readable {
     if [ $1 -gt 1000000000 ] ; then
@@ -74,16 +133,16 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
 
     echo "$name|$rbytes|$tbytes|$maxinspeed|$maxoutspeed" >> $RUN_FILE
 
-    if [ $inspeed -gt $CRIT -o $outspeed -gt $CRIT ] ; then
-        RET=$CRITICAL
-    elif [ $inspeed -gt $WARN -o $outspeed -gt $WARN ] ; then
-        if [ $RET -lt $CRITICAL ] ; then
-            RET=$WARNING
+    if [ $inspeed -gt $CRITBPS -o $outspeed -gt $CRITBPS ] ; then
+        RET=$RET_CRITICAL
+    elif [ $inspeed -gt $WARNBPS -o $outspeed -gt $WARNBPS ] ; then
+        if [ $RET -lt $RET_CRITICAL ] ; then
+            RET=$RET_WARNING
         fi
     fi
 
     data="$data$name:UP (in=$(convert_readable $inspeed)bps/out=$(convert_readable $outspeed)bps), "
-    perfdata="$perfdata '${name}_in_bps'=${inspeed}bps;$WARN;$CRIT;0 '${name}_out_bps'=${outspeed}bps;$WARN;$CRIT;0"
+    perfdata="$perfdata '${name}_in_bps'=${inspeed}bps;$WARNBPS;$CRITBPS;0 '${name}_out_bps'=${outspeed}bps;$WARNBPS;$CRITBPS;0"
 done
 
 data="${data::-2}"
