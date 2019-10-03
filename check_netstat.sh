@@ -47,7 +47,6 @@ while getopts :w:c:m:h FLAG; do
             fi
             ;;
         m)
-            echo $OPTARG
             if ! [[ $OPTARG =~ $re ]] ; then
                 echo "error: Not a number" >&2; exit 1
             else
