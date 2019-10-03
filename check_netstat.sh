@@ -125,6 +125,11 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
     [ -z "$maxinspeed" ] && maxinspeed=0
     [ -z "$maxoutspeed" ] && maxoutspeed=0
 
+    # If max registered speed is greater than MAXBPS,
+    # then update MAXBPS to use max registered speed
+    [ $maxinspeed -gt $MAXBPS ] && MAXBPS=$maxinspeed
+    [ $maxoutspeed -gt $MAXBPS ] && MAXBPS=$maxoutspeed
+
     inspeed=$((($rbytes - $lastrbytes) * 8 / ($now - $since)))
     outspeed=$((($tbytes - $lasttbytes) * 8 / ($now - $since)))
 
