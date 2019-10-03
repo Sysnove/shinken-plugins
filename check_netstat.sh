@@ -114,10 +114,10 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
         continue
     fi
 
-    lastrbytes=$(grep $name $LAST_RUN_FILE | cut -d '|' -f 2)
-    lasttbytes=$(grep $name $LAST_RUN_FILE | cut -d '|' -f 3)
-    maxinspeed=$(grep $name $LAST_RUN_FILE | cut -d '|' -f 4)
-    maxoutspeed=$(grep $name $LAST_RUN_FILE | cut -d '|' -f 5)
+    lastrbytes=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 2)
+    lasttbytes=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 3)
+    maxinspeed=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 4)
+    maxoutspeed=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 5)
 
     [ -z "$lastrbytes" ] && lastrbytes=$rbytes
     [ -z "$lasttbytes" ] && lasttbytes=$tbytes
