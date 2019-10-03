@@ -133,11 +133,13 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
 
     echo "$name|$rbytes|$tbytes|$maxinspeed|$maxoutspeed" >> $RUN_FILE
 
-    if [ $inspeed -gt $CRITBPS -o $outspeed -gt $CRITBPS ] ; then
-        RET=$RET_CRITICAL
-    elif [ $inspeed -gt $WARNBPS -o $outspeed -gt $WARNBPS ] ; then
-        if [ $RET -lt $RET_CRITICAL ] ; then
-            RET=$RET_WARNING
+    if [[ ! $name =~ ^br ]] ; then
+        if [ $inspeed -gt $CRITBPS -o $outspeed -gt $CRITBPS ] ; then
+            RET=$RET_CRITICAL
+        elif [ $inspeed -gt $WARNBPS -o $outspeed -gt $WARNBPS ] ; then
+            if [ $RET -lt $RET_CRITICAL ] ; then
+                RET=$RET_WARNING
+            fi
         fi
     fi
 
