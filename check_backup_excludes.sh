@@ -7,7 +7,7 @@ bind_mounts=$(cat /etc/fstab | grep bind | grep -v '^/var/log' | awk '{print $1}
 
 
 if echo "$backup_excludes" | egrep -q $FORBIDDEN_EXCLUDES; then
-    echo "CRITICAL - You should not exclude $FORBIDDEN_EXCLUDES"
+    echo "CRITICAL - You should not exclude /var/www, /var/vmail, /var/backups or /var/lib/docker"
     exit 2
 fi
 
