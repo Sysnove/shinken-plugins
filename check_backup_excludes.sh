@@ -3,7 +3,7 @@
 FORBIDDEN_EXCLUDES='^/var/(www|vmail|backups|lib/docker)$'
 
 backup_excludes=$(cat /etc/backup.d/90.borg | grep '^exclude =' | awk '{print $3}')
-bind_mounts=$(cat /etc/fstab | grep bind | grep -v '^/var/log' | awk '{print $1}')
+bind_mounts=$(cat /etc/fstab | grep bind | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
 
 
 if echo "$backup_excludes" | egrep -q $FORBIDDEN_EXCLUDES; then
