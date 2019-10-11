@@ -1,6 +1,11 @@
 #!/bin/sh
 
-FORBIDDEN_EXCLUDES='^/var/(www|vmail|backups|lib/docker)$'
+
+if [ -z "$1" ] ; then
+    FORBIDDEN_EXCLUDES='^/var/(www|vmail|backups|lib/docker)$'
+else
+    FORBIDDEN_EXCLUDES="$1"
+fi
 
 backup_excludes=$(cat /etc/backup.d/90.borg | grep '^exclude =' | awk '{print $3}')
 bind_mounts=$(cat /etc/fstab | grep bind | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
