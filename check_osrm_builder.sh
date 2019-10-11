@@ -35,11 +35,11 @@ else
     THRESHOLD=$((4*3600))
 fi
 
-# Compute running duration in hours
+# Compute running duration in seconds
 DURATION=$(( $(date +%s) - $(date -d "${STARTED_AT}" +%s) ))
 
 if [ "${DURATION}" -gt "${THRESHOLD}" ]; then
-    echo "CRITICAL - Builder is running more than ${DURATION} hours on region ${REGION} and profile ${PROFILE}."
+    echo "CRITICAL - Builder is running more than $(( ${DURATION} / 3600 )) hours on region ${REGION} and profile ${PROFILE}."
     exit 2
 fi
 
