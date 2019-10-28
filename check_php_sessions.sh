@@ -9,7 +9,7 @@ fi
 AGE=15
 LIST=false
 
-while getopts "e:n:a:" option; do
+while getopts "e:n:a:L:" option; do
     case $option in
         e)
             EXCLUDES="${EXCLUDES} ${OPTARG}"
