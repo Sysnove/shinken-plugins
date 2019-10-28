@@ -7,6 +7,7 @@ else
 fi
 
 AGE=15
+LIST=false
 
 while getopts "e:n:a:" option; do
     case $option in
@@ -19,6 +20,8 @@ while getopts "e:n:a:" option; do
         a)
             AGE=${OPTARG}
             ;;
+        L)
+            LIST=true
     esac
 done
 
@@ -31,14 +34,18 @@ done
 FIND_OPTS="${FIND_OPTS} -path /usr/share -prune -o"
 FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex .*/(ci_session|sess_).* -ctime +${AGE} -print"
 
-total=$(nice -n 19 find ${FIND_OPTS} 2>/dev/null | wc -l)
-
-msg="$total PHP old session files found | total=$total;;;;;"
-
-if [ $total -lt ${NUMBER} ] ; then
-    echo "OK: $msg"
-    exit 0
+if $LIST; then
+    nice -n 19 find ${FIND_OPTS} 2>/dev/null | wc -l
 else
-    echo "WARNING: $msg"
-    exit 1
+    total=$(nice -n 19 find ${FIND_OPTS} 2>/dev/null | wc -l)
+
+    msg="$total PHP old session files found | total=$total;;;;;"
+
+    if [ $total -lt ${NUMBER} ] ; then
+        echo "OK: $msg"
+        exit 0
+    else
+        echo "WARNING: $msg"
+        exit 1
+    fi
 fi
