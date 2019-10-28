@@ -10,6 +10,7 @@ CRIT_THRESHOLD=$((MAX*CRIT/100))
 
 ret=0
 msg="OK - fs.inotify.max_user_instances=$MAX"
+root_count=0
 
 IFS=$'\n'
 
