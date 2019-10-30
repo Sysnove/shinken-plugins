@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# 20190926: Added maxinspeed and maxoutspeed in persistence file.
+# 20190926: Added inspeed_max and outspeed_max in persistence file.
 # Will be used in future work to guess right thresholds depending on the interface.
+# 20191030: Use inspeed_max and outspeed_max to compute per-interface thresholds
 
 RET_OK=0
 RET_WARNING=1
@@ -67,10 +68,7 @@ done
 shift $((OPTIND-1))
 
 
-MAXBPS=$((MAX*1000000))
-WARNBPS=$(((WARN*MAXBPS)/100))
-CRITBPS=$(((CRIT*MAXBPS)/100))
-
+DEFAULTMAXBPS=$((MAX*1000000))
 
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
@@ -116,31 +114,39 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
 
     lastrbytes=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 2)
     lasttbytes=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 3)
-    maxinspeed=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 4)
-    maxoutspeed=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 5)
+    inspeed_max=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 4)
+    outspeed_max=$(grep "$name|" $LAST_RUN_FILE | cut -d '|' -f 5)
 
     [ -z "$lastrbytes" ] && lastrbytes=$rbytes
     [ -z "$lasttbytes" ] && lasttbytes=$tbytes
-    [ -z "$maxinspeed" ] && maxinspeed=0
-    [ -z "$maxoutspeed" ] && maxoutspeed=0
+    [ -z "$inspeed_max" ] && inspeed_max=0
+    [ -z "$outspeed_max" ] && outspeed_max=0
 
-    # If max registered speed is greater than MAXBPS,
-    # then update MAXBPS to use max registered speed
-    [ $maxinspeed -gt $MAXBPS ] && MAXBPS=$maxinspeed
-    [ $maxoutspeed -gt $MAXBPS ] && MAXBPS=$maxoutspeed
+    interval=$(($now - $since))
 
-    inspeed=$((($rbytes - $lastrbytes) * 8 / ($now - $since)))
-    outspeed=$((($tbytes - $lasttbytes) * 8 / ($now - $since)))
+    inspeed=$((($rbytes - $lastrbytes) * 8 / $interval))
+    outspeed=$((($tbytes - $lasttbytes) * 8 / $interval))
 
-    [ $inspeed -gt $maxinspeed ] && maxinspeed=$inspeed
-    [ $outspeed -gt $maxoutspeed ] && maxoutspeed=$outspeed
+    if [ $interval -gt 120 ]; then # avoid to register bursts
+        [ $inspeed -gt $inspeed_max ] && inspeed_max=$inspeed
+        [ $outspeed -gt $outspeed_max ] && outspeed_max=$outspeed
+    fi
 
-    echo "$name|$rbytes|$tbytes|$maxinspeed|$maxoutspeed" >> $RUN_FILE
+    echo "$name|$rbytes|$tbytes|$inspeed_max|$outspeed_max" >> $RUN_FILE
+
+    # We don't want thresholds too low
+    [ $inspeed_max -lt $DEFAULTMAXBPS ] && inspeed_max=$DEFAULTMAXBPS
+    [ $outspeed_max -lt $DEFAULTMAXBPS ] && outspeed_max=$DEFAULTMAXBPS
+
+    inspeed_warn=$(((WARN*inspeed_max)/100))
+    inspeed_crit=$(((CRIT*inspeed_max)/100))
+    outspeed_warn=$(((WARN*outspeed_max)/100))
+    outspeed_crit=$(((CRIT*outspeed_max)/100))
 
     if [[ ! $name =~ ^br ]] ; then
-        if [ $inspeed -gt $CRITBPS -o $outspeed -gt $CRITBPS ] ; then
+        if [ $inspeed -gt $inspeed_crit -o $outspeed -gt $outspeed_crit ] ; then
             RET=$RET_CRITICAL
-        elif [ $inspeed -gt $WARNBPS -o $outspeed -gt $WARNBPS ] ; then
+        elif [ $inspeed -gt $inspeed_warn -o $outspeed -gt $outspeed_warn ] ; then
             if [ $RET -lt $RET_CRITICAL ] ; then
                 RET=$RET_WARNING
             fi
@@ -148,7 +154,7 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
     fi
 
     data="$data$name:UP (in=$(convert_readable $inspeed)bps/out=$(convert_readable $outspeed)bps), "
-    perfdata="$perfdata '${name}_in_bps'=${inspeed}bps;$WARNBPS;$CRITBPS;0 '${name}_out_bps'=${outspeed}bps;$WARNBPS;$CRITBPS;0"
+    perfdata="$perfdata '${name}_in_bps'=${inspeed}bps;$inspeed_warn;$inspeed_crit;0 '${name}_out_bps'=${outspeed}bps;$outspeed_warn;$outspeed_crit;0"
 done
 
 data="${data::-2}"
