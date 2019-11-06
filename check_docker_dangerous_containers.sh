@@ -19,7 +19,7 @@ fi
 containers=$(echo "$containers" | egrep -v "(base_mongo_proxy|registry_portus_mariadb)")
 
 # Get images
-images=$(echo "$containers" | xargs -l docker container inspect --format "{{ .Image }}")
+images=$(echo "$containers" | xargs -l docker container inspect --format "{{ .Config.Image }}")
 
 count_pg=$(echo "$images" | egrep '(postgres|postgis)' | wc -l)
 count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | wc -l)
