@@ -80,8 +80,8 @@ def main():
     finally:
         json.dump((now, values["Total Accesses"]), open(TMP_FILE, "w"))
 
-    values["ReqPerSec"] = "%.2f" % round(
-        (values["Total Accesses"] - last_check[1]) / (now - last_check[0]), 2
+    values["ReqPerSec"] = "%.2f" % max(
+        0, round((values["Total Accesses"] - last_check[1]) / (now - last_check[0]), 2)
     )
 
     perfdata = (
