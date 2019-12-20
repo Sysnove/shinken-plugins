@@ -68,7 +68,7 @@ if [ -n "$count_mongo" ]; then
 fi
 
 if [ -n "$count" ]; then
-    echo "WARNING - $count dangerous containers running in docker ($msg)"
+    echo "WARNING - $count dangerous containers running in docker (${msg::-2})"
     exit 1
 fi
 
