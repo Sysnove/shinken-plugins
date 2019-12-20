@@ -72,5 +72,5 @@ if [ -n "$count" ]; then
     exit 1
 fi
 
-echo "OK - no dangerous container found in docker"
+echo "OK - no dangerous containers found in docker"
 exit 0
