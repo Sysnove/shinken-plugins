@@ -24,7 +24,7 @@ images=$(echo "$containers" | xargs -l docker container inspect --format "{{ .Co
 for image in $images; do
     image_name=$(basename $image | cut -d':' -f1)
 
-    case $image in
+    case $image_name in
         postgres | postgis)
             count_pg=$(($count_pg+1))
             count=$(($count+1))
