@@ -18,7 +18,7 @@ if [ $? = 0 ]; then
     msg="Last backup is $last"
 
     if [[ "$last" == "$(date +'%Y-%m-%d')" ]]; then
-        if [[ $count > 35 ]]; then
+        if [[ $count -gt 35 ]]; then
             echo "WARNING: $count backups, please check borg prune."
             exit 1
         else
