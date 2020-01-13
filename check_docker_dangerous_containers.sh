@@ -21,35 +21,56 @@ containers=$(echo "$containers" | egrep -v "(base_mongo_proxy|registry_portus_ma
 # Get images
 images=$(echo "$containers" | xargs -l docker container inspect --format "{{ .Config.Image }}")
 
-count_pg=$(echo "$images" | egrep '(postgres|postgis)' | wc -l)
-count_mysql=$(echo "$images" | egrep '(mysql|mariadb)' | wc -l)
-count_couchbase=$(echo "$images" | grep 'couchbase' | wc -l)
-count_couchdb=$(echo "$images" | grep 'couchdb' | wc -l)
-count_mongo=$(echo "$images" | grep 'mongo' | grep -v 'mongo-express' | wc -l)
+for image in $images; do
+    image_name=$(basename $image | cut -d':' -f1)
 
-count=$(($count_pg+$count_mysql+$count_couchbase+$count_couchdb+$count_mongo))
+    case $image_name in
+        postgres | postgis)
+            count_pg=$(($count_pg+1))
+            count=$(($count+1))
+            ;;
+        mysql | mariadb)
+            count_mysql=$(($count_mysql+1))
+            count=$(($count+1))
+            ;;
+        counchbase)
+            count_couchbase=$(($count_couchbase+1))
+            count=$(($count+1))
+            ;;
+        counchdb)
+            count_couchdb=$(($count_couchbase+1))
+            count=$(($count+1))
+            ;;
+        mongo)
+            count_mongo=$((count_mongo+1))
+            count=$(($count+1))
+            ;;
+    esac
+
+    count_total=$((count_total+1))
+done
 
 msg=''
-if [ $count_pg -gt 0 ]; then
+if [ -n "$count_pg" ]; then
     msg="$msg$count_pg postgres, "
 fi
-if [ $count_mysql -gt 0 ]; then
+if [ -n "$count_mysql" ]; then
     msg="$msg$count_mysql mysql, "
 fi
-if [ $count_couchbase -gt 0 ]; then
+if [ -n "$count_couchbase" ]; then
     msg="$msg$count_couchbase couchbase, "
 fi
-if [ $count_couchdb -gt 0 ]; then
+if [ -n "$count_couchdb" ]; then
     msg="$msg$count_couchdb couchdb, "
 fi
-if [ $count_mongo -gt 0 ]; then
+if [ -n "$count_mongo" ]; then
     msg="$msg$count_mongo mongo, "
 fi
 
-if [ $count -gt 0 ]; then
-    echo "WARNING - $count dangerous containers running in docker ($msg)"
+if [ -n "$count" ]; then
+    echo "WARNING - $count dangerous containers running in docker (${msg::-2})"
     exit 1
 fi
 
-echo "OK - no dangerous container found in docker"
+echo "OK - no dangerous containers found in docker"
 exit 0
