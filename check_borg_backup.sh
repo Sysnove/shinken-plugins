@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+MAX_BACKUPS=45 # 31 days + 12 months + some margin
+
 export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
 export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
 
@@ -18,7 +20,7 @@ if [ $? = 0 ]; then
     msg="Last backup is $last"
 
     if [[ "$last" == "$(date +'%Y-%m-%d')" ]]; then
-        if [[ $count -gt 35 ]]; then
+        if [[ $count -gt $MAX_BACKUPS ]]; then
             echo "WARNING: $count backups, please check borg prune."
             exit 1
         else
