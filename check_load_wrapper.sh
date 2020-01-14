@@ -4,8 +4,17 @@
 # load1 is less than load15 thresholds, meaning that the load is recovering
 # and we do not want CRITICAL or WARNING return codes.
 
-out=$(/usr/lib/nagios/plugins/check_load $@)
-ret=$?
+if [ -x /usr/lib/nagios/plugins/check_load ] ; then
+    out=$(/usr/lib/nagios/plugins/check_load $@)
+    ret=$?
+elif [ -x /usr/lib64/nagios/plugins/check_load ] ; then
+    out=$(/usr/lib64/nagios/plugins/check_load $@)
+    ret=$?
+else
+    exit "Could not find check_load executable."
+    exit 3
+fi
+
 
 #OK - Charge moyenne: 0.49, 1.56, 1.84|load1=0.490;5.000;20.000;0; load5=1.560;5.000;15.000;0; load15=1.840;5.000;10.000┌(19:04:04)─(~)
 
