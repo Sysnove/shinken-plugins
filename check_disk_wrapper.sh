@@ -12,5 +12,6 @@ else
     exit 3
 fi
 
-$exe -A -I '^/sys' -I '^/run' -I '^/dev$' -I tmpfs -I borgfs -X tmpfs -X fuse.sshfs -X fuse.nvim -X devtmpfs -X aufs -X overlay -X overlay2 $(findmnt --raw | grep '\[' | awk '{print "-I "$1}' | xargs) $@
+$exe $@ -A -I '^/sys' -I '^/run' -I '^/dev$' -I tmpfs -I borgfs -X tmpfs -X fuse.sshfs -X fuse.nvim -X devtmpfs -X aufs -X overlay -X overlay2 $(findmnt --raw | grep '\[' | awk '{print "-I "$1}' | xargs)
+
 exit $?
