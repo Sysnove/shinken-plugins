@@ -19,7 +19,7 @@ fi
 missing=""
 
 for source in $bind_mounts; do
-    if ! echo "$backup_excludes" | egrep -q "^(re:|sh:)?$source$"; then
+    if ! echo "$backup_excludes" | egrep -q "^(re:|sh:)?$source/?$"; then
         missing="$missing$source "
     fi
 done
