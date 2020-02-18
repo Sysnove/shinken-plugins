@@ -35,7 +35,7 @@ def main():
 
     for line in out.splitlines():
         # ftype:ecode:edomain:name:msg
-        match = re.search('.* - (?P<ftype>WARNING|ERROR):(?P<ecode>[A-Z]+):(?P<edomain>\w+):(?P<name>\w+):(?P<msg>.*)', line)
+        match = re.match('.* - (?P<ftype>WARNING|ERROR):(?P<ecode>\w+):(?P<edomain>\w+):(?P<name>[\w.]+):(?P<msg>.*)', line)
         if match:
             status = match.group('ftype')
             ecode = match.group('ecode')
