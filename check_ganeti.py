@@ -20,7 +20,7 @@ STATUS_UNKNOWN = 3
 def main():
 
     try:
-        p = subprocess.Popen(["/usr/sbin/gnt-cluster", "verify"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(["/usr/sbin/gnt-cluster", "verify", "--ignore-errors", "ENODEN1", "--error-codes"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
     except Exception as e:
         print(e)
@@ -34,17 +34,16 @@ def main():
     ret_out = []
 
     for line in out.splitlines():
-        match = re.search('.* - (WARNING|ERROR): (.*)', line)
+        # ftype:ecode:edomain:name:msg
+        match = re.match('.* - (?P<ftype>WARNING|ERROR):(?P<ecode>\w+):(?P<edomain>\w+):(?P<name>[\w.]+):(?P<msg>.*)', line)
         if match:
-            status = match.group(1)
-            msg = match.group(2)
-            if status == "WARNING" and 'DRBD version mismatch' not in msg:
+            status = match.group('ftype')
+            ecode = match.group('ecode')
+            msg = match.group('msg')
+            if status == "WARNING" and ecode != 'ENODEDRBDHELPER':
                 ret_code = max(ret_code, STATUS_WARNING)
             if status == "ERROR":
-                if 'not enough memory to accomodate instance failovers should node' in msg:
-                    ret_code = max(ret_code, STATUS_WARNING)
-                else:
-                    ret_code = max(ret_code, STATUS_ERROR)
+                ret_code = max(ret_code, STATUS_ERROR)
             ret_out.append('%s: %s' % (status, msg))
 
     if ret_code == STATUS_OK:
