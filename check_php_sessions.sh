@@ -6,7 +6,7 @@ else
     NUMBER=10000
 fi
 
-AGE=15
+AGE=16
 LIST=false
 
 while getopts "e:n:a:L" option; do
