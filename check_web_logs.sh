@@ -70,10 +70,13 @@ tmpfile="/tmp/$$.tmp"
 
 total=$(cat $tmpfile | wc -l)
 
-count2=$(cat $tmpfile | cut -d ' ' -f 9 | grep '2..' -c)
-count3=$(cat $tmpfile | cut -d ' ' -f 9 | grep '3..' -c)
-count4=$(cat $tmpfile | cut -d ' ' -f 9 | grep '4..' -c)
-count5=$(cat $tmpfile | cut -d ' ' -f 9 | grep '5..' -c)
+# Sometimes we have the website in first field, sometimes not.
+# Sometimes we don't get anything in the request field (408 return code)
+# So we need some range here.
+count2=$(cat $tmpfile | cut -d ' ' -f 7-10 | egrep '(^| )2..( |$)' -c)
+count3=$(cat $tmpfile | cut -d ' ' -f 7-10 | egrep '(^| )3..( |$)' -c)
+count4=$(cat $tmpfile | cut -d ' ' -f 7-10 | egrep '(^| )4..( |$)' -c)
+count5=$(cat $tmpfile | cut -d ' ' -f 7-10 | egrep '(^| )5..( |$)' -c)
 
 rm $tmpfile
 
