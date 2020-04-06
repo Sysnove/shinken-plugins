@@ -66,17 +66,14 @@ echo "$now" > $LAST_RUN_FILE
 
 tmpfile="/tmp/$$.tmp"
 
-/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep -v check_http > $tmpfile
+/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep -v check_http | egrep -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
 
 total=$(cat $tmpfile | wc -l)
 
-# Sometimes we have the website in first field, sometimes not.
-# Sometimes we don't get anything in the request field (408 return code)
-# So we need some range here.
-count2=$(cat $tmpfile | cut -d ' ' -f 7-10 | egrep '(^| )2..( |$)' -c)
-count3=$(cat $tmpfile | cut -d ' ' -f 7-10 | egrep '(^| )3..( |$)' -c)
-count4=$(cat $tmpfile | cut -d ' ' -f 7-10 | egrep '(^| )4..( |$)' -c)
-count5=$(cat $tmpfile | cut -d ' ' -f 7-10 | egrep '(^| )5..( |$)' -c)
+count2=$(cat $tmpfile | grep '2..' -c)
+count3=$(cat $tmpfile | grep '3..' -c)
+count4=$(cat $tmpfile | grep '4..' -c)
+count5=$(cat $tmpfile | grep '5..' -c)
 
 rm $tmpfile
 
