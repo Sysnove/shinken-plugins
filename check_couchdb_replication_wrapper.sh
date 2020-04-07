@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Manages couchdb 1 and couchdb 2.
 
@@ -9,7 +9,7 @@ if [ -z "$couchdb_version" ]; then
     exit 2
 fi
 
-if [ "$couchdb_version" > 1 ]; then
+if [[ "$couchdb_version" > 1 ]]; then
     /usr/local/nagios/plugins/check_couchdb2_replications.sh -H localhost -r $1
     exit $?
 else
