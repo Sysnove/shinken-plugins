@@ -9,10 +9,12 @@ if [ -z "$couchdb_version" ]; then
     exit 2
 fi
 
-if [[ "$couchdb_version" > 1 ]]; then
-    /usr/local/nagios/plugins/check_couchdb2_replications.sh -H localhost -r $1
+echo $couchdb_version
+
+if [[ "$couchdb_version" = 1.* ]]; then
+    /usr/local/nagios/plugins/check_couchdb_replications.py -r $1
     exit $?
 else
-    /usr/local/nagios/plugins/check_couchdb_replications.py -r $1
+    /usr/local/nagios/plugins/check_couchdb2_replications.sh -H localhost -r $1
     exit $?
 fi
