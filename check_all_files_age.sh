@@ -32,17 +32,24 @@ for f in $(find $DIR -maxdepth 1 -type f); do
     fi
 done
 
-out="$(echo $oks | wc -w) files up to date. "
-ret=0
+nb_ok="$(echo $oks | wc -w)"
 
-if [ ! -z "$warnings" ]; then
-    out="$(echo $warnings | wc -w) files WARNING ($warnings). ${out}"
-    ret=1
-fi
-
-if [ ! -z "$errors" ]; then
-    out="$(echo $errors | wc -w) files CRITICAL ($errors). ${out}"
+if [ $nb_ok = 0 ]; then
+    out="0 file up to date."
     ret=2
+else
+    out="$nb_ok files up to date. "
+    ret=0
+
+    if [ ! -z "$warnings" ]; then
+        out="$(echo $warnings | wc -w) files WARNING ($warnings). ${out}"
+        ret=1
+    fi
+
+    if [ ! -z "$errors" ]; then
+        out="$(echo $errors | wc -w) files CRITICAL ($errors). ${out}"
+        ret=2
+    fi
 fi
 
 echo "$out"
