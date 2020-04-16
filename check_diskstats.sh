@@ -134,13 +134,15 @@ for DEVICE in `ls /sys/block`; do
         DATA="$DATA$DEVICE=$PCT_BUSY% "
 
         # check TPS
-        if [ $PCT_BUSY -gt $WARNING ]; then
-            if [ $PCT_BUSY -gt $CRITICAL ]; then
-                OUTPUT="CRITICAL : $DEVICE I/O utilization is $PCT_BUSY% (>$CRITICAL%)"
-                EXITCODE=$E_CRITICAL
-            elif [ $EXITCODE -lt $E_WARNING ]; then
-                OUTPUT="WARNING : $DEVICE I/O utilization is $PCT_BUSY% (>$WARNING%)"
-                EXITCODE=$E_WARNING
+        if ! [[ $(uname -r) == "4.19"* && $DEVICE == "nvme"* ]]; then # Because of a bug in 4.19 kernel https://github.com/netdata/netdata/issues/5744
+            if [ $PCT_BUSY -gt $WARNING ]; then
+                if [ $PCT_BUSY -gt $CRITICAL ]; then
+                    OUTPUT="CRITICAL : $DEVICE I/O utilization is $PCT_BUSY% (>$CRITICAL%)"
+                    EXITCODE=$E_CRITICAL
+                elif [ $EXITCODE -lt $E_WARNING ]; then
+                    OUTPUT="WARNING : $DEVICE I/O utilization is $PCT_BUSY% (>$WARNING%)"
+                    EXITCODE=$E_WARNING
+                fi
             fi
         fi
 	fi
