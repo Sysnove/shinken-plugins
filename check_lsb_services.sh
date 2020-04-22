@@ -19,7 +19,7 @@ STATE_WARNING=1
 STATE_CRITICAL=2
 STATE_UNKNOWN=3
 
-services="addok addok-wrapper apache2 atd bind9 ceph clamav-daemon couchdb cron dibbler-client docker dovecot elasticsearch exim4 fail2ban fcgiwrap lm-sensors logstash lsyncd mailgraph memcached mongodb mongod nagios-nrpe-server nginx npcd ntp openvpn pdns pgbouncer php5-fpm php7.0-fpm php7.1-fpm php7.2-fpm postfix pure-ftpd-mysql rabbitmq-server redis-server repmgrd resolvconf rspamd rsyslog shorewall shorewall6 slapd ssh uwsgi unbound"
+services="addok addok-wrapper apache2 atd bind9 ceph clamav-daemon couchdb cron dibbler-client docker dovecot elasticsearch exim4 fail2ban lm-sensors logstash lsyncd mailgraph memcached mongodb mongod nagios-nrpe-server nginx npcd ntp openvpn pdns pgbouncer php5-fpm php7.0-fpm php7.1-fpm php7.2-fpm postfix pure-ftpd-mysql rabbitmq-server redis-server repmgrd resolvconf rspamd rsyslog shorewall shorewall6 slapd ssh uwsgi unbound"
 
 down=""
 
