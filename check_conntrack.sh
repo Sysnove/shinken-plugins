@@ -8,6 +8,18 @@ RET_UNKNOWN=3
 WEB_WARN=5000
 ALL_WARN=10000
 
+while getopts "w:a:" option
+do
+    case $option in
+        w)
+            WEB_WARN=$OPTARG
+            ;;
+        a)
+            ALL_WARN=$OPTARG
+            ;;
+    esac
+done
+
 all=$(/usr/sbin/conntrack -C 2>/dev/null)
 
 if [[ -z "$all" ]]; then
