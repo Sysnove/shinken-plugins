@@ -32,7 +32,7 @@ https=$(/usr/sbin/conntrack -L -p tcp --dport 443 2>/dev/null | wc -l)
 
 web=$(($http+$https))
 
-perfdata="all=${all}c;$ALL_WARN web=${web}c;$WEB_WARN"
+perfdata="all=${all};$ALL_WARN web=${web};$WEB_WARN"
 
 if [[ $all -gt $ALL_WARN ]]; then
     echo "WARNING - $all connections | $perfdata"
