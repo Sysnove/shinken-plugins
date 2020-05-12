@@ -22,7 +22,7 @@ done
 
 MY_IPS=$(/sbin/ifconfig | sed -En 's/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p' | paste -sd "|" -)
 
-all=$(/usr/sbin/conntrack -L | awk '{print $5}' | egrep -v "src=($MY_IPS)" 2>/dev/null)
+all=$(/usr/sbin/conntrack -L | awk '{print $5}' | egrep -v "src=($MY_IPS)" 2>/dev/null | wc -l)
 
 if [[ -z "$all" ]]; then
     /usr/sbin/conntrack -C
