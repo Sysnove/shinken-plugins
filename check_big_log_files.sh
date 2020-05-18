@@ -21,7 +21,7 @@ done
 
 FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name catalina.out ) -size +${SIZE} -print"
 
-files=$(nice -n 19 find ${FIND_OPTS})
+files=$(nice -n 10 find ${FIND_OPTS})
 
 if [ -z "$files" ]; then
     echo "OK: No crazy log file found."

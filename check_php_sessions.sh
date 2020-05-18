@@ -35,9 +35,9 @@ FIND_OPTS="${FIND_OPTS} -path /usr/share -prune -o"
 FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex .*/(ci_session|sess_).* -ctime +${AGE} -print"
 
 if $LIST; then
-    nice -n 19 find ${FIND_OPTS} 2>/dev/null
+    nice -n 10 find ${FIND_OPTS} 2>/dev/null
 else
-    total=$(nice -n 19 find ${FIND_OPTS} 2>/dev/null | wc -l)
+    total=$(nice -n 10 find ${FIND_OPTS} 2>/dev/null | wc -l)
 
     msg="$total PHP old session files found | total=$total;;;;;"
 
