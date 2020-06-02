@@ -29,7 +29,7 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
 
     nb_pools=$((nb_pools+1))
 
-    output=$(SCRIPT_NAME=/status SCRIPT_FILENAME=/status REQUEST_METHOD=GET cgi-fcgi -bind -connect $sock 2> /dev/null)
+    output=$(SCRIPT_NAME=/status SCRIPT_FILENAME=/status REQUEST_METHOD=GET timeout 5s cgi-fcgi -bind -connect $sock 2> /dev/null)
 
     if [ $? -ne 0 ] ; then
         nb_pools_down=$(($nb_pools_down + 1))
@@ -37,7 +37,7 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
     fi
 
     if echo $output | grep -q "File not found"; then
-        output=$(SCRIPT_NAME=/fpm_status SCRIPT_FILENAME=/fpm_status REQUEST_METHOD=GET cgi-fcgi -bind -connect $sock 2> /dev/null)
+        output=$(SCRIPT_NAME=/fpm_status SCRIPT_FILENAME=/fpm_status REQUEST_METHOD=GET timeout 5s cgi-fcgi -bind -connect $sock 2> /dev/null)
     fi
 
     pool_name=$(echo "$output" | grep '^pool:' | awk '{print $2}')
