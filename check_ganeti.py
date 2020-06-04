@@ -43,7 +43,7 @@ def main():
             status = match.group('ftype')
             ecode = match.group('ecode')
             msg = match.group('msg')
-            if status == "WARNING" and ecode != 'ENODEDRBDHELPER':
+            if status == "WARNING":
                 ret_code = max(ret_code, STATUS_WARNING)
             if status == "ERROR":
                 ret_code = max(ret_code, STATUS_ERROR)
