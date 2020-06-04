@@ -20,7 +20,7 @@ STATUS_UNKNOWN = 3
 def main():
 
     try:
-        p = subprocess.Popen( ["/usr/sbin/gnt-cluster", "verify", "--error-codes"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(["/usr/sbin/gnt-cluster", "verify", "--error-codes"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
     except Exception as e:
         print(e)
