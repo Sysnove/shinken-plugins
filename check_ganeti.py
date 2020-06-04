@@ -43,7 +43,7 @@ def main():
             status = match.group('ftype')
             ecode = match.group('ecode')
             msg = match.group('msg')
-            name = match.groupt('name')
+            name = match.group('name')
 
             if ecode == 'ENODEN1':
                 status="WARNING"
