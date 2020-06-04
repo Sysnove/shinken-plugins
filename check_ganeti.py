@@ -43,6 +43,7 @@ def main():
             status = match.group('ftype')
             ecode = match.group('ecode')
             msg = match.group('msg')
+            name = match.groupt('name')
 
             if ecode == 'ENODEN1':
                 status="WARNING"
@@ -53,7 +54,7 @@ def main():
                 ret_code = max(ret_code, STATUS_WARNING)
             if status == "ERROR":
                 ret_code = max(ret_code, STATUS_ERROR)
-            ret_out.append('%s: %s' % (status, msg))
+            ret_out.append('%s - %s: %s' % (status, name, msg))
 
     if ret_code == STATUS_OK:
         print("Ganeti cluster is OK")
