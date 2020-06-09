@@ -20,7 +20,7 @@ STATUS_UNKNOWN = 3
 def main():
 
     try:
-        p = subprocess.Popen(["/usr/sbin/gnt-cluster", "verify", "--ignore-errors", "ENODEN1", "--error-codes"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(["/usr/sbin/gnt-cluster", "verify", "--error-codes"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
     except Exception as e:
         print(e)
@@ -33,18 +33,28 @@ def main():
     ret_code = STATUS_OK
     ret_out = []
 
+    # ftype:ecode:edomain:name:msg
+    # List of ecodes can be found in `gnt-cluster verfify` man page: http://docs.ganeti.org/ganeti/2.7/html/man-gnt-cluster.html#verify
+    status_re = re.compile(r'^.* +- (?P<ftype>WARNING|ERROR):(?P<ecode>\w+):(?P<edomain>\w+):(?P<name>[\w.-]+):(?P<msg>.*)$')
+
     for line in out.splitlines():
-        # ftype:ecode:edomain:name:msg
-        match = re.match('.* - (?P<ftype>WARNING|ERROR):(?P<ecode>\w+):(?P<edomain>\w+):(?P<name>[\w.]+):(?P<msg>.*)', line)
+        match = status_re.match(line)
         if match:
             status = match.group('ftype')
             ecode = match.group('ecode')
             msg = match.group('msg')
-            if status == "WARNING" and ecode != 'ENODEDRBDHELPER':
+            name = match.group('name')
+
+            if ecode == 'ENODEN1':
+                status="WARNING"
+                # Consider N+1 fault as warning and not error.
+                ret_code = max(ret_code, STATUS_WARNING)
+
+            if status == "WARNING":
                 ret_code = max(ret_code, STATUS_WARNING)
             if status == "ERROR":
                 ret_code = max(ret_code, STATUS_ERROR)
-            ret_out.append('%s: %s' % (status, msg))
+            ret_out.append('%s - %s: %s' % (status, name, msg))
 
     if ret_code == STATUS_OK:
         print("Ganeti cluster is OK")
