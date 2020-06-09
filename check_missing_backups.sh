@@ -40,6 +40,16 @@ if pgrep slapd > /dev/null; then
     fi
 fi
 
+if pgrep beam -u couchbase > /dev/null; then
+    databases="$databases couchbase"
+    if [ ! -e /etc/backup.d/41.sh ]; then
+        if ! grep -q couchbase /etc/backup.d/.backupninja_ignores; then
+            echo "CRITICAL : Missing couchbase backup"
+            exit 2
+        fi
+    fi
+fi
+
 # :TODO:maethor:190109: Couchbase, couchdb… ?
 
 if [ -z $databases ] ; then
