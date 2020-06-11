@@ -1,12 +1,20 @@
 #!/bin/bash
 
-LOGFILE=$1
-
 #SLOW_WARNING=0.1
 #SLOW_CRITICAL=1
 
-SLOW_WARNING=$2
-SLOW_CRITICAL=$3
+SLOW_WARNING=$1
+SLOW_CRITICAL=$2
+
+LOGFILE="$3"
+
+if [ -z "$LOGFILE" ]; then
+    LOGFILE=$(ls -tr /var/log/postgresql/*.log | tail -n 1)
+    if [ -z "$LOGFILE" ]; then
+        echo "UNKNOWN: Couldn't find a PostgreSQL logfile"
+        exit 3
+    fi
+fi
 
 MINUTES=5
 # :WARNING:maethor:171205: This can be a bug if you have more than 100000 lines of logs on the last 5 minutes.
