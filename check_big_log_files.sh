@@ -3,7 +3,7 @@
 SIZE="1G"
 CACHE=1 # days
 
-TMPFILE=/var/tmp/check_big_log_files
+CACHEFILE=/var/tmp/check_big_log_files
 
 while getopts "e:s:" option; do
     case $option in
@@ -24,22 +24,22 @@ done
 
 FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name syslog -o -name catalina.out ) -size +${SIZE} -print"
 
-if ! [[ $(find $TMPFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
-    nice -n 10 find ${FIND_OPTS} > $TMPFILE
-    files="$(cat $TMPFILE)"
+if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
+    nice -n 10 find ${FIND_OPTS} > $CACHEFILE
 else
-    files="$(for f in $(cat $TMPFILE); do find $f -size +${SIZE} -print; done)"
-    echo "$files" > $TMPFILE
+    files="$(for f in $(cat $CACHEFILE); do find $f -size +${SIZE} -print; done)"
+    echo "$files" > $CACHEFILE
 fi
 
-if [ -z "$files" ]; then
+num=$(wc -l $CACHEFILE)
+
+if [ $num -eq 0 ]; then
     echo "OK: No crazy log file found."
     exit 0
+elif [ $num -eq 1 ]; then
+    echo "WARNING: $(cat $CACHEFILE) size is bigger than ${SIZE}iB."
+    exit 1
 else
-    if [ $(echo $files | wc -l) -eq 1 ]; then
-        echo "WARNING: $files size is bigger than ${SIZE}iB."
-    else
-        echo "WARNING: $(echo $files | wc -l) log files are bigger than ${SIZE}iB."
-    fi
+    echo "WARNING: $num log files are bigger than ${SIZE}iB."
     exit 1
 fi

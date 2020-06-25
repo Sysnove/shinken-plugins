@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TMPFILE=/var/tmp/check_php_sessions
+CACHEFILE=/var/tmp/check_php_sessions
 CACHE=1 # days
 
 if [ -d /usr/local/ispconfig ] ; then
@@ -37,18 +37,18 @@ done
 FIND_OPTS="${FIND_OPTS} -path /usr/share -prune -o"
 FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex .*/(ci_session|sess_).* -ctime +${AGE} -print"
 
-if ! [[ $(find $TMPFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
-    nice -n 10 find ${FIND_OPTS} 2>/dev/null > $TMPFILE
-    files=$(cat $TMPFILE)
+if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
+    nice -n 10 find ${FIND_OPTS} 2>/dev/null > $CACHEFILE
 else
-    files=$(cat $TMPFILE | xargs sudo ls -d 2>/dev/null)
-    echo "$files" > $TMPFILE
+    files=$(cat $CACHEFILE | xargs sudo ls -d 2>/dev/null)
+    echo "$files" > $CACHEFILE
 fi
 
 if $LIST; then
+    cat $CACHEFILE
     echo "$files"
 else
-    total=$(echo "$files" | wc -l)
+    total=$(wc -l $CACHEFILE)
 
     msg="$total PHP old session files found | total=$total;;;;;"
 
