@@ -35,20 +35,20 @@ for EXCLUDE in ${EXCLUDES}; do
 done
 
 FIND_OPTS="${FIND_OPTS} -path /usr/share -prune -o"
-FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex '.*/(ci_session|sess_).*' -ctime +${AGE} -print"
+FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex .*/(ci_session|sess_).* -ctime +${AGE} -print"
 
 if ! [[ $(find $TMPFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
     nice -n 10 find ${FIND_OPTS} 2>/dev/null > $TMPFILE
-    files="$(cat $TMPFILE)"
+    files=$(cat $TMPFILE)
 else
-    files="$(cat $TMPFILE | xargs sudo ls -d 2>/dev/null)"
+    files=$(cat $TMPFILE | xargs sudo ls -d 2>/dev/null)
     echo "$files" > $TMPFILE
 fi
 
 if $LIST; then
-    echo $files
+    echo "$files"
 else
-    total=$(echo $files |wc -l)
+    total=$(echo "$files" | wc -l)
 
     msg="$total PHP old session files found | total=$total;;;;;"
 
