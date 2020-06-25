@@ -50,9 +50,8 @@ def main():
                 status = 'OK'
 
             if ecode == 'ENODEN1':
-                status="WARNING"
                 # Consider N+1 fault as warning and not error.
-                ret_code = max(ret_code, STATUS_WARNING)
+                status = "WARNING"
 
             if status == "WARNING":
                 ret_code = max(ret_code, STATUS_WARNING)
