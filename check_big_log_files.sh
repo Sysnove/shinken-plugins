@@ -1,6 +1,9 @@
 #!/bin/bash
 
 SIZE="1G"
+CACHE=1 # days
+
+TMPFILE=/var/tmp/check_big_log_files
 
 while getopts "e:s:" option; do
     case $option in
@@ -19,9 +22,15 @@ for EXCLUDE in ${EXCLUDES}; do
     FIND_OPTS="${FIND_OPTS} -path ${EXCLUDE} -prune -o"
 done
 
-FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name catalina.out ) -size +${SIZE} -print"
+FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name syslog -o -name catalina.out ) -size +${SIZE} -print"
 
-files=$(nice -n 10 find ${FIND_OPTS})
+if ! [[ $(find $TMPFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
+    nice -n 10 find ${FIND_OPTS} > $TMPFILE
+    files="$(cat $TMPFILE)"
+else
+    files="$(for f in $(cat $TMPFILE); do find $f -size +${SIZE} -print; done)"
+    echo "$files" > $TMPFILE
+fi
 
 if [ -z "$files" ]; then
     echo "OK: No crazy log file found."
