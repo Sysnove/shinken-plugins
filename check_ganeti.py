@@ -45,6 +45,10 @@ def main():
             msg = match.group('msg')
             name = match.group('name')
 
+            if ecode == 'ENODEDRBDHELPER' and status == 'WARNING':
+                # Ignore DRBD version mismatch warning.
+                status = 'OK'
+
             if ecode == 'ENODEN1':
                 status="WARNING"
                 # Consider N+1 fault as warning and not error.
