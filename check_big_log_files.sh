@@ -29,7 +29,7 @@ if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
 else
     if [ $(cat $CACHEFILE | wc -l) -gt 0 ]; then
         files="$(for f in $(cat $CACHEFILE); do find $f -size +${SIZE} -print; done)"
-        echo "$files" | grep -v -e '^$' > $CACHEFILE
+        echo -n "$files" > $CACHEFILE
     fi
 fi
 
