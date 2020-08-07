@@ -9,7 +9,7 @@ fi
 
 last=$maldetsessions/session.$(<$maldetsessions/session.last)
 
-if ! [ -e $maldetsessions ] ; then
+if ! [ -e $last ] ; then
     echo "UNKNOWN: Maldet report not found"
     exit 3
 fi
