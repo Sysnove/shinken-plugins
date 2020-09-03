@@ -16,7 +16,7 @@ elif [ $ret -ne 0 ]; then
 fi
 
 # Filter out known wanted containers
-containers=$(echo "$containers" | egrep -v "(base_mongo_proxy|registry_portus_mariadb)")
+containers=$(echo "$containers" | egrep -v "(base_mongo_proxy|registry_portus_mariadb|drone-)")
 
 # Get images
 images=$(echo "$containers" | xargs -l docker container inspect --format "{{ .Config.Image }}")
