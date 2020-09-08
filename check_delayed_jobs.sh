@@ -94,7 +94,7 @@ if [ ${WAITING} -ge ${CRIT_THRESHOLD} ]; then
     critical "Found ${WAITING} jobs waiting."
 fi
 
-if [ ${WAITING} -gt 0 ]; then
+if [ ${WAITING} -gt 1 ]; then
     if [ ${RUNNING} -lt ${EXPECTED_WORKERS} ]; then
         critical "Found ${WAITING} jobs and only ${RUNNING} running jobs (expected ${EXPECTED_WORKERS})."
     fi
