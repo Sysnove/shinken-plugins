@@ -94,19 +94,19 @@ if [ ${WAITING} -ge ${CRIT_THRESHOLD} ]; then
     critical "Found ${WAITING} jobs waiting."
 fi
 
-if [ ${WAITING} -gt 0 ]; then
+if [ ${WAITING} -gt 1 ]; then
     if [ ${RUNNING} -lt ${EXPECTED_WORKERS} ]; then
-        critical "Found ${WAITING} jobs and only ${RUNNING} running jobs (expected ${EXPECTED_WORKERS})."
+        critical "Found ${WAITING} waiting jobs and only ${RUNNING} running jobs (expected ${EXPECTED_WORKERS})."
     fi
 fi
 
 if [ ${WAITING} -ge ${WARN_THRESHOLD} ]; then
-    warning "Found ${WAITING} jobs waiting."
+    warning "Found ${WAITING} waiting jobs."
 fi
 
 if [ ${ZOMBIES} -gt 0 ]; then
     warning "Found ${ZOMBIES} zombie jobs."
 fi
 
-ok "Found ${RUNNING} jobs over ${PID_COUNT} workers and ${WAITING} waiting jobs."
+ok "Found ${RUNNING} running jobs over ${PID_COUNT} workers and ${WAITING} waiting jobs."
 exit 0
