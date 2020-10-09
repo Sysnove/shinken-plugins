@@ -5,10 +5,8 @@ if which ipset > /dev/null 2>&1; then
     dropped=$(ipset list SW_DBL4 | grep 'Number of entries:' | awk '{print $4}')
 
     if [ -z "$dropped" ]; then
-        echo "UNKNOWN - Could not find entries in ipset list SW_DBL4"
-
-        # Always return OK
-        exit 3
+        # Yep… I known, I don't care
+        dropped=0
     fi
 else
     # Without ipset, use shorewall show dynamic
