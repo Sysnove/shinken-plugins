@@ -40,14 +40,18 @@ memVmSize=$(($memVmSize/1024))
 memVmRSS=`grep 'VmRSS:' /proc/$pid/status | awk -F' ' '{print $2}'`
 memVmRSS=$(($memVmRSS/1024))
 
+memVmRSSb=$(($memVmRSS*1024*1024))
+WARNb=$(($2*1024*1024))
+CRITb=$(($4*1024*1024))
+
 if [ "$memVmRSS" -ge "$4" ]; then
-    echo "Memory: CRITICAL VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=$(($memVmRSS*1024*1024));;;;"
+    echo "Memory: CRITICAL VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSSb}b;$WARNb;$CRITb;0;"
     $(exit 2)
 elif [ "$memVmRSS" -ge "$2" ]; then
-    echo "Memory: WARNING VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=$(($memVmRSS*1024*1024));;;;"
+    echo "Memory: WARNING VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSSb}b;$WARNb;$CRITb;0;"
     $(exit 1)
 else
-    echo "Memory: OK VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=$(($memVmRSS*1024*1024));;;;"
+    echo "Memory: OK VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSSb}b;$WARNb;$CRITb;0;"
     $(exit 0)
 fi
 
@@ -65,4 +69,4 @@ else
     echo "Copyright (C) 2014 DennyZhang (denny.zhang001@gmail.com)"
     exit
 fi
-## File - check_proc_mem.sh ends 
+## File - check_proc_mem.sh ends
