@@ -13,6 +13,7 @@ while getopts "e:s:" option; do
         s)
             SIZE=${OPTARG}
             ;;
+        *)
     esac
 done
 
@@ -25,20 +26,20 @@ done
 FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name syslog -o -name catalina.out ) -size +${SIZE} -print"
 
 if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
-    nice -n 10 find ${FIND_OPTS} > $CACHEFILE
+    nice -n 10 find "${FIND_OPTS}" > $CACHEFILE
 else
-    if [ $(cat $CACHEFILE | wc -l) -gt 0 ]; then
-        files="$(for f in $(cat $CACHEFILE); do find $f -size +${SIZE} -print; done)"
+    if [ "$(wc -l $CACHEFILE)" -gt 0 ]; then
+        files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print; done)"
         echo -n "$files" > $CACHEFILE
     fi
 fi
 
-num=$(cat $CACHEFILE | wc -l)
+num=$(wc -l $CACHEFILE)
 
-if [ $num -eq 0 ]; then
+if [ "$num" -eq 0 ]; then
     echo "OK: No crazy log file found."
     exit 0
-elif [ $num -eq 1 ]; then
+elif [ "$num" -eq 1 ]; then
     echo "WARNING: $(cat $CACHEFILE) size is bigger than ${SIZE}iB."
     exit 1
 else

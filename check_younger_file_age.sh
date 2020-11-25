@@ -62,14 +62,14 @@ done
 
 THRESHOLD=${CRIT_THRESHOLD}
 
-NB=$(find ${DIRECTORY} -mmin -$((${THRESHOLD} * 60)) -type f -ls | wc -l)
+NB=$(find "${DIRECTORY}" -mmin -$((THRESHOLD * 60)) -type f -ls | wc -l)
 
 [[ "${NB}" -eq 0 ]] && critical "No file younger than ${THRESHOLD} hours."
 
-if [ ${WARN_THRESHOLD} -le ${CRIT_THRESHOLD} ]; then
+if [ "${WARN_THRESHOLD}" -le "${CRIT_THRESHOLD}" ]; then
     THRESHOLD=${WARN_THRESHOLD}
 
-    NB=$(find ${DIRECTORY} -mmin -$((${THRESHOLD} * 60)) -type f -ls | wc -l)
+    NB=$(find "${DIRECTORY}" -mmin -$((THRESHOLD * 60)) -type f -ls | wc -l)
 
     [[ "${NB}" -eq 0 ]] && warning "No file younger than ${THRESHOLD} hours."
 fi

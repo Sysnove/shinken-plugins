@@ -17,20 +17,20 @@ IFS=$'\n'
 
 function foo {
     for line in $(find /proc/*/fd/* -type l -lname 'anon_inode:inotify' -print 2>/dev/null | cut -d/ -f3 | sort | uniq -c); do
-        count=$(echo $line | awk '{print $1}')
-        user=$(echo $line | awk '{print $2}' | xargs ps --no-headers -o '%U' -p)
-        echo $count $user
+        count=$(echo "$line" | awk '{print $1}')
+        user=$(echo "$line" | awk '{print $2}' | xargs ps --no-headers -o '%U' -p)
+        echo "$count $user"
     done
 }
 
 for i in $(foo | awk '{a[$2] += $1} END{for (i in a) print a[i], i}' | sort -nr); do
-    count=$(echo $i | sed -e 's/^[ \t]*//' | awk '{print $1}')
-    name=$(echo $i | sed -e 's/^[ \t]*//' | awk '{print $2}')
-    if [ $count -gt $WARN_THRESHOLD -a $ret -lt 2 ]; then
+    count=$(echo "$i" | sed -e 's/^[ \t]*//' | awk '{print $1}')
+    name=$(echo "$i" | sed -e 's/^[ \t]*//' | awk '{print $2}')
+    if [ "$count" -gt "$WARN_THRESHOLD" ] && [ $ret -lt 2 ]; then
         msg="WARNING - $name user has $count inotify open (Max=$MAX)"
         ret=1
     fi
-    if [ $count -gt $CRIT_THRESHOLD ]; then
+    if [ "$count" -gt "$CRIT_THRESHOLD" ]; then
         msg="CRITICAL - $name user has $count inotify open (Max=$MAX)"
         ret=2
     fi

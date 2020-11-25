@@ -16,34 +16,34 @@ elif [ $ret -ne 0 ]; then
 fi
 
 # Filter out known wanted containers
-containers=$(echo "$containers" | egrep -v "(base_mongo_proxy|registry_portus_mariadb|drone-)")
+containers=$(echo "$containers" | grep -E -v "(base_mongo_proxy|registry_portus_mariadb|drone-)")
 
 # Get images
 images=$(echo "$containers" | xargs -l docker container inspect --format "{{ .Config.Image }}")
 
 for image in $images; do
-    image_name=$(basename $image | cut -d':' -f1)
+    image_name=$(basename "$image" | cut -d':' -f1)
 
     case $image_name in
         postgres | postgis)
-            count_pg=$(($count_pg+1))
-            count=$(($count+1))
+            count_pg=$((count_pg+1))
+            count=$((count+1))
             ;;
         mysql | mariadb)
-            count_mysql=$(($count_mysql+1))
-            count=$(($count+1))
+            count_mysql=$((count_mysql+1))
+            count=$((count+1))
             ;;
         counchbase)
-            count_couchbase=$(($count_couchbase+1))
-            count=$(($count+1))
+            count_couchbase=$((count_couchbase+1))
+            count=$((count+1))
             ;;
         counchdb)
-            count_couchdb=$(($count_couchbase+1))
-            count=$(($count+1))
+            count_couchdb=$((count_couchbase+1))
+            count=$((count+1))
             ;;
         mongo)
             count_mongo=$((count_mongo+1))
-            count=$(($count+1))
+            count=$((count+1))
             ;;
     esac
 

@@ -22,10 +22,10 @@ if [ "${RUNNING}" != "true" ]; then
 fi
 
 # Retrieve region
-REGION=$(echo ${CONTAINER} | jq -r '.[0].Config.Env[]' | sed -nEe 's/^REGION=(.*)/\1/p')
-PROFILE=$(echo ${CONTAINER} | jq -r '.[0].Config.Env[]' | sed -nEe 's/^PROFILE=(.*)/\1/p')
+REGION=$(echo "${CONTAINER}" | jq -r '.[0].Config.Env[]' | sed -nEe 's/^REGION=(.*)/\1/p')
+PROFILE=$(echo "${CONTAINER}" | jq -r '.[0].Config.Env[]' | sed -nEe 's/^PROFILE=(.*)/\1/p')
 
-STARTED_AT=$(echo ${CONTAINER} | jq -r '.[0].State.StartedAt')
+STARTED_AT=$(echo "${CONTAINER}" | jq -r '.[0].State.StartedAt')
 
 if [ "${REGION}" = "europe" ]; then
     # Europe, threshold is 72 hours
@@ -39,9 +39,9 @@ fi
 DURATION=$(( $(date +%s) - $(date -d "${STARTED_AT}" +%s) ))
 
 if [ "${DURATION}" -gt "${THRESHOLD}" ]; then
-    echo "CRITICAL - Builder is running more than $(( ${DURATION} / 3600 )) hours on region ${REGION} and profile ${PROFILE}."
+    echo "CRITICAL - Builder is running more than $(( DURATION / 3600 )) hours on region ${REGION} and profile ${PROFILE}."
     exit 2
 fi
 
-echo "OK - Builder is running since $(date -d ${STARTED_AT} +%c) on region ${REGION} and profile ${PROFILE}."
+echo "OK - Builder is running since $(date -d "${STARTED_AT}" +%c) on region ${REGION} and profile ${PROFILE}."
 exit 0

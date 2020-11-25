@@ -2,7 +2,6 @@
 
 RET_OK=0
 RET_WARN=1
-RET_CRIT=2
 RET_UNKNOWN=3
 
 WEB_WARN=5000
@@ -17,22 +16,23 @@ do
         a)
             ALL_WARN=$OPTARG
             ;;
+        *)
     esac
 done
 
 MY_IPS=$(/sbin/ifconfig | sed -En 's/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p' | paste -sd "|" -)
 
-all=$(/usr/sbin/conntrack -L | awk '{print $5}' | egrep -v "src=($MY_IPS)" 2>/dev/null | wc -l)
+all=$(/usr/sbin/conntrack -L | awk '{print $5}' | grep -E -c -v "src=($MY_IPS)" 2>/dev/null)
 
 if [[ -z "$all" ]]; then
     /usr/sbin/conntrack -C
     exit $RET_UNKNOWN
 fi
 
-http=$(/usr/sbin/conntrack -L -p tcp --dport 80 | awk '{print $5}' | egrep -v "src=($MY_IPS)" 2>/dev/null | wc -l)
-https=$(/usr/sbin/conntrack -L -p tcp --dport 443 | awk '{print $5}' | egrep -v "src=($MY_IPS)" 2>/dev/null | wc -l)
+http=$(/usr/sbin/conntrack -L -p tcp --dport 80 | awk '{print $5}' | grep -E -c -v "src=($MY_IPS)" 2>/dev/null)
+https=$(/usr/sbin/conntrack -L -p tcp --dport 443 | awk '{print $5}' | grep -E -c -v "src=($MY_IPS)" 2>/dev/null)
 
-web=$(($http+$https))
+web=$((http + https))
 
 perfdata="all=${all};$ALL_WARN web=${web};$WEB_WARN"
 

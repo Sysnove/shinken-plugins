@@ -15,7 +15,7 @@ else
         exit 3
     fi
 
-    dropped=$(shorewall show dynamic | grep DROP | wc -l)
+    dropped=$(shorewall show dynamic | grep -c DROP)
 fi
 
 echo "OK - $dropped IP address(es) currently dropped by Shorewall | dropped=$dropped"

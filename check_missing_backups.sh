@@ -52,7 +52,7 @@ fi
 
 # :TODO:maethor:190109: Couchbase, couchdb… ?
 
-if [ -z $databases ] ; then
+if [ -z "$databases" ] ; then
     echo "OK : no database running on this server."
 else
     echo "OK : $databases backups are configured in backupninja."

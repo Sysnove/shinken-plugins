@@ -25,6 +25,8 @@ while getopts "e:n:a:L" option; do
             ;;
         L)
             LIST=true
+            ;;
+        *)
     esac
 done
 
@@ -38,9 +40,9 @@ FIND_OPTS="${FIND_OPTS} -path /usr/share -prune -o"
 FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex .*/(ci_session|sess_).* -ctime +${AGE} -print"
 
 if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
-    nice -n 10 find ${FIND_OPTS} 2>/dev/null > $CACHEFILE
+    nice -n 10 find "${FIND_OPTS}" 2>/dev/null > $CACHEFILE
 else
-    if [ $(cat $CACHEFILE | wc -l) -gt 0 ]; then
+    if [ "$(wc -l $CACHEFILE)" -gt 0 ]; then
         files=$(cat $CACHEFILE | xargs ls -d 2>/dev/null)
         echo "$files" > $CACHEFILE
     fi
@@ -53,7 +55,7 @@ else
 
     msg="$total PHP old session files found | total=$total;;;;;"
 
-    if [ $total -lt ${NUMBER} ] ; then
+    if [ "$total" -lt "${NUMBER}" ] ; then
         echo "OK: $msg"
         exit 0
     else

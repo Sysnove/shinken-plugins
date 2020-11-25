@@ -8,7 +8,7 @@ if [ -x /usr/lib/nagios/plugins/check_disk ] ; then
 elif [ -x /usr/lib64/nagios/plugins/check_disk ] ; then
     exe=/usr/lib64/nagios/plugins/check_disk
 else
-    exit "Could not find check_disk executable."
+    echo "Could not find check_disk executable."
     exit 3
 fi
 

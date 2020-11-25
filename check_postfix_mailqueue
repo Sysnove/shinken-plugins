@@ -20,12 +20,12 @@
 # Uncomment to enable debugging
 # set -x
 
-PROGNAME=`basename $0`
+PROGNAME=$(basename "$0")
 VERSION="Version 1.0"
 AUTHOR="Guillaume Subiron (http://www.sysnove.fr/)"
 
 STATE_OK=0
-STATE_WARN=1
+STATE_WARN=0
 STATE_CRIT=2
 STATE_UNKNOWN=3
 
@@ -39,7 +39,7 @@ print_version() {
 }
 
 print_help() {
-    print_version $PROGNAME $VERSION
+    print_version "$PROGNAME $VERSION"
     echo ""
     echo "$PROGNAME - Checks postfix mailqueue statistic"
     echo ""
@@ -171,26 +171,26 @@ while test -n "$1"; do
     shift
 done
 
-if [ -z $corrupt_crit ]; then
+if [ -z "$corrupt_crit" ]; then
     corrupt_crit=1
 fi
 
 # Can be set via environment, but default is fetched by postconf (if available,
 # else /var/spool/postfix) 
 if which postconf > /dev/null ; then
-    SPOOLDIR=${spooldir:-`postconf -c "$config_dir" -h queue_directory`}
+    SPOOLDIR=${spooldir:-$(postconf -c "$config_dir" -h queue_directory)}
 else
     SPOOLDIR=${spooldir:-/var/spool/postfix}
 fi
 
-cd $SPOOLDIR >/dev/null 2>/dev/null || {
+cd "$SPOOLDIR" >/dev/null 2>/dev/null || {
     echo -n "Cannot cd to $SPOOLDIR"
     exit $STATE_CRIT
 }
 
 # Get values
 for i in deferred active maildrop incoming corrupt hold; do
-    eval $i=`(test -d $i && find $i -type f ) | wc -l`
+    eval $i=`(test -d "$i" && find "$i" -type f ) | wc -l`
 done
 
 for state in crit warn; do
