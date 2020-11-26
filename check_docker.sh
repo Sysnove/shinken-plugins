@@ -14,7 +14,7 @@ fi
 
 # Check if daemon has been upgraded.
 
-if readlink -e "/proc/$(< /var/run/docker.pid)/exe" > /dev/null; then
+if ! readlink -e "/proc/$(< /var/run/docker.pid)/exe" > /dev/null; then
     echo "CRITICAL - Docker has been upgraded, please schedule a service restart."
     exit 2
 fi
