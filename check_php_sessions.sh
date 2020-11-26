@@ -42,7 +42,7 @@ FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex .*/(ci_session|sess_).* -c
 if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
     nice -n 10 find "${FIND_OPTS}" 2>/dev/null > $CACHEFILE
 else
-    if [ "$(wc -l $CACHEFILE)" -gt 0 ]; then
+    if [ "$(wc -l < $CACHEFILE)" -gt 0 ]; then
         files=$(cat $CACHEFILE | xargs ls -d 2>/dev/null)
         echo "$files" > $CACHEFILE
     fi
@@ -51,7 +51,7 @@ fi
 if $LIST; then
     cat $CACHEFILE
 else
-    total=$(cat $CACHEFILE | wc -l)
+    total=$(wc -l < $CACHEFILE)
 
     msg="$total PHP old session files found | total=$total;;;;;"
 

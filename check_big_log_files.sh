@@ -28,13 +28,13 @@ FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name syslog -o -name catalina.out ) -s
 if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
     nice -n 10 find "${FIND_OPTS}" > $CACHEFILE
 else
-    if [ "$(wc -l $CACHEFILE)" -gt 0 ]; then
+    if [ "$(wc -l < $CACHEFILE)" -gt 0 ]; then
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print; done)"
         echo -n "$files" > $CACHEFILE
     fi
 fi
 
-num=$(wc -l $CACHEFILE)
+num=$(wc -l < $CACHEFILE)
 
 if [ "$num" -eq 0 ]; then
     echo "OK: No crazy log file found."
