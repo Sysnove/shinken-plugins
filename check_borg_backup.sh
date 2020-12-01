@@ -1,25 +1,36 @@
-#!/bin/zsh
+#!/bin/bash
 
 MAX_BACKUPS=45 # 31 days + 12 months + some margin
 
 export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
 export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
 
-if [ -z $1 ]; then
-    repository="backups:$(hostname)"
-else
-    repository="backups:$1"
-fi
+REPOSITORY="backups:$(hostname)"
+THRESHOLD=0
 
-list=$(borg list --short $repository 2>&1)
+while getopts "r:t:" option
+do
+    case $option in
+        r)
+            REPOSITORY="backups:$OPTARG"
+            ;;
+        t)
+            THRESHOLD=$OPTARG
+            ;;
+        *)
+    esac
+done
 
-if [ $? = 0 ]; then
-    last=$(echo $list | tail -n 1)
-    count=$(echo $list | wc -l)
+ok_date="$(date +'%Y-%m-%d' -d "-$THRESHOLD day")"
+warn_date="$(date +'%Y-%m-%d' -d "-$((THRESHOLD + 1)) day")"
+
+if list=$(borg list --short "$REPOSITORY" 2>&1); then
+    last=$(echo "$list" | tail -n 1)
+    count=$(echo "$list" | wc -l)
 
     msg="Last backup is $last"
 
-    if [[ "$last" == "$(date +'%Y-%m-%d')" ]]; then
+    if [[ "$last" == "$ok_date" ]]; then
         if [[ $count -gt $MAX_BACKUPS ]]; then
             echo "WARNING: $count backups, please check borg prune."
             exit 1
@@ -27,7 +38,7 @@ if [ $? = 0 ]; then
             echo "OK: $msg" 
             exit 0
         fi
-    elif [[ "$last" == "$(date +'%Y-%m-%d' -d "yesterday")" ]]; then
+    elif [[ "$last" == "$warn_date" ]]; then
         echo "WARNING: $msg"
         exit 1
     else
