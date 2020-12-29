@@ -127,7 +127,7 @@ def main():
         sys.exit(CRIT)
 
     if age.days > warning:
-        print(f'WARNING: Data is more than {critical} days old: {age.days}')
+        print(f'WARNING: Data is more than {warning} days old: {age.days}')
         sys.exit(WARN)
 
     print(f"OK: Data is {age.days} old.")
