@@ -44,7 +44,7 @@ CURL=/usr/bin/curl
 [ ! -x ${CURL} ] && crit "Please install curl."
 
 # Argument parsing
-CBHOST=localhost:8091
+CBHOST=localhost
 
 while getopts "u:p:h:b:" option
 do
@@ -80,15 +80,13 @@ fi
 
 CURL="${CURL} ${CURLOPTS}"
 
-BASEURL="http://${CBHOST}"
-
 # Default jq options
 JQOPTS="--raw-output"
 
 JQ="${JQ} ${JQOPTS}"
 
 # Query Couchbase to retrieve cluster status.
-if ! STATUS=$(${CURL} "${BASEURL}/pools/default"); then
+if ! STATUS=$(${CURL} "http://${CBHOST}:8091/pools/default"); then
     crit "Unable to contact couchbase server on ${CBHOST}."
 fi
 
@@ -123,14 +121,13 @@ if [ -n "${CBBUCKET}" ]; then
     TIMESTAMP="$(date +%s)"
 
     QUERY=$(cat <<EOF
-UPSERT INTO \`fleet-prod\` (KEY, VALUE)
+UPSERT INTO \`${CBBUCKET}\` (KEY, VALUE)
 VALUES ("test", {"type": "test", "info": "do not remove this document", "touched_at": "${TIMESTAMP}"})
-RETURNING touched_at;"
+RETURNING touched_at;
 EOF
 )
 
-    RESULT=$(/opt/couchbase/bin/cbq -q -u "${CBUSER}" -p "${CBPASSWORD}" \
-        -e "${BASEURL}" -s "${QUERY}")
+    RESULT=$(${CURL} "http://${CBHOST}:8093/query/service" --data-urlencode "statement=${QUERY}")
 
     QUERYSTATUS=$(echo "${RESULT}" | ${JQ} '.status')
 
