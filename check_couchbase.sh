@@ -88,13 +88,14 @@ JQOPTS="--raw-output"
 JQ="${JQ} ${JQOPTS}"
 
 # Query Couchbase to retrieve cluster status.
-if ! STATUS=${CURL} "${BASEURL}/pools/default"; then
+if ! STATUS=$(${CURL} "${BASEURL}/pools/default"); then
     crit "Unable to contact couchbase server on ${CBHOST}."
 fi
 
 # Get current node status.
-FQDN=$(hostname --fqdn)
-CURRENT_NODE=$(echo "${STATUS}" | ${JQ} ".nodes | map(select(.hostname | test('^${FQDN}')))")
+# shellcheck disable=SC2016
+CURRENT_NODE=$(echo "${STATUS}" | ${JQ} --arg FQDN "$(hostname --fqdn)" \
+    '.nodes | map(select(.hostname | test("^" + $FQDN)))[0]')
 
 if [ -z "${CURRENT_NODE}" ]; then
     crit "No node information found."
