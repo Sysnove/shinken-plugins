@@ -5,7 +5,7 @@ CACHE=1 # days
 
 CACHEFILE=/var/tmp/nagios/check_big_log_files
 
-mkdir -p dirname "$CACHEFILE"
+mkdir -p "$(dirname $CACHEFILE)"
 
 # :COMMENT:maethor:20210121: Temporaire
 if [ -e "/var/tmp/check_big_log_files" ] && [ ! -e "$CACHEFILE" ]; then
