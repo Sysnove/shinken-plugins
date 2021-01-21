@@ -34,8 +34,8 @@ function usage()
 }
 
 while [ "$1" != "" ]; do
-    PARAM=`echo $1 | awk -F= '{print $1}'`
-    VALUE=`echo $1 | awk -F= '{print $2}'`
+    PARAM=$(echo "$1" | awk -F= '{print $1}')
+    VALUE=$(echo "$1" | awk -F= '{print $2}')
     case $PARAM in
         -w | --warn)
             WARN_THRESHOLD=$VALUE
@@ -63,12 +63,12 @@ if [[ $WARN_THRESHOLD -ge $CRITICAL_THRESHOLD ]]; then
     exit $UNKNOWN
 fi
 
-NOW=`date +%s`
-min_valid_ts=$(($NOW - $VALID_INTERVAL))
-current_process_count=`awk '/processes/ {print $2}' /proc/stat`
+NOW=$(date +%s)
+min_valid_ts=$((NOW - VALID_INTERVAL))
+current_process_count=$(awk '/processes/ {print $2}' /proc/stat)
 
 if [ ! -f $DATAFILE ]; then
-    mkdir -p $(dirname $DATAFILE)
+    mkdir -p "$(dirname $DATAFILE)"
     echo -e "$NOW\t$current_process_count" > $DATAFILE
     echo "Missing $DATAFILE; creating"
     exit $UNKNOWN
@@ -76,7 +76,7 @@ fi
 
 # now compare this to previous
 mv $DATAFILE{,.previous}
-while read ts process_count; do
+while read -r ts process_count; do
     if [[ $ts -lt $min_valid_ts ]]; then
         continue
     fi
@@ -85,9 +85,9 @@ while read ts process_count; do
         continue
     fi
     # calculate the rate
-    process_delta=$(($current_process_count - $process_count))
-    ts_delta=$(($NOW - $ts))
-    current_fork_rate=`echo "$process_delta / $ts_delta" | bc`
+    process_delta=$((current_process_count - process_count))
+    ts_delta=$((NOW - ts))
+    current_fork_rate=$(echo "$process_delta / $ts_delta" | bc)
     echo -e "$ts\t$process_count" >> $DATAFILE
 done < $DATAFILE.previous
 echo -e "$NOW\t$current_process_count" >> $DATAFILE

@@ -19,7 +19,7 @@ show_help() {
 }
 
 # process args
-while [ ! -z "$1" ]; do 
+while [ -n "$1" ]; do 
 	case $1 in
 		-w)	shift; WARNING=$1 ;;
 		-c)	shift; CRITICAL=$1 ;;
@@ -86,15 +86,14 @@ if [ ! -f $HISTFILE ]; then
 	exit $E_UNKNOWN
 fi
 
-OLDDISKSTAT=$(readhistdiskstat)
-if [ $? -ne 0 ]; then
+if ! OLDDISKSTAT=$(readhistdiskstat); then
 	echo "Cannot read histfile $HISTFILE..."
 	exit $E_UNKNOWN
 fi
 OLDDISKSTAT_EPOCH=$(date -r $HISTFILE +%s)
 NEWDISKSTAT_EPOCH=$(date +%s)
 
-let "TIME = $NEWDISKSTAT_EPOCH - $OLDDISKSTAT_EPOCH"
+TIME=$((NEWDISKSTAT_EPOCH - OLDDISKSTAT_EPOCH))
 
 PERFDATA=""
 OUTPUT="Disk business is OK"
@@ -103,8 +102,8 @@ EXITCODE=$E_OK
 echo "$NEWDISKSTAT" >$HISTFILE
 # now we have old and current stat; 
 # let compare it for each device
-for DEVICE in `ls /sys/block`; do
-	if [ -L /sys/block/$DEVICE/device ]; then
+for DEVICE in $(ls /sys/block); do
+	if [ -L "/sys/block/$DEVICE/device" ]; then
         OLD_READ=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $4}')
         NEW_READ=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $4}')
         OLD_WRITE=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $8}')
@@ -122,24 +121,20 @@ for DEVICE in `ls /sys/block`; do
         OLD_SECTORS_WRITTEN=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $10}')
         NEW_SECTORS_WRITTEN=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $10}')
 
-        let "SECTORS_READ = $NEW_SECTORS_READ - $OLD_SECTORS_READ"
-        let "SECTORS_WRITE = $NEW_SECTORS_WRITTEN - $OLD_SECTORS_WRITTEN"
+        SECTORS_READ=$((NEW_SECTORS_READ - OLD_SECTORS_READ))
+        SECTORS_WRITE=$((NEW_SECTORS_WRITTEN - OLD_SECTORS_WRITTEN))
 
-        #let "TIME_READING = $NEW_TIME_READING - $OLD_TIME_READING"
-        #let "TIME_WRITING = $NEW_TIME_WRITING - $OLD_TIME_WRITING"
-        let "TIME_IO = $NEW_TIME_IO - $OLD_TIME_IO"
+        TIME_IO=$((NEW_TIME_IO - OLD_TIME_IO))
 
-        let "PCT_BUSY = 100 * ($TIME_IO) / ($TIME * 1000)"
-        #let "PCT_BUSY_READING = 100 * ($TIME_READING) / ($TIME * 1000)"
-        #let "PCT_BUSY_WRITING = 100 * ($TIME_WRITING) / ($TIME * 1000)"
+        PCT_BUSY=$((100 * TIME_IO / (TIME * 1000)))
 
-        let "READS_PER_SEC=($NEW_READ - $OLD_READ) / $TIME"
-        let "WRITES_PER_SEC=($NEW_WRITE - $OLD_WRITE) / $TIME"
+        READS_PER_SEC=$(((NEW_READ - OLD_READ) / TIME))
+        WRITES_PER_SEC=$(((NEW_WRITE - OLD_WRITE) / TIME))
         
-        let "BYTES_READ_PER_SEC = $SECTORS_READ * $SECTORBYTESIZE / $TIME"
-        let "BYTES_WRITTEN_PER_SEC = $SECTORS_WRITE * $SECTORBYTESIZE / $TIME"
-        let "KBYTES_READ_PER_SEC = $BYTES_READ_PER_SEC / 1024"
-        let "KBYTES_WRITTEN_PER_SEC = $BYTES_WRITTEN_PER_SEC / 1024"
+        BYTES_READ_PER_SEC=$((SECTORS_READ * SECTORBYTESIZE / TIME))
+        BYTES_WRITTEN_PER_SEC=$((SECTORS_WRITE * SECTORBYTESIZE / TIME))
+        #KBYTES_READ_PER_SEC=$((BYTES_READ_PER_SEC / 1024))
+        #KBYTES_WRITTEN_PER_SEC=$((BYTES_WRITTEN_PER_SEC / 1024))
 
         PERFDATA="$PERFDATA ${DEVICE}_pct_busy=$PCT_BUSY% ${DEVICE}_read=${BYTES_READ_PER_SEC}bps ${DEVICE}_write=${BYTES_WRITTEN_PER_SEC}bps ${DEVICE}_rps=${READS_PER_SEC}r/s ${DEVICE}_wps=${WRITES_PER_SEC}w/s"
 
@@ -147,8 +142,8 @@ for DEVICE in `ls /sys/block`; do
 
         # check TPS
         if ! [[ $(uname -r) == "4.19"* && $DEVICE == "nvme"* ]]; then # Because of a bug in 4.19 kernel https://github.com/netdata/netdata/issues/5744
-            if [ $PCT_BUSY -gt $WARNING ]; then
-                if [ $PCT_BUSY -gt $CRITICAL ]; then
+            if [ $PCT_BUSY -gt "$WARNING" ]; then
+                if [ $PCT_BUSY -gt "$CRITICAL" ]; then
                     OUTPUT="CRITICAL : $DEVICE I/O utilization is $PCT_BUSY% (>$CRITICAL%)"
                     EXITCODE=$E_CRITICAL
                 elif [ $EXITCODE -lt $E_WARNING ]; then

@@ -36,7 +36,7 @@ show_help() {
 
 
 # process args
-while [ ! -z "$1" ]; do 
+while [ -n "$1" ]; do 
     case $1 in
         -l)	shift; LOGS_WITH_GLOB=$1 ;;
         -m) shift; MIN=$1 ;;
@@ -58,7 +58,7 @@ if [ -z "$LOGS_WITH_GLOB" ]; then
     exit $E_UNKNOWN
 fi
 
-LOGS=$(ls $LOGS_WITH_GLOB 2>/dev/null)
+LOGS=$(ls "$LOGS_WITH_GLOB" 2>/dev/null)
 
 # check logs
 if [ -z "$LOGS" ]; then
@@ -68,7 +68,7 @@ fi
 
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
-    echo "$(date +%H:%M:%S -d '5 min ago')" > $LAST_RUN_FILE
+    date +%H:%M:%S -d '5 min ago' > $LAST_RUN_FILE
 fi
 
 since=$(<$LAST_RUN_FILE)
@@ -78,14 +78,14 @@ echo "$now" > $LAST_RUN_FILE
 
 tmpfile="/tmp/$$.tmp"
 
-/usr/local/bin/dategrep --sort-files -format apache --start $since $LOGS | grep -v check_http | egrep -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
+/usr/local/bin/dategrep --sort-files -format apache --start "$since" "$LOGS" | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
 
-total=$(cat $tmpfile | wc -l)
+total=$(wc -l < $tmpfile)
 
-count2=$(cat $tmpfile | grep '2..' -c)
-count3=$(cat $tmpfile | grep '3..' -c)
-count4=$(cat $tmpfile | grep '4..' -c)
-count5=$(cat $tmpfile | grep '5..' -c)
+count2=$(grep '2..' -c $tmpfile)
+count3=$(grep '3..' -c $tmpfile)
+count4=$(grep '4..' -c $tmpfile)
+count5=$(grep '5..' -c $tmpfile)
 
 rm $tmpfile
 
@@ -94,22 +94,22 @@ pourcent3=0
 pourcent4=0
 pourcent5=0
 
-if [ $total -gt 0 ] ; then
-    pourcent2=$((($count2 * 100) / $total))
-    pourcent3=$((($count3 * 100) / $total))
-    pourcent4=$((($count4 * 100) / $total))
-    pourcent5=$((($count5 * 100) / $total))
+if [ "$total" -gt 0 ] ; then
+    pourcent2=$(((count2 * 100) / total))
+    pourcent3=$(((count3 * 100) / total))
+    pourcent4=$(((count4 * 100) / total))
+    pourcent5=$(((count5 * 100) / total))
 fi
 
-now_s=$(date -d $now +%s)
-since_s=$(date -d $since +%s)
-period=$(( $now_s - $since_s ))
+now_s=$(date -d "$now" +%s)
+since_s=$(date -d "$since" +%s)
+period=$(( now_s - since_s ))
 
-ratetotal=$(($total / $period))
-rate2=$(($count2 / $period))
-rate3=$(($count3 / $period))
-rate4=$(($count4 / $period))
-rate5=$(($count5 / $period))
+#ratetotal=$((total / period))
+rate2=$((count2 / period))
+rate3=$((count3 / period))
+rate4=$((count4 / period))
+rate5=$((count5 / period))
 
 RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) | total=$total;;;;0;100 2xx=$rate2;;;;0;100 3xx=$rate3;;;;0;100 4xx=$rate4;;;;0;100 5xx=$rate5;;;;0;100"
 
@@ -126,5 +126,5 @@ else
     RET_CODE=$E_OK
 fi
 
-echo $RET_MSG
+echo "$RET_MSG"
 exit $RET_CODE

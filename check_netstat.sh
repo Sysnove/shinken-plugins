@@ -85,10 +85,10 @@ DEFAULTMAXBPS=$((MAX*1000000))
 
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
-    echo "$(date +s -d '5 min ago')" > $LAST_RUN_FILE
+    date +s -d '5 min ago' > $LAST_RUN_FILE
 fi
 
-since=$(cat $LAST_RUN_FILE | head -n 1)
+since=$(head -n 1 "$LAST_RUN_FILE")
 now=$(date +%s)
 echo "$now" > $RUN_FILE
 
@@ -99,29 +99,29 @@ notrunning=0
 RET=$RET_OK
 
 function convert_readable {
-    if [ $1 -gt 1000000000 ] ; then
+    if [ "$1" -gt 1000000000 ] ; then
         echo $(($1 / 1000000000))G
-    elif [ $1 -gt 1000000 ] ; then
+    elif [ "$1" -gt 1000000 ] ; then
         echo $(($1 / 1000000))M
-    elif [ $1 -gt 1000 ] ; then
+    elif [ "$1" -gt 1000 ] ; then
         echo $(($1 / 1000))k
     else
-        echo $1
+        echo "$1"
     fi
 }
 
-for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
-    name=$(echo $line | awk '{print $1}' | cut -d ':' -f 1)
+for line in $(tail -n+3 /proc/net/dev | grep -v "no statistics"); do
+    name=$(echo "$line" | awk '{print $1}' | cut -d ':' -f 1)
 
     if [[ ! $name =~ ^(eth|en|tun|br) ]] ; then
         continue
     fi
 
-    rbytes=$(echo $line | awk '{print $2}')
-    tbytes=$(echo $line | awk '{print $10}')
+    rbytes=$(echo "$line" | awk '{print $2}')
+    tbytes=$(echo "$line" | awk '{print $10}')
 
-    if ! /sbin/ifconfig $name | grep -q RUNNING; then
-        notrunning=$(($notrunning + 1))
+    if ! /sbin/ifconfig "$name" | grep -q RUNNING; then
+        notrunning=$((notrunning + 1))
         continue
     fi
 
@@ -135,10 +135,10 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
     [ -z "$inspeed_max" ] && inspeed_max=0
     [ -z "$outspeed_max" ] && outspeed_max=0
 
-    interval=$(($now - $since))
+    interval=$((now - since))
 
-    inspeed=$((($rbytes - $lastrbytes) * 8 / $interval))
-    outspeed=$((($tbytes - $lasttbytes) * 8 / $interval))
+    inspeed=$(((rbytes - lastrbytes) * 8 / interval))
+    outspeed=$(((tbytes - lasttbytes) * 8 / interval))
 
     if [ $interval -gt 120 ]; then # avoid to register bursts
         [ $inspeed -gt $inspeed_max ] && inspeed_max=$inspeed
@@ -157,9 +157,9 @@ for line in $(cat /proc/net/dev | tail -n+3 | grep -v "no statistics"); do
     outspeed_crit=$(((CRIT*outspeed_max)/100))
 
     if [[ ! $name =~ ^br ]] ; then
-        if [ $inspeed -gt $inspeed_crit -o $outspeed -gt $outspeed_crit ] ; then
+        if [ $inspeed -gt $inspeed_crit ] || [ $outspeed -gt $outspeed_crit ] ; then
             RET=$RET_CRITICAL
-        elif [ $inspeed -gt $inspeed_warn -o $outspeed -gt $outspeed_warn ] ; then
+        elif [ $inspeed -gt $inspeed_warn ] || [ $outspeed -gt $outspeed_warn ] ; then
             if [ $RET -lt $RET_CRITICAL ] ; then
                 RET=$RET_WARNING
             fi

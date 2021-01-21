@@ -23,7 +23,7 @@ show_help() {
 }
 
 # process args
-while [ ! -z "$1" ]; do 
+while [ -n "$1" ]; do 
 	case $1 in
 		-d)	shift; DISK=$1 ;;
 		-w)	shift; WARNING=$1 ;;
@@ -36,11 +36,11 @@ done
 # generate HISTFILE filename
 HISTFILE=/var/tmp/nagios/check_diskstat.$DISK
 
-install -g nagios -o nagios -m 750 -d "$(dirname $HISTFILE)"
+install -g nagios -o nagios -m 750 -d "$(dirname "$HISTFILE")"
 
 # :COMMENT:maethor:20210121: Temporaire
 if [ -f "${HISTFILE/nagios\//}" ] && [ ! -f "$HISTFILE" ]; then
-    mv ${HISTFILE/nagios\//} "$HISTFILE"
+    mv "${HISTFILE/nagios\//}" "$HISTFILE"
 fi
 
 if [ -f "$HISTFILE" ] && [ ! -O "$HISTFILE" ]; then
@@ -67,11 +67,11 @@ sanitize() {
 	fi
 	
 	# 
-	if [ -z "$WARN_TPS" -o -z "$WARN_READ" -o -z "$WARN_WRITE" ]; then
+	if [ -z "$WARN_TPS" ] || [ -z "$WARN_READ" ] || [ -z "$WARN_WRITE" ]; then
 		echo "Need 3 values for warning threshold (tps,read,write)"
 		exit $E_UNKNOWN
 	fi
-	if [ -z "$CRIT_TPS" -o -z "$CRIT_READ" -o -z "$CRIT_WRITE" ]; then
+	if [ -z "$CRIT_TPS" ] || [ -z "$CRIT_READ" ] || [ -z "$CRIT_WRITE" ]; then
 		echo "Need 3 values for critical threshold (tps,read,write)"
 		exit $E_UNKNOWN
 	fi
@@ -84,77 +84,76 @@ readdiskstat() {
 		return $E_UNKNOWN
 	fi
 
-	cat /sys/block/$1/stat
+	cat "/sys/block/$1/stat"
 }
 
 readhistdiskstat() {
-	[ -f $HISTFILE ] && cat $HISTFILE
+	[ -f "$HISTFILE" ] && cat "$HISTFILE"
 }
 
 # process thresholds
-WARN_TPS=$(echo $WARNING | cut -d , -f 1)
-WARN_READ=$(echo $WARNING | cut -d , -f 2)
-WARN_WRITE=$(echo $WARNING | cut -d , -f 3)
-CRIT_TPS=$(echo $CRITICAL | cut -d , -f 1)
-CRIT_READ=$(echo $CRITICAL | cut -d , -f 2)
-CRIT_WRITE=$(echo $CRITICAL | cut -d , -f 3)
+WARN_TPS=$(echo "$WARNING" | cut -d , -f 1)
+WARN_READ=$(echo "$WARNING" | cut -d , -f 2)
+WARN_WRITE=$(echo "$WARNING" | cut -d , -f 3)
+CRIT_TPS=$(echo "$CRITICAL" | cut -d , -f 1)
+CRIT_READ=$(echo "$CRITICAL" | cut -d , -f 2)
+CRIT_WRITE=$(echo "$CRITICAL" | cut -d , -f 3)
 # check args
 sanitize
 
 
-NEWDISKSTAT=$(readdiskstat $DISK)
+NEWDISKSTAT=$(readdiskstat "$DISK")
 if [ $? -eq $E_UNKNOWN ]; then
 	echo "Cannot read disk stats, check your /sys filesystem for $DISK"
 	exit $E_UNKNOWN
 fi
 
-if [ ! -f $HISTFILE ]; then
-	echo $NEWDISKSTAT >$HISTFILE
+if [ ! -f "$HISTFILE" ]; then
+	echo "$NEWDISKSTAT" > "$HISTFILE"
 	echo "UNKNOWN - Initial buffer creation..." 
 	exit $E_UNKNOWN
 fi
 
-OLDDISKSTAT=$(readhistdiskstat)
-if [ $? -ne 0 ]; then
+if ! OLDDISKSTAT=$(readhistdiskstat); then
 	echo "Cannot read histfile $HISTFILE..."
 	exit $E_UNKNOWN
 fi
-OLDDISKSTAT_TIME=$(stat $HISTFILE | grep Modify | sed 's/^.*: \(.*\)$/\1/')
+OLDDISKSTAT_TIME=$(stat "$HISTFILE" | grep Modify | sed 's/^.*: \(.*\)$/\1/')
 OLDDISKSTAT_EPOCH=$(date -d "$OLDDISKSTAT_TIME" +%s)
 NEWDISKSTAT_EPOCH=$(date +%s)
 
-echo $NEWDISKSTAT >$HISTFILE
+echo "$NEWDISKSTAT" > "$HISTFILE"
 # now we have old and current stat; 
 # let compare it
-OLD_SECTORS_READ=$(echo $OLDDISKSTAT | awk '{print $3}')
-NEW_SECTORS_READ=$(echo $NEWDISKSTAT | awk '{print $3}')
-OLD_READ=$(echo $OLDDISKSTAT | awk '{print $1}')
-NEW_READ=$(echo $NEWDISKSTAT | awk '{print $1}')
-OLD_WRITE=$(echo $OLDDISKSTAT | awk '{print $5}')
-NEW_WRITE=$(echo $NEWDISKSTAT | awk '{print $5}')
+OLD_SECTORS_READ=$(echo "$OLDDISKSTAT" | awk '{print $3}')
+NEW_SECTORS_READ=$(echo "$NEWDISKSTAT" | awk '{print $3}')
+OLD_READ=$(echo "$OLDDISKSTAT" | awk '{print $1}')
+NEW_READ=$(echo "$NEWDISKSTAT" | awk '{print $1}')
+OLD_WRITE=$(echo "$OLDDISKSTAT" | awk '{print $5}')
+NEW_WRITE=$(echo "$NEWDISKSTAT" | awk '{print $5}')
 
-OLD_SECTORS_WRITTEN=$(echo $OLDDISKSTAT | awk '{print $7}')
-NEW_SECTORS_WRITTEN=$(echo $NEWDISKSTAT | awk '{print $7}')
+OLD_SECTORS_WRITTEN=$(echo "$OLDDISKSTAT" | awk '{print $7}')
+NEW_SECTORS_WRITTEN=$(echo "$NEWDISKSTAT" | awk '{print $7}')
 
 # kernel handles sectors by 512bytes
 # http://www.mjmwired.net/kernel/Documentation/block/stat.txt
 SECTORBYTESIZE=512
 
-let "SECTORS_READ = $NEW_SECTORS_READ - $OLD_SECTORS_READ"
-let "SECTORS_WRITE = $NEW_SECTORS_WRITTEN - $OLD_SECTORS_WRITTEN"
-let "TIME = $NEWDISKSTAT_EPOCH - $OLDDISKSTAT_EPOCH"
-let "BYTES_READ_PER_SEC = $SECTORS_READ * $SECTORBYTESIZE / $TIME"
-let "BYTES_WRITTEN_PER_SEC = $SECTORS_WRITE * $SECTORBYTESIZE / $TIME"
-let "TPS=($NEW_READ - $OLD_READ + $NEW_WRITE - $OLD_WRITE) / $TIME"
+SECTORS_READ=$((NEW_SECTORS_READ - OLD_SECTORS_READ))
+SECTORS_WRITE=$((NEW_SECTORS_WRITTEN - OLD_SECTORS_WRITTEN))
+TIME=$((NEWDISKSTAT_EPOCH - OLDDISKSTAT_EPOCH))
+BYTES_READ_PER_SEC=$((SECTORS_READ * SECTORBYTESIZE / TIME))
+BYTES_WRITTEN_PER_SEC=$((SECTORS_WRITE * SECTORBYTESIZE / TIME))
+TPS=$(((NEW_READ - OLD_READ + NEW_WRITE - OLD_WRITE) / TIME))
 
-let "KBYTES_READ_PER_SEC = $BYTES_READ_PER_SEC / 1024"
-let "KBYTES_WRITTEN_PER_SEC = $BYTES_WRITTEN_PER_SEC / 1024"
+KBYTES_READ_PER_SEC=$((BYTES_READ_PER_SEC / 1024))
+KBYTES_WRITTEN_PER_SEC=$((BYTES_WRITTEN_PER_SEC / 1024))
 
 OUTPUT=""
 EXITCODE=$E_OK
 # check TPS
-if [ $TPS -gt $WARN_TPS ]; then
-	if [ $TPS -gt $CRIT_TPS ]; then
+if [ $TPS -gt "$WARN_TPS" ]; then
+	if [ $TPS -gt "$CRIT_TPS" ]; then
 		OUTPUT="critical IO/s (>$CRIT_TPS), "
 		EXITCODE=$E_CRITICAL
 	else
@@ -163,8 +162,8 @@ if [ $TPS -gt $WARN_TPS ]; then
 	fi
 fi
 # check read
-if [ $BYTES_READ_PER_SEC -gt $WARN_READ ]; then
-	if [ $BYTES_READ_PER_SEC -gt $CRIT_READ ]; then
+if [ $BYTES_READ_PER_SEC -gt "$WARN_READ" ]; then
+	if [ $BYTES_READ_PER_SEC -gt "$CRIT_READ" ]; then
 		OUTPUT="${OUTPUT}critical read sectors/s (>$CRIT_READ), "
 		EXITCODE=$E_CRITICAL
 	else
@@ -174,8 +173,8 @@ if [ $BYTES_READ_PER_SEC -gt $WARN_READ ]; then
 fi
 
 # check write
-if [ $BYTES_WRITTEN_PER_SEC -gt $WARN_WRITE ]; then
-	if [ $BYTES_WRITTEN_PER_SEC -gt $CRIT_WRITE ]; then
+if [ $BYTES_WRITTEN_PER_SEC -gt "$WARN_WRITE" ]; then
+	if [ $BYTES_WRITTEN_PER_SEC -gt "$CRIT_WRITE" ]; then
 		OUTPUT="${OUTPUT}critical write sectors/s (>$CRIT_WRITE), "
 		EXITCODE=$E_CRITICAL
 	else

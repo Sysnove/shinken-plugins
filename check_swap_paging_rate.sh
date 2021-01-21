@@ -39,8 +39,8 @@ function usage()
 }
 
 while [ "$1" != "" ]; do
-    PARAM=`echo $1 | awk -F= '{print $1}'`
-    VALUE=`echo $1 | awk -F= '{print $2}'`
+    PARAM=$(echo "$1" | awk -F= '{print $1}')
+    VALUE=$(echo "$1" | awk -F= '{print $2}')
     case $PARAM in
         --warn)
             WARN_THRESHOLD=$VALUE
@@ -57,13 +57,13 @@ while [ "$1" != "" ]; do
 done
 
 
-NOW=`date +%s`
-min_valid_ts=$(($NOW - $VALID_INTERVAL))
+NOW=$(date +%s)
+min_valid_ts=$((NOW - VALID_INTERVAL))
 
-CURRENT_PAGES_SWAPPED_IN=`vmstat -s | grep 'pages swapped in' | awk '{print $1}'`
-CURRENT_PAGES_SWAPPED_OUT=`vmstat -s | grep 'pages swapped out' | awk '{print $1}'`
+CURRENT_PAGES_SWAPPED_IN=$(vmstat -s | grep 'pages swapped in' | awk '{print $1}')
+CURRENT_PAGES_SWAPPED_OUT=$(vmstat -s | grep 'pages swapped out' | awk '{print $1}')
 
-mkdir -p $(dirname $IN_DATAFILE)
+mkdir -p "$(dirname $IN_DATAFILE)"
 if [ ! -f $IN_DATAFILE ]; then
     echo -e "$NOW\t$CURRENT_PAGES_SWAPPED_IN" > $IN_DATAFILE
     echo "Missing $IN_DATAFILE; creating"
@@ -84,8 +84,8 @@ function swap_rate() {
     local current=$2
     local rate=0
     
-    mv $file ${file}.previous
-    while read ts swap_count; do
+    mv "$file" "${file}.previous"
+    while read -r ts swap_count; do
         if [[ $ts -lt $min_valid_ts ]]; then
             continue
         fi
@@ -94,17 +94,17 @@ function swap_rate() {
             continue
         fi
         # calculate the rate
-        swap_delta=$(($current - $swap_count))
-        ts_delta=$(($NOW - $ts))
-        rate=`echo "$swap_delta / $ts_delta" | bc`
-        echo -e "$ts\t$swap_count" >> $file
-    done < ${file}.previous
-    echo -e "$NOW\t$current" >> $file
-    echo $rate
+        swap_delta=$((current - swap_count))
+        ts_delta=$((NOW - ts))
+        rate=$(echo "$swap_delta / $ts_delta" | bc)
+        echo -e "$ts\t$swap_count" >> "$file"
+    done < "${file}.previous"
+    echo -e "$NOW\t$current" >> "$file"
+    echo "$rate"
 }
 
-in_rate=`swap_rate $IN_DATAFILE $CURRENT_PAGES_SWAPPED_IN`
-out_rate=`swap_rate $OUT_DATAFILE $CURRENT_PAGES_SWAPPED_OUT`
+in_rate=$(swap_rate $IN_DATAFILE "$CURRENT_PAGES_SWAPPED_IN")
+out_rate=$(swap_rate $OUT_DATAFILE "$CURRENT_PAGES_SWAPPED_OUT")
 
 echo "swap in/out is $in_rate/$out_rate per second | in=${in_rate}pages/s;${WARN_THRESHOLD};${CRITICAL_THRESHOLD};; out=${out_rate}pages/s;${WARN_THRESHOLD};${CRITICAL_THRESHOLD};;"
 if [[ $in_rate -ge $CRITICAL_THRESHOLD ]] || [[ $out_rate -ge $CRITICAL_THRESHOLD ]]; then

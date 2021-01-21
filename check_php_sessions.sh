@@ -55,7 +55,7 @@ if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
     nice -n 10 find "${FIND_OPTS}" 2>/dev/null > $CACHEFILE
 else
     if [ "$(wc -l < $CACHEFILE)" -gt 0 ]; then
-        # shellcheck disable=SC2013
+        # shellcheck disable=SC2002
         files=$(cat $CACHEFILE | xargs ls -d 2>/dev/null)
         echo "$files" > $CACHEFILE
     fi

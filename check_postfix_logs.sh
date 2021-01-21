@@ -6,7 +6,7 @@ LOG_FILE="/var/log/mail.log"
 
 E_OK=0
 E_WARNING=1
-E_CRITICAL=2
+#E_CRITICAL=2
 E_UNKNOWN=3
 
 LAST_RUN_FILE=/var/tmp/nagios/check_mail_logs_last_run
@@ -20,7 +20,7 @@ fi
 
 if [ -f "$LAST_RUN_FILE" ] && [ ! -O "$LAST_RUN_FILE" ]; then
     echo "UNKNOWN: $LAST_RUN_FILE is not owned by $USER"
-    exit $RET_UNKNOWN
+    exit $E_UNKNOWN
 fi
 
 show_help() {
@@ -33,7 +33,7 @@ function compute() {
 }
 
 # process args
-while [ ! -z "$1" ]; do 
+while [ -n "$1" ]; do 
     case $1 in
         -l)	shift; LOG_FILE=$1 ;;
         -h)	show_help; exit 1 ;;
@@ -49,7 +49,7 @@ fi
 
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
-    echo "$(date +%H:%M:%S -d '5 min ago')" > $LAST_RUN_FILE
+    date +%H:%M:%S -d '5 min ago' > $LAST_RUN_FILE
 fi
 
 since=$(<$LAST_RUN_FILE)
@@ -59,32 +59,32 @@ echo "$now" > $LAST_RUN_FILE
 
 tmpfile="/tmp/$$.tmp"
 
-/usr/local/bin/dategrep -format rsyslog --start $since $LOG_FILE | grep ' postfix/'  > $tmpfile
+/usr/local/bin/dategrep -format rsyslog --start "$since" "$LOG_FILE" | grep ' postfix/'  > $tmpfile
 
 tmpfile_in="/tmp/$$_in.tmp"
 
 tmpfile_out="/tmp/$$_out.tmp"
 
 # Outgoing
-cat $tmpfile | grep 'postfix/smtp\[' | egrep -v 'relay=[^\s\[]*[127\.0\.0\.1]'> $tmpfile_out
+grep 'postfix/smtp\[' $tmpfile | grep -E -v 'relay=[^\s\[]*[127\.0\.0\.1]'> $tmpfile_out
 
-out_bounced=$(cat $tmpfile_out | grep 'status=bounced' -c)
-out_deferred=$(cat $tmpfile_out | grep 'status=deferred' -c)
-out_sent=$(cat $tmpfile_out | grep 'status=sent' -c)
+out_bounced=$(grep 'status=bounced' -c $tmpfile_out)
+out_deferred=$(grep 'status=deferred' -c $tmpfile_out)
+out_sent=$(grep 'status=sent' -c $tmpfile_out)
 
 # Incoming
-cat $tmpfile | egrep 'postfix/(pipe|cleanup)\[' > $tmpfile_in
+grep -E 'postfix/(pipe|cleanup)\[' $tmpfile > $tmpfile_in
 
-in_accepted=$(cat $tmpfile_in | grep 'status=sent' -c)
-in_virus=$(cat $tmpfile_in | grep 'Infected' -c)
-in_spam=$(cat $tmpfile_in | grep 'Spam message rejected' -c)
-in_ratelimit=$(cat $tmpfile_in | grep 'Rate limit exceeded' -c)
-in_greylist=$(cat $tmpfile_in | grep 'Try again later' -c)
-in_reject=$(cat $tmpfile | grep postfix/smtpd | grep 'NOQUEUE: reject' -c)
+in_accepted=$(grep 'status=sent' -c $tmpfile_in)
+in_virus=$(grep 'Infected' -c $tmpfile_in)
+in_spam=$(grep 'Spam message rejected' -c $tmpfile_in)
+in_ratelimit=$(grep 'Rate limit exceeded' -c $tmpfile_in)
+in_greylist=$(grep 'Try again later' -c $tmpfile_in)
+in_reject=$(grep postfix/smtpd | grep 'NOQUEUE: reject' -c $tmpfile)
 
-now_s=$(date -d $now +%s)
-since_s=$(date -d $since +%s)
-period=$(( $now_s - $since_s ))
+now_s=$(date -d "$now" +%s)
+since_s=$(date -d "$since" +%s)
+period=$(( now_s - since_s ))
 
 rate_out_bounced=$(compute "$out_bounced * 60 / $period")
 rate_out_deferred=$(compute "$out_deferred * 60 / $period")
@@ -107,7 +107,7 @@ RET_MSG="$in_accepted messages received and $out_sent messages sent in the last 
 RET_MSG="OK - $RET_MSG"
 RET_CODE=$E_OK
 
-if cat $tmpfile | egrep -q 'warning: database .* is older than source file'; then
+if grep -E -q 'warning: database .* is older than source file' $tmpfile; then
     RET_MSG="WARNING - Old postfix database file - $RET_MSG"
     RET_CODE=$E_WARNING
 fi
@@ -116,5 +116,5 @@ rm $tmpfile
 rm $tmpfile_in
 rm $tmpfile_out
 
-echo $RET_MSG
+echo "$RET_MSG"
 exit $RET_CODE
