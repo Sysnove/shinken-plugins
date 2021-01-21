@@ -132,7 +132,9 @@ EOF
     QUERYSTATUS=$(echo "${RESULT}" | ${JQ} '.status')
 
     if [ "${QUERYSTATUS}" != "success" ]; then
-        crit "Impossible to upsert test document."
+        ERROR_MSG=$(echo "${RESULT}" | ${JQ} '.errors[0].msg')
+        ERROR_CODE=$(echo "${RESULT}" | ${JQ} '.errors[0].code')
+        crit "Impossible to upsert test document: [${ERROR_CODE}] ${ERROR_MSG}"
     fi
 fi
 
