@@ -3,7 +3,19 @@
 SIZE="1G"
 CACHE=1 # days
 
-CACHEFILE=/var/tmp/check_big_log_files
+CACHEFILE=/var/tmp/nagios/check_big_log_files
+
+mkdir -p dirname "$CACHEFILE"
+
+# :COMMENT:maethor:20210121: Temporaire
+if [ -e "/var/tmp/check_big_log_files" ] && [ ! -e "$CACHEFILE" ]; then
+    mv /var/tmp/check_big_log_files "$CACHEFILE"
+fi
+
+if [ -e "$CACHEFILE" ] || [ ! -O "$CACHEFILE" ]; then
+    echo "UNKNOWN: $CACHEFILE is not owned by $USER"
+    exit 3
+fi
 
 while getopts "e:s:" option; do
     case $option in
@@ -29,7 +41,9 @@ if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
     nice -n 10 find "${FIND_OPTS}" > $CACHEFILE
 else
     if [ "$(wc -l < $CACHEFILE)" -gt 0 ]; then
+        # shellcheck disable=SC2013
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print; done)"
+
         echo -n "$files" > $CACHEFILE
     fi
 fi
