@@ -9,7 +9,19 @@ E_WARNING=1
 E_CRITICAL=2
 E_UNKNOWN=3
 
-LAST_RUN_FILE=/var/tmp/check_mail_logs_last_run
+LAST_RUN_FILE=/var/tmp/nagios/check_mail_logs_last_run
+
+install -g nagios -o nagios -m 750 -d "$(dirname $LAST_RUN_FILE)"
+
+# :COMMENT:maethor:20210121: Temporaire
+if [ -f "${LAST_RUN_FILE/nagios\//}" ] && [ ! -f "$LAST_RUN_FILE" ]; then
+    mv ${LAST_RUN_FILE/nagios\//} "$LAST_RUN_FILE"
+fi
+
+if [ -f "$LAST_RUN_FILE" ] && [ ! -O "$LAST_RUN_FILE" ]; then
+    echo "UNKNOWN: $LAST_RUN_FILE is not owned by $USER"
+    exit $RET_UNKNOWN
+fi
 
 show_help() {
     echo "$0 [-l LOG_FILE]"

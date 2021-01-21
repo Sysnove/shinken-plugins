@@ -1,7 +1,19 @@
 #!/bin/bash
 
-CACHEFILE=/var/tmp/check_php_sessions
+CACHEFILE=/var/tmp/nagios/check_php_sessions
 CACHE=1 # days
+
+install -g nagios -o nagios -m 750 -d "$(dirname $CACHEFILE)"
+
+# :COMMENT:maethor:20210121: Temporaire
+if [ -f "${CACHEFILE/nagios\//}" ] && [ ! -f "$CACHEFILE" ]; then
+    mv ${CACHEFILE/nagios\//} "$CACHEFILE"
+fi
+
+if [ -f "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
+    echo "UNKNOWN: $CACHEFILE is not owned by $USER"
+    exit 3
+fi
 
 if [ -d /usr/local/ispconfig ] ; then
     NUMBER=30000
@@ -43,6 +55,7 @@ if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
     nice -n 10 find "${FIND_OPTS}" 2>/dev/null > $CACHEFILE
 else
     if [ "$(wc -l < $CACHEFILE)" -gt 0 ]; then
+        # shellcheck disable=SC2013
         files=$(cat $CACHEFILE | xargs ls -d 2>/dev/null)
         echo "$files" > $CACHEFILE
     fi

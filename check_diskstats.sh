@@ -29,7 +29,19 @@ while [ ! -z "$1" ]; do
 done
 
 # generate HISTFILE filename
-HISTFILE=/var/tmp/check_diskstat
+HISTFILE=/var/tmp/nagios/check_diskstat
+
+install -g nagios -o nagios -m 750 -d "$(dirname $HISTFILE)"
+
+# :COMMENT:maethor:20210121: Temporaire
+if [ -f "${HISTFILE/nagios\//}" ] && [ ! -f "$HISTFILE" ]; then
+    mv ${HISTFILE/nagios\//} "$HISTFILE"
+fi
+
+if [ -f "$HISTFILE" ] && [ ! -O "$HISTFILE" ]; then
+    echo "UNKNOWN: $HISTFILE is not owned by $USER"
+    exit 3
+fi
 
 # kernel handles sectors by 512bytes
 # http://www.mjmwired.net/kernel/Documentation/block/stat.txt

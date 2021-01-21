@@ -5,14 +5,14 @@ CACHE=1 # days
 
 CACHEFILE=/var/tmp/nagios/check_big_log_files
 
-install -g nagios -o nagios -d "$(dirname $CACHEFILE)"
+install -g nagios -o nagios -m 750 -d "$(dirname $CACHEFILE)"
 
 # :COMMENT:maethor:20210121: Temporaire
-if [ -e "/var/tmp/check_big_log_files" ] && [ ! -e "$CACHEFILE" ]; then
-    mv /var/tmp/check_big_log_files "$CACHEFILE"
+if [ -f "${CACHEFILE/nagios\//}" ] && [ ! -f "$CACHEFILE" ]; then
+    mv ${CACHEFILE/nagios\//} "$CACHEFILE"
 fi
 
-if [ -e "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
+if [ -f "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
     echo "UNKNOWN: $CACHEFILE is not owned by $USER"
     exit 3
 fi

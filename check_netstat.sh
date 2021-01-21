@@ -9,8 +9,21 @@ RET_WARNING=1
 RET_CRITICAL=2
 RET_UNKNOWN=3
 
-LAST_RUN_FILE=/var/tmp/check_netstat_last_run
+LAST_RUN_FILE=/var/tmp/nagios/check_netstat_last_run
 RUN_FILE=$LAST_RUN_FILE.new
+
+install -g nagios -o nagios -m 750 -d "$(dirname $LAST_RUN_FILE)"
+
+# :COMMENT:maethor:20210121: Temporaire
+if [ -f "${LAST_RUN_FILE/nagios\//}" ] && [ ! -f "$LAST_RUN_FILE" ]; then
+    mv ${LAST_RUN_FILE/nagios\//} "$LAST_RUN_FILE"
+fi
+
+if [ -f "$LAST_RUN_FILE" ] && [ ! -O "$LAST_RUN_FILE" ]; then
+    echo "UNKNOWN: $LAST_RUN_FILE is not owned by $USER"
+    exit $RET_UNKNOWN
+fi
+
 
 WARN=80
 CRIT=95

@@ -10,9 +10,27 @@ EXITFLAG=$OK
 WARN_THRESHOLD=1
 CRITICAL_THRESHOLD=100
 
-IN_DATAFILE="/var/tmp/nagios_check_swap_pages_in.dat"
-OUT_DATAFILE="/var/tmp/nagios_check_swap_pages_out.dat"
+IN_DATAFILE="/var/tmp/nagios/nagios_check_swap_pages_in.dat"
+OUT_DATAFILE="/var/tmp/nagios/nagios_check_swap_pages_out.dat"
 VALID_INTERVAL=600
+
+install -g nagios -o nagios -m 750 -d "$(dirname $IN_DATAFILE)"
+
+# :COMMENT:maethor:20210121: Temporaire
+if [ -f "${IN_DATAFILE/nagios\//}" ] && [ ! -f "$IN_DATAFILE" ]; then
+    mv ${IN_DATAFILE/nagios\//} "$IN_DATAFILE"
+    mv ${OUT_DATAFILE/nagios\//} "$OUT_DATAFILE"
+fi
+
+if [ -f "$IN_DATAFILE" ] && [ ! -O "$IN_DATAFILE" ]; then
+    echo "UNKNOWN: $IN_DATAFILE is not owned by $USER"
+    exit 3
+fi
+
+if [ -f "$OUT_DATAFILE" ] && [ ! -O "$OUT_DATAFILE" ]; then
+    echo "UNKNOWN: $OUT_DATAFILE is not owned by $USER"
+    exit 3
+fi
 
 function usage()
 {

@@ -2,8 +2,20 @@
 # Copyright bitly, Aug 2011 
 # written by Jehiah Czebotar
 
-DATAFILE="/var/tmp/nagios_check_forkrate.dat"
+DATAFILE="/var/tmp/nagios/nagios_check_forkrate.dat"
 VALID_INTERVAL=600
+
+install -g nagios -o nagios -m 750 -d "$(dirname $DATAFILE)"
+
+# :COMMENT:maethor:20210121: Temporaire
+if [ -f "${DATAFILE/nagios\//}" ] && [ ! -f "$DATAFILE" ]; then
+    mv ${DATAFILE/nagios\//} "$DATAFILE"
+fi
+
+if [ -f "$DATAFILE" ] && [ ! -O "$DATAFILE" ]; then
+    echo "UNKNOWN: $DATAFILE is not owned by $USER"
+    exit 3
+fi
 
 OK=0
 WARNING=1

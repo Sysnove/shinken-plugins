@@ -34,7 +34,19 @@ while [ ! -z "$1" ]; do
 done
 
 # generate HISTFILE filename
-HISTFILE=/var/tmp/check_diskstat.$DISK
+HISTFILE=/var/tmp/nagios/check_diskstat.$DISK
+
+install -g nagios -o nagios -m 750 -d "$(dirname $HISTFILE)"
+
+# :COMMENT:maethor:20210121: Temporaire
+if [ -f "${HISTFILE/nagios\//}" ] && [ ! -f "$HISTFILE" ]; then
+    mv ${HISTFILE/nagios\//} "$HISTFILE"
+fi
+
+if [ -f "$HISTFILE" ] && [ ! -O "$HISTFILE" ]; then
+    echo "UNKNOWN: $HISTFILE is not owned by $USER"
+    exit 3
+fi
 
 # check input parameters so we can continu !
 sanitize() {
