@@ -58,7 +58,8 @@ if [ -z "$LOGS_WITH_GLOB" ]; then
     exit $E_UNKNOWN
 fi
 
-LOGS=$(ls "$LOGS_WITH_GLOB" 2>/dev/null)
+# shellcheck disable=SC2086
+LOGS=$(ls $LOGS_WITH_GLOB 2>/dev/null)
 
 # check logs
 if [ -z "$LOGS" ]; then
@@ -80,7 +81,7 @@ tmpfile="/tmp/$$.tmp"
 
 /usr/local/bin/dategrep --sort-files -format apache --start "$since" "$LOGS" | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
 
-total=$(wc -l < $tmpfile)
+total=$(wc -l $tmpfile)
 
 count2=$(grep '2..' -c $tmpfile)
 count3=$(grep '3..' -c $tmpfile)
