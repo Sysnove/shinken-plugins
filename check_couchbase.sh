@@ -15,6 +15,7 @@ Options:
     -h  Host to connect to, default to localhost:8091
     -u  Username used to connect to host
     -p  Password used to connect to host
+    -b  Bucket to do an active check with upsert
 EOF
 
     exit $UNKN
@@ -43,9 +44,9 @@ CURL=/usr/bin/curl
 [ ! -x ${CURL} ] && crit "Please install curl."
 
 # Argument parsing
-CBHOST=localhost:8091
+CBHOST=localhost
 
-while getopts "u:p:h:" option
+while getopts "u:p:h:b:" option
 do
     case $option in
         u)
@@ -56,6 +57,9 @@ do
             ;;
         h)
             CBHOST=$OPTARG
+            ;;
+        b)
+            CBBUCKET=$OPTARG
             ;;
         *)
             usage
@@ -76,51 +80,68 @@ fi
 
 CURL="${CURL} ${CURLOPTS}"
 
-BASEURL="http://${CBHOST}"
-
 # Default jq options
 JQOPTS="--raw-output"
 
 JQ="${JQ} ${JQOPTS}"
 
-# Debug
-#echo ${CURL} ${BASEURL}/pools/default
+# Query Couchbase to retrieve cluster status.
+if ! STATUS=$(${CURL} "http://${CBHOST}:8091/pools/default"); then
+    crit "Unable to contact couchbase server on ${CBHOST}."
+fi
 
-# Get status
-STATUS=$(${CURL} ${BASEURL}/pools/default)
+# Get current node status.
+# shellcheck disable=SC2016
+CURRENT_NODE=$(echo "${STATUS}" | ${JQ} --arg FQDN "$(hostname --fqdn)" \
+    '.nodes | map(select(.hostname | test("^" + $FQDN)))[0]')
 
-[ $? != 0 ] && crit "Unable to contact couchbase server on ${CBHOST}."
+if [ -z "${CURRENT_NODE}" ]; then
+    crit "No node information found."
+fi
 
-#echo ${STATUS} | ${JQ} .
+NODESTATUS=$(echo "${CURRENT_NODE}" | ${JQ} ".status")
 
-# Get node status
-NODES=$(echo ${STATUS} | ${JQ} ".nodes | length")
+case "${NODESTATUS}" in
+    "healthy")
+        # Node is healthy, do nothing.
+        ;;
+    "unhealthy")
+        crit "Node is unhealthy."
+        ;;
+    "warmup")
+        warn "Node is warming up."
+        ;;
+    *)
+        unkn "Unknown status: ${NODESTATUS}."
+        ;;
+esac
 
-for i in $(seq 0 $((${NODES} - 1))); do
-    NODEHOST=$( echo ${STATUS} | ${JQ} ".nodes[${i}].hostname")
-    NODESTATUS=$( echo ${STATUS} | ${JQ} ".nodes[${i}].status")
+# Active check if bucket has been passed
+if [ -n "${CBBUCKET}" ]; then
+    TIMESTAMP="$(date +%s)"
 
-    case "${NODESTATUS}" in
-        "healthy")
-            # Node is healthy, do nothing.
-            ;;
-        "unhealthy")
-            crit "Node ${NODEHOST} is unhealthy."
-            ;;
-        "warmup")
-            warn "Node ${NODEHOST} is warming up."
-            ;;
-        *)
-            unkn "Node status ${NODESTATUS} is not handled for host ${NODEHOST}."
-            ;;
-    esac
-done
+    QUERY=$(cat <<EOF
+UPSERT INTO \`${CBBUCKET}\` (KEY, VALUE)
+VALUES ("test", {"type": "test", "info": "do not remove this document", "touched_at": "${TIMESTAMP}"})
+RETURNING touched_at;
+EOF
+)
+
+    RESULT=$(${CURL} "http://${CBHOST}:8093/query/service" --data-urlencode "statement=${QUERY}")
+
+    QUERYSTATUS=$(echo "${RESULT}" | ${JQ} '.status')
+
+    if [ "${QUERYSTATUS}" != "success" ]; then
+        crit "Impossible to upsert test document."
+    fi
+fi
 
 # Check balanced
-BALANCED=$(echo ${STATUS} | ${JQ} ".balanced")
+NODE_COUNT=$(echo "${STATUS}" | ${JQ} ".nodes | length")
+BALANCED=$(echo "${STATUS}" | ${JQ} ".balanced")
 
 if [ "${BALANCED}" != "true" ]; then
-    REBALANCESTATUS=$(echo ${STATUS} | ${JQ} ".rebalanceStatus")
+    REBALANCESTATUS=$(echo "${STATUS}" | ${JQ} ".rebalanceStatus")
 
     case "${REBALANCESTATUS}" in
         "running")
@@ -135,6 +156,12 @@ if [ "${BALANCED}" != "true" ]; then
     esac
 fi
 
-echo "OK: Cluster is healthy with ${NODES} balanced nodes."
+printf "OK: Cluster is healthy with %s balanced nodes" "${NODE_COUNT}"
+
+if [ -n "${CBBUCKET}" ]; then
+    printf " and upsert test was successfull"
+fi
+
+echo "."
 
 exit ${OK}
