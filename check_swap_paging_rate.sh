@@ -14,7 +14,8 @@ IN_DATAFILE="/var/tmp/nagios/nagios_check_swap_pages_in.dat"
 OUT_DATAFILE="/var/tmp/nagios/nagios_check_swap_pages_out.dat"
 VALID_INTERVAL=600
 
-install -g nagios -o nagios -m 750 -d "$(dirname $IN_DATAFILE)"
+NAGIOS_USER=${SUDO_USER:-$(whoami)}
+install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$IN_DATAFILE")"
 
 # :COMMENT:maethor:20210121: Temporaire
 if [ -f "${IN_DATAFILE/nagios\//}" ] && [ ! -f "$IN_DATAFILE" ]; then

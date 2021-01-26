@@ -5,7 +5,8 @@ CACHE=1 # days
 
 CACHEFILE=/var/tmp/nagios/check_big_log_files
 
-install -g nagios -o nagios -m 750 -d "$(dirname $CACHEFILE)"
+NAGIOS_USER=${SUDO_USER:-$(whoami)}
+install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
 
 # :COMMENT:maethor:20210121: Temporaire
 if [ -f "${CACHEFILE/nagios\//}" ] && [ ! -f "$CACHEFILE" ]; then

@@ -31,7 +31,8 @@ done
 # generate HISTFILE filename
 HISTFILE=/var/tmp/nagios/check_diskstat
 
-install -g nagios -o nagios -m 750 -d "$(dirname $HISTFILE)"
+NAGIOS_USER=${SUDO_USER:-$(whoami)}
+install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$HISTFILE")"
 
 # :COMMENT:maethor:20210121: Temporaire
 if [ -f "${HISTFILE/nagios\//}" ] && [ ! -f "$HISTFILE" ]; then

@@ -3,7 +3,8 @@
 CACHEFILE=/var/tmp/nagios/check_php_sessions
 CACHE=1 # days
 
-install -g nagios -o nagios -m 750 -d "$(dirname $CACHEFILE)"
+NAGIOS_USER=${SUDO_USER:-$(whoami)}
+install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
 
 # :COMMENT:maethor:20210121: Temporaire
 if [ -f "${CACHEFILE/nagios\//}" ] && [ ! -f "$CACHEFILE" ]; then
