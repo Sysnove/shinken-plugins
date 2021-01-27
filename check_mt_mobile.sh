@@ -43,16 +43,16 @@ fi
 AGE=$(echo "${RESULT}" | jq --argjson timestamp "$(date +%s)" '$timestamp - (.results[0].doc.touched_at | tonumber)')
 
 if [ -z "${AGE}" ]; then
-    unkn "Age is empty, please check result: ${RESULT}."
+    unkn "Age of test document is empty, please check result: ${RESULT}."
 fi
 
 if [ "${AGE}" -gt 180 ]; then
-    warn "Age of test file is over 3 minutes: ${AGE}s."
+    warn "Age of test document is over 3 minutes: ${AGE}s."
 fi
 
 if [ "${AGE}" -gt 300 ]; then
-    crit "Age of test file is over 5 minutes : ${AGE}s."
+    crit "Age of test document is over 5 minutes : ${AGE}s."
 fi
 
-echo "OK: Age of test file is under 3 minutes: ${AGE}s."
+echo "OK: Age of test document is under 3 minutes: ${AGE}s."
 exit $OK
