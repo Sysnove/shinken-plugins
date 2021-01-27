@@ -51,6 +51,10 @@ RESULT=$(curl -sS "http://${HOST}/db/_changes?limit=1&active_only=false&include_
 
 AGE=$(echo "${RESULT}" | jq --argjson timestamp "$(date +%s)" '$timestamp - (.results[0].doc.touched_at | tonumber)')
 
+if [ -z "${AGE}" ]; then
+    unkn "Age is empty, please check result: ${RESULT}."
+fi
+
 if [ "${AGE}" -gt 120 ]; then
     warn "Age of test file is over 2 minutes: ${AGE}s."
 fi
