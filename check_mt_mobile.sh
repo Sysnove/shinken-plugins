@@ -55,13 +55,13 @@ if [ -z "${AGE}" ]; then
     unkn "Age is empty, please check result: ${RESULT}."
 fi
 
-if [ "${AGE}" -gt 120 ]; then
-    warn "Age of test file is over 2 minutes: ${AGE}s."
+if [ "${AGE}" -gt 180 ]; then
+    warn "Age of test file is over 3 minutes: ${AGE}s."
 fi
 
 if [ "${AGE}" -gt 300 ]; then
     crit "Age of test file is over 5 minutes : ${AGE}s."
 fi
 
-echo "Age of test file is under 2 minutes: ${AGE}s."
+echo "OK: Age of test file is under 2 minutes: ${AGE}s."
 exit $OK
