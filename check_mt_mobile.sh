@@ -63,5 +63,5 @@ if [ "${AGE}" -gt 300 ]; then
     crit "Age of test file is over 5 minutes : ${AGE}s."
 fi
 
-echo "OK: Age of test file is under 2 minutes: ${AGE}s."
+echo "OK: Age of test file is under 3 minutes: ${AGE}s."
 exit $OK
