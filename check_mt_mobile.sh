@@ -34,6 +34,12 @@ fi
 
 RESULT=$(curl -sS "http://${HOST}/db/_changes?limit=1&active_only=false&include_docs=true&filter=_doc_ids&channels=%21&doc_ids=test&feed=normal")
 
+RESULT_COUNT=$(echo "${RESULT}" | jq '.results | length')
+
+if [ "${RESULT_COUNT}" -eq 0 ]; then
+    crit "No result found, test document is not present."
+fi
+
 AGE=$(echo "${RESULT}" | jq --argjson timestamp "$(date +%s)" '$timestamp - (.results[0].doc.touched_at | tonumber)')
 
 if [ -z "${AGE}" ]; then
