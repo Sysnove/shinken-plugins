@@ -6,21 +6,6 @@ WARN=1
 CRIT=2
 UNKN=3
 
-# Utility function
-usage() {
-    cat <<EOF
-Usage: $0 [-h HOST[:PORT]] [-u USERNAME] [-p PASSWORD]
-
-Options:
-    -h  Host to connect to, default to localhost:8091
-    -u  Username used to connect to host
-    -p  Password used to connect to host
-    -b  Bucket to do an active check with upsert
-EOF
-
-    exit $UNKN
-}
-
 warn(){
     echo "WARNING: $*"
     exit $WARN
