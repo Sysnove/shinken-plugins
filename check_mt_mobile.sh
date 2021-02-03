@@ -1,23 +1,39 @@
 #!/bin/sh
 
+AGE_WARN=180
+AGE_CRIT=300
+
 # Return codes
 OK=0
 WARN=1
 CRIT=2
 UNKN=3
 
+perfdata(){
+    if [ -z "${AGE}" ]; then
+        printf "last_updated:Us;%d;%d;0;" "${AGE_WARN}" "${AGE_CRIT}"
+    else
+        printf "last_updated:%ds;%d;%d;0;" "${AGE}" "${AGE_WARN}" "${AGE_CRIT}"
+    fi
+}
+
+ok(){
+    printf 'OK: %s | %s\n' "$*" "$(perfdata)"
+    exit $OK
+}
+
 warn(){
-    echo "WARNING: $*"
+    printf 'WARNING: %s | %s\n' "$*" "$(perfdata)"
     exit $WARN
 }
 
 crit(){
-    echo "CRITICAL: $*"
+    printf 'CRITICAL: %s | %s\n' "$*" "$(perfdata)"
     exit $CRIT
 }
 
 unkn(){
-    echo "UNKNOWN: $*"
+    printf 'UNKNOWN: %s | %s\n' "$*" "$(perfdata)"
     exit $UNKN
 }
 
@@ -46,13 +62,12 @@ if [ -z "${AGE}" ]; then
     unkn "Age of test document is empty, please check result: ${RESULT}."
 fi
 
-if [ "${AGE}" -gt 180 ]; then
+if [ "${AGE}" -gt ${AGE_WARN} ]; then
     warn "Age of test document is over 3 minutes: ${AGE}s."
 fi
 
-if [ "${AGE}" -gt 300 ]; then
+if [ "${AGE}" -gt ${AGE_CRIT} ]; then
     crit "Age of test document is over 5 minutes : ${AGE}s."
 fi
 
-echo "OK: Age of test document is under 3 minutes: ${AGE}s."
-exit $OK
+ok "Age of test document is under 3 minutes: ${AGE}s."
