@@ -11,29 +11,29 @@ UNKN=3
 
 perfdata(){
     if [ -z "${AGE}" ]; then
-        printf "'last_updated':Us;%d;%d;0;" "${AGE_WARN}" "${AGE_CRIT}"
+        printf "last_updated:Us;%d;%d;;" "${AGE_WARN}" "${AGE_CRIT}"
     else
-        printf "'last_updated':%ds;%d;%d;0;" "${AGE}" "${AGE_WARN}" "${AGE_CRIT}"
+        printf "last_updated:%ds;%d;%d;;" "${AGE}" "${AGE_WARN}" "${AGE_CRIT}"
     fi
 }
 
 ok(){
-    printf 'OK: %s | %s\n' "$*" "$(perfdata)"
+    printf 'OK: %s |%s\n' "$*" "$(perfdata)"
     exit $OK
 }
 
 warn(){
-    printf 'WARNING: %s | %s\n' "$*" "$(perfdata)"
+    printf 'WARNING: %s |%s\n' "$*" "$(perfdata)"
     exit $WARN
 }
 
 crit(){
-    printf 'CRITICAL: %s | %s\n' "$*" "$(perfdata)"
+    printf 'CRITICAL: %s |%s\n' "$*" "$(perfdata)"
     exit $CRIT
 }
 
 unkn(){
-    printf 'UNKNOWN: %s | %s\n' "$*" "$(perfdata)"
+    printf 'UNKNOWN: %s |%s\n' "$*" "$(perfdata)"
     exit $UNKN
 }
 
