@@ -11,9 +11,9 @@ UNKN=3
 
 perfdata(){
     if [ -z "${AGE}" ]; then
-        printf "last_updated:Us;%d;%d;0;" "${AGE_WARN}" "${AGE_CRIT}"
+        printf "'last_updated':Us;%d;%d;0;" "${AGE_WARN}" "${AGE_CRIT}"
     else
-        printf "last_updated:%ds;%d;%d;0;" "${AGE}" "${AGE_WARN}" "${AGE_CRIT}"
+        printf "'last_updated':%ds;%d;%d;0;" "${AGE}" "${AGE_WARN}" "${AGE_CRIT}"
     fi
 }
 
