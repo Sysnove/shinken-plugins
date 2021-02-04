@@ -57,7 +57,12 @@ check_user_home () {
         # Files that should not be readable by group or other
         for f in .netrc .rhosts .gnupg/secring.gpg .gnupg/random_seed .pgp/secring.pgp .shosts .ssh/identity .ssh/id_dsa .ssh/id_ecdsa .ssh/id_rsa .ssh/id_ed25519 .zhistory .google_authenticator; do
             if [ -f "$home/$f" ] && [ ! -L "$home/$f" ]; then
-                if ! stat -c "%a" "$home/$f" | grep -q '.00'; then
+                if [ "$(stat -c "%G" "$home/$f")" = "$username" ]; then
+                    check='..0'
+                else
+                    check='.00'
+                fi
+                if ! stat -c "%a" "$home/$f" | grep -q "$check"; then
                     critical "$home/$f is readable or writable by group or other."
                 fi
             fi
@@ -66,7 +71,12 @@ check_user_home () {
         # Files that should not be writable by group or other
         for f in .bashrc .bash_profile .bash_login .bash_logout .cshrc .emacs .exrc .forward .fvwmrc .inputrc .kshrc .zlogin .zpreztorc .zprofile .zshenv .zshrc .vimrc .tmux.conf .gitconfig .login .logout .nexrc .profile .screenrc .ssh .ssh/config .ssh/authorized_keys .ssh/authorized_keys2 .ssh/environment .ssh/known_hosts .ssh/rc .tcshrc .twmrc .xsession .xinitrc .Xdefaults .Xauthority; do
             if [ -f "$home/$f" ] && [ ! -L "$home/$f" ]; then
-                if stat -c "%a" "$home/$f" | grep -E -q '(.[267].|..[267])'; then
+                if [ "$(stat -c "%G" "$home/$f")" = "$username" ]; then
+                    check='..[267]'
+                else
+                    check='(.[267].|..[267])'
+                fi
+                if stat -c "%a" "$home/$f" | grep -E -q "$check"; then
                     critical "$home/$f is writable by group or other."
                 fi
             fi
