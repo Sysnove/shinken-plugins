@@ -43,39 +43,41 @@ check_user_home () {
     uid=$2
     home=$3
 
-    # Users should owned their home
-    if [ "$(stat -c "%U" "$home")" != "$username" ]; then 
-        critical "$home is not owned by $username"
-    fi
-
-    # Home should not be group writable
-    if stat -c "%a" "$home" | grep -q '.[267].'; then
-        critical "$username home directory is group writable."
-    fi
-
-    # Home should not be other writable
-    if stat -c "%a" "$home" | grep -q '..[267]'; then
-        critical "$username home directory is other writable."
-    fi
-
-    # :TODO:maethor:20210127: Améliorer ces listes (gérer des répertoires : .bin, .config…)
-    # Files that should not be readable by group or other
-    for f in .netrc .rhosts .gnupg/secring.gpg .gnupg/random_seed .pgp/secring.pgp .shosts .ssh/identity .ssh/id_dsa .ssh/id_ecdsa .ssh/id_rsa .ssh/id_ed25519 .zhistory .google_authenticator; do
-        if [ -f "$home/$f" ] && [ ! -L "$home/$f" ]; then
-            if ! stat -c "%a" "$home/$f" | grep -q '.00'; then
-                critical "$home/$f is readable or writable by group or other."
-            fi
+    if [ -d "$home" ]; then
+        # Users should owned their home
+        if [ "$(stat -c "%U" "$home")" != "$username" ]; then 
+            critical "$home is not owned by $username"
         fi
-    done
 
-    # Files that should not be writable by group or other
-    for f in .bashrc .bash_profile .bash_login .bash_logout .cshrc .emacs .exrc .forward .fvwmrc .inputrc .kshrc .zlogin .zpreztorc .zprofile .zshenv .zshrc .vimrc .tmux.conf .gitconfig .login .logout .nexrc .profile .screenrc .ssh .ssh/config .ssh/authorized_keys .ssh/authorized_keys2 .ssh/environment .ssh/known_hosts .ssh/rc .tcshrc .twmrc .xsession .xinitrc .Xdefaults .Xauthority; do
-        if [ -f "$home/$f" ] && [ ! -L "$home/$f" ]; then
-            if stat -c "%a" "$home/$f" | grep -E -q '(.[267].|..[267])'; then
-                critical "$home/$f is writable by group or other."
-            fi
+        # Home should not be group writable
+        if stat -c "%a" "$home" | grep -q '.[267].'; then
+            critical "$username home directory is group writable."
         fi
-    done
+
+        # Home should not be other writable
+        if stat -c "%a" "$home" | grep -q '..[267]'; then
+            critical "$username home directory is other writable."
+        fi
+
+        # :TODO:maethor:20210127: Améliorer ces listes (gérer des répertoires : .bin, .config…)
+        # Files that should not be readable by group or other
+        for f in .netrc .rhosts .gnupg/secring.gpg .gnupg/random_seed .pgp/secring.pgp .shosts .ssh/identity .ssh/id_dsa .ssh/id_ecdsa .ssh/id_rsa .ssh/id_ed25519 .zhistory .google_authenticator; do
+            if [ -f "$home/$f" ] && [ ! -L "$home/$f" ]; then
+                if ! stat -c "%a" "$home/$f" | grep -q '.00'; then
+                    critical "$home/$f is readable or writable by group or other."
+                fi
+            fi
+        done
+
+        # Files that should not be writable by group or other
+        for f in .bashrc .bash_profile .bash_login .bash_logout .cshrc .emacs .exrc .forward .fvwmrc .inputrc .kshrc .zlogin .zpreztorc .zprofile .zshenv .zshrc .vimrc .tmux.conf .gitconfig .login .logout .nexrc .profile .screenrc .ssh .ssh/config .ssh/authorized_keys .ssh/authorized_keys2 .ssh/environment .ssh/known_hosts .ssh/rc .tcshrc .twmrc .xsession .xinitrc .Xdefaults .Xauthority; do
+            if [ -f "$home/$f" ] && [ ! -L "$home/$f" ]; then
+                if stat -c "%a" "$home/$f" | grep -E -q '(.[267].|..[267])'; then
+                    critical "$home/$f is writable by group or other."
+                fi
+            fi
+        done
+    fi
 
 }
 
