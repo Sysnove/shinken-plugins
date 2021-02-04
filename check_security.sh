@@ -94,7 +94,7 @@ cat /etc/passwd | while IFS= read -r line; do
 
     # :COMMENT:maethor:20210126: I expect this will be noisy
     # shellcheck disable=SC2016
-    if grep -q -E "^$username:\$1\$" /etc/shadow; then
+    if grep -q "^$username:\$1\$" /etc/shadow; then
         warning "$username password is stored in md5 in /etc/shadow"
     fi
 done
