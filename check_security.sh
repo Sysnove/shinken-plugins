@@ -92,10 +92,11 @@ cat /etc/passwd | while IFS= read -r line; do
         check_user_home "$username" "$uid" "$home"
     fi
 
-    # :COMMENT:maethor:20210126: I expect this will be noisy
     # shellcheck disable=SC2016
-    if grep -q "^$username:\$1\\$" /etc/shadow; then
-        warning "$username password is stored in md5 in /etc/shadow"
+    if [ "$uid" -lt 5000 ]; then
+        if grep -q "^$username:\$1\\$" /etc/shadow; then
+            warning "$username password is stored in md5 in /etc/shadow"
+        fi
     fi
 done
 
