@@ -19,7 +19,7 @@ if grep -q -E '\:\$1\$' /etc/shadow; then
 fi
 
 # shellcheck disable=SC2013
-for user in $(awk -F':' '/sysnove/{print $4}' /etc/group | sed "s/,/ /g"); do
+for user in $(awk -F':' '/^sysnove:/{print $4}' /etc/group | sed "s/,/ /g"); do
     if [ -n "$(find "/home/$user" -name "id_(rsa|dsa|ecdsa|ed25519)")" ]; then
         warning "private SSH key found in /home/$user"
     fi
