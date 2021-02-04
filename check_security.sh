@@ -115,8 +115,8 @@ done
 ROOT_PATH="$(sudo -Hiu root env | grep '^PATH=' | cut -d '=' -f 2)"
 
 # :COMMENT:maethor:20210126: I expect this will not work everywhere, but we'll see
-if [ "$ROOT_PATH" != "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ] && [ "$ROOT_PATH" != "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games" ] ; then
-    critical "Wrong root PATH : $ROOT_PATH"
+if [ "$ROOT_PATH" != "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ] && [ "$ROOT_PATH" != "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" ] ; then
+    critical "Wrong root PATH: $ROOT_PATH"
 fi
 
 for dir in ${ROOT_PATH//:/ }; do
