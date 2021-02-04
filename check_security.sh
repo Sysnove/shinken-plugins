@@ -114,8 +114,10 @@ for dir in ${ROOT_PATH//:/ }; do
             critical "$dir is in root PATH and is writable by other."
         fi
     else
-        if stat -c "%a" "$dir" | grep -E -q '(.[267].|..[267])$'; then
-            critical "$dir is in root PATH and is writable by group or other."
+        if [ ! -L "$dir" ]; then
+            if stat -c "%a" "$dir" | grep -E -q '(.[267].|..[267])$'; then
+                critical "$dir is in root PATH and is writable by group or other."
+            fi
         fi
     fi
 done
