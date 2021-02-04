@@ -24,7 +24,7 @@ for user in $(awk -F':' '/sysnove/{print $4}' /etc/group | sed "s/,/ /g"); do
         warning "private SSH key found in /home/$user"
     fi
 
-    if grep -qr  'PRIVATE KEY' "/home/$user/.ssh"; then
+    if [ -d "/home/$user/.ssh" ] && grep -qr  'PRIVATE KEY' "/home/$user/.ssh"; then
         warning "private SSH key found in /home/$user/.ssh"
     fi
 done
