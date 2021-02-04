@@ -91,7 +91,8 @@ cat /etc/passwd | while IFS= read -r line; do
         critical "$username uid = 0"
     fi
 
-    if [ "$uid" -ge 1000 ] && [ "$username" != "nobody" ]; then
+    # uid > 5000 = ispconfig web user
+    if [ "$uid" -ge 1000 ] && [ "$uid" -lt 5000 ] && [ "$username" != "nobody" ]; then
         check_user_home "$username" "$uid" "$home"
     fi
 done
