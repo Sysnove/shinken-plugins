@@ -12,12 +12,6 @@ warning () {
     [ $RET -eq 0 ] && RET=1
 }
 
-# :COMMENT:maethor:20210126: I expect this will be noisy
-# shellcheck disable=SC2016
-if grep -q -E '\:\$1\$' /etc/shadow; then
-    warning "md5 passwords found in /etc/shadow"
-fi
-
 # shellcheck disable=SC2013
 for user in $(awk -F':' '/^sysnove:/{print $4}' /etc/group | sed "s/,/ /g"); do
     if [ -n "$(find "/home/$user" -name "id_(rsa|dsa|ecdsa|ed25519)")" ]; then
@@ -96,6 +90,12 @@ cat /etc/passwd | while IFS= read -r line; do
     # uid > 5000 = ispconfig web user
     if [ "$uid" -ge 1000 ] && [ "$uid" -lt 5000 ] && [ "$username" != "nobody" ]; then
         check_user_home "$username" "$uid" "$home"
+    fi
+
+    # :COMMENT:maethor:20210126: I expect this will be noisy
+    # shellcheck disable=SC2016
+    if grep -q -E "^$username:\$1\$" /etc/shadow; then
+        warning "$username password is stored in md5 in /etc/shadow"
     fi
 done
 
