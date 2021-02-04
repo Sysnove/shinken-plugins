@@ -20,12 +20,14 @@ fi
 
 # shellcheck disable=SC2013
 for user in $(awk -F':' '/sysnove/{print $4}' /etc/group | sed "s/,/ /g"); do
-    if [ -n "$(find "/home/$user" -name "id_(rsa|dsa|ecdsa|ed25519)")" ]; then
-        warning "private SSH key found in /home/$user"
-    fi
+    if [ -d "/home/$user" ]; then
+        if [ -n "$(find "/home/$user" -name "id_(rsa|dsa|ecdsa|ed25519)")" ]; then
+            warning "private SSH key found in /home/$user"
+        fi
 
-    if [ -d "/home/$user/.ssh" ] && grep -qr  'PRIVATE KEY' "/home/$user/.ssh"; then
-        warning "private SSH key found in /home/$user/.ssh"
+        if [ -d "/home/$user/.ssh" ] && grep -qr  'PRIVATE KEY' "/home/$user/.ssh"; then
+            warning "private SSH key found in /home/$user/.ssh"
+        fi
     fi
 done
 
