@@ -133,4 +133,8 @@ for dir in ${ROOT_PATH//:/ }; do
     fi
 done
 
+if [ $RET -eq 0 ]; then
+    echo "Everything seems OK"
+fi
+
 exit $RET
