@@ -33,7 +33,7 @@ check_user_home () {
     uid=$2
     home=$3
 
-    if [ -d "$home" ] and [ "$home" != "/" ]; then
+    if [ -d "$home" ] && [ "$home" != "/" ]; then
         # Users should owned their home
         if [ "$(stat -c "%U" "$home")" != "$username" ]; then 
             critical "$home is not owned by $username"
