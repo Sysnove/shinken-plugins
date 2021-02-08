@@ -33,7 +33,7 @@ check_user_home () {
     uid=$2
     home=$3
 
-    if [ -d "$home" ]; then
+    if [ -d "$home" ] and [ "$home" != "/" ]; then
         # Users should owned their home
         if [ "$(stat -c "%U" "$home")" != "$username" ]; then 
             critical "$home is not owned by $username"
@@ -41,12 +41,12 @@ check_user_home () {
 
         # Home should not be group writable
         if stat -c "%a" "$home" | grep -q '.[267].'; then
-            critical "$username home directory is group writable."
+            critical "$username home directory ($home) is group writable."
         fi
 
         # Home should not be other writable
         if stat -c "%a" "$home" | grep -q '..[267]'; then
-            critical "$username home directory is other writable."
+            critical "$username home directory ($home) is other writable."
         fi
 
         # :TODO:maethor:20210127: Améliorer ces listes (gérer des répertoires : .bin, .config…)
