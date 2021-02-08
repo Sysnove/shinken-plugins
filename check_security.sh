@@ -28,10 +28,6 @@ if [ -n "$(find /tmp -perm -4000 2>/dev/null)" ]; then
 fi
 
 
-#if grep -v '^root:x:0:' /etc/passwd | grep -q 'x:0:'; then
-#    critical "Found non-root user with uid=0 in /etc/passwd"
-#fi
-
 check_user_home () {
     username=$1
     uid=$2
@@ -87,28 +83,29 @@ check_user_home () {
 
 check_user_home root 0 /root
 
-# shellcheck disable=SC2002
-cat /etc/passwd | while IFS= read -r line; do
+while IFS= read -r line; do
     username=$(echo "$line" | cut -d ':' -f 1)
     uid=$(echo "$line" | cut -d ':' -f 3)
     home=$(echo "$line" | cut -d ':' -f 6)
 
-    if [ "$uid" -eq 0 ] && [ "$username" != "root" ]; then
-        critical "$username uid = 0"
-    fi
+    if [ -n "$username" ]; then
+        if [ "$uid" -eq 0 ] && [ "$username" != "root" ]; then
+            critical "$username uid = 0"
+        fi
 
-    # uid > 5000 = ispconfig web user
-    if [ "$uid" -ge 1000 ] && [ "$uid" -lt 5000 ] && [ "$username" != "nobody" ]; then
-        check_user_home "$username" "$uid" "$home"
-    fi
+        # uid > 5000 = ispconfig web user
+        if [ "$uid" -ge 1000 ] && [ "$uid" -lt 5000 ] && [ "$username" != "nobody" ]; then
+            check_user_home "$username" "$uid" "$home"
+        fi
 
-    # shellcheck disable=SC2016
-    if [ "$uid" -lt 5000 ]; then
-        if grep -q "^$username:\$1\\$" /etc/shadow; then
-            warning "$username password is stored in md5 in /etc/shadow"
+        # shellcheck disable=SC2016
+        if [ "$uid" -lt 5000 ]; then
+            if grep -q "^$username:\$1\\$" /etc/shadow; then
+                warning "$username password is stored in md5 in /etc/shadow"
+            fi
         fi
     fi
-done
+done < /etc/passwd
 
 
 
@@ -126,9 +123,11 @@ for dir in ${ROOT_PATH//:/ }; do
             critical "$dir is in root PATH and is writable by other."
         fi
     else
-        if [ ! -L "$dir" ]; then
-            if stat -c "%a" "$dir" | grep -E -q '(.[267].|..[267])$'; then
-                critical "$dir is in root PATH and is writable by group or other."
+        if [ "$dir" != '/snap/bin' ] || [ -d '/snap/bin' ]; then
+            if [ ! -L "$dir" ]; then
+                if stat -c "%a" "$dir" | grep -E -q '(.[267].|..[267])$'; then
+                    critical "$dir is in root PATH and is writable by group or other."
+                fi
             fi
         fi
     fi
