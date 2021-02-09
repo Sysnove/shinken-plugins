@@ -120,7 +120,7 @@ fi
 
 for dir in ${ROOT_PATH//:/ }; do
     # On Debian, /usr/local is writable by staff group.
-    if [[ "$dir" =~ ^/usr/local/(bin|sbin) ]]; then
+    if [[ "$dir" =~ ^/usr/local/(bin|sbin) ]] ||  [[ "$dir" == /usr/local/rvm/* ]]; then
         if stat -c "%a" "$dir" | grep -E -q '..[267]$'; then
             critical "$dir is in root PATH and is writable by other."
         fi
