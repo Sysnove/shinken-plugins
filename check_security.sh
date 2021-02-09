@@ -111,14 +111,16 @@ done < /etc/passwd
 
 ROOT_PATH="$(sudo -Hiu root env | grep '^PATH=' | cut -d '=' -f 2)"
 
-# :COMMENT:maethor:20210126: I expect this will not work everywhere, but we'll see
-if [ "$ROOT_PATH" != "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ] && [ "$ROOT_PATH" != "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" ] ; then
-    critical "Wrong root PATH: $ROOT_PATH"
+# :COMMENT:maethor:20210209: Too much exceptions to apply everywhere
+if [[ $(hostname) =~ ^(infra|sysnove)- ]]; then
+    if [ "$ROOT_PATH" != "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ]; then
+        critical "Wrong root PATH: $ROOT_PATH"
+    fi
 fi
 
 for dir in ${ROOT_PATH//:/ }; do
     # On Debian, /usr/local is writable by staff group.
-    if [[ "$dir" == /usr/local* ]]; then
+    if [[ "$dir" =~ ^/usr/local/(bin|sbin) ]]; then
         if stat -c "%a" "$dir" | grep -E -q '..[267]$'; then
             critical "$dir is in root PATH and is writable by other."
         fi
