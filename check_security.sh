@@ -123,12 +123,13 @@ for dir in ${ROOT_PATH//:/ }; do
             critical "$dir is in root PATH and is writable by other."
         fi
     else
-        if [ "$dir" != '/snap/bin' ] || [ -d '/snap/bin' ]; then
-            if [ ! -L "$dir" ]; then
-                if stat -c "%a" "$dir" | grep -E -q '(.[267].|..[267])$'; then
-                    critical "$dir is in root PATH and is writable by group or other."
-                fi
+        realdir="$(readlink -f "$dir")"
+        if [ ! -d "$realdir" ]; then
+            if [ "$realdir" != '/snap/bin' ]; then
+                critical "$dir is in root PATH and does not exist."
             fi
+        elif stat -c "%a" "$realdir" | grep -E -q '(.[267].|..[267])$'; then
+            critical "$dir is in root PATH and is writable by group or other."
         fi
     fi
 done
