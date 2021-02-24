@@ -50,6 +50,16 @@ if pgrep beam -u couchbase > /dev/null; then
     fi
 fi
 
+if pgrep java -u elasticsearch > /dev/null; then
+    databases="$databases elasticsearch"
+    if [ ! -e /etc/backup.d/40.sh ]; then
+        if ! grep -q elasticsearch /etc/backup.d/.backupninja_ignores; then
+            echo "CRITICAL : Missing elasticsearch backup"
+            exit 2
+        fi
+    fi
+fi
+
 # :TODO:maethor:190109: Couchbase, couchdb… ?
 
 if [ -z "$databases" ] ; then
