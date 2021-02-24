@@ -40,11 +40,14 @@ def main():
 
     for cluster in lsclusters:
         cluster = cluster.split()
-        if cluster[3] == 'down':
-            down.append(cluster[0])
+        cversion = cluster[0]
+        cname = cluster[1]
+        cstatus = cluster[3]
+        if cstatus == 'down' and not cname.endswith('.bak'):
+            down.append(cversion + '/' + cname)
 
-        if cluster[3] == 'online':
-            online.append(cluster[0])
+        if cstatus == 'online':
+            online.append(cversion + '/' + cname)
 
     if down:
         print("PG cluster %s is down" % ', '.join(down))
