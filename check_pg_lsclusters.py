@@ -46,7 +46,7 @@ def main():
         if cstatus == 'down' and not cname.endswith('.bak'):
             down.append(cversion + '/' + cname)
 
-        if cstatus == 'online':
+        if cstatus.startswith('online'):
             online.append(cversion + '/' + cname)
 
     if down:
