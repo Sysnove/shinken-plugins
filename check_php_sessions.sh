@@ -6,16 +6,6 @@ CACHE=1 # days
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
 install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
 
-# :COMMENT:maethor:20210121: Temporaire
-if [ -f "${CACHEFILE/nagios\//}" ] && [ ! -f "$CACHEFILE" ]; then
-    mv ${CACHEFILE/nagios\//} "$CACHEFILE"
-fi
-
-if [ -f "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
-    echo "UNKNOWN: $CACHEFILE is not owned by $USER"
-    exit 3
-fi
-
 if [ -d /usr/local/ispconfig ] ; then
     NUMBER=30000
 else
@@ -25,7 +15,9 @@ fi
 AGE=16
 LIST=false
 
-while getopts "e:n:a:L" option; do
+EXCLUDES="/var/cache /var/lib /usr/share /proc /sys"
+
+while getopts "e:n:a:Lf" option; do
     case $option in
         e)
             EXCLUDES="${EXCLUDES} ${OPTARG}"
@@ -39,23 +31,40 @@ while getopts "e:n:a:L" option; do
         L)
             LIST=true
             ;;
+        f)
+            rm -f "$CACHEFILE"
+            ;;
         *)
     esac
 done
 
-FIND_OPTS='/'
+if [ -f "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
+    echo "UNKNOWN: $CACHEFILE is not owned by $USER"
+    exit 3
+fi
+
+
+FIND_EXCLUDES=""
 
 for EXCLUDE in ${EXCLUDES}; do
-    FIND_OPTS="${FIND_OPTS} -path ${EXCLUDE} -prune -o"
+    FIND_EXCLUDES="${FIND_OPTS} -path ${EXCLUDE} -prune -o"
 done
 
-FIND_OPTS="${FIND_OPTS} -path /usr/share -prune -o"
-FIND_OPTS="${FIND_OPTS} -regextype posix-egrep -regex .*/(ci_session|sess_).* -ctime +${AGE} -print"
+FIND_OPTS="-regextype posix-egrep -regex '.*/(ci_session|sess_).*' -ctime +${AGE} -print"
 
-if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
-    nice -n 10 find "${FIND_OPTS}" 2>/dev/null > $CACHEFILE
+if ! find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null > /dev/null; then
+    eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE
+    if [ $? -gt 1 ]; then
+        echo "UNKNOWN: error during first find"
+        exit 3
+    fi
+    eval "nice -n 10 find /var/lib/php/sessions ${FIND_OPTS}" >> $CACHEFILE
+    if [ $? -gt 1 ]; then
+        echo "UNKNOWN: error during second find"
+        exit 3
+    fi
 else
-    if [ "$(wc -l < $CACHEFILE)" -gt 0 ]; then
+    if ! [ -s "$CACHEFILE" ]; then
         # shellcheck disable=SC2002
         files=$(cat $CACHEFILE | xargs ls -d 2>/dev/null)
         echo "$files" > $CACHEFILE

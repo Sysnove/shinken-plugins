@@ -8,17 +8,9 @@ CACHEFILE=/var/tmp/nagios/check_big_log_files
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
 install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
 
-# :COMMENT:maethor:20210121: Temporaire
-if [ -f "${CACHEFILE/nagios\//}" ] && [ ! -f "$CACHEFILE" ]; then
-    mv ${CACHEFILE/nagios\//} "$CACHEFILE"
-fi
+EXCLUDES="/var/cache /var/lib /usr/share /proc /sys"
 
-if [ -f "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
-    echo "UNKNOWN: $CACHEFILE is not owned by $USER"
-    exit 3
-fi
-
-while getopts "e:s:" option; do
+while getopts "e:s:f" option; do
     case $option in
         e)
             EXCLUDES="${EXCLUDES} ${OPTARG}"
@@ -26,25 +18,36 @@ while getopts "e:s:" option; do
         s)
             SIZE=${OPTARG}
             ;;
+        f)
+            rm -f "$CACHEFILE"
+            ;;
         *)
     esac
 done
 
-FIND_OPTS='/'
+if [ -f "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
+    echo "UNKNOWN: $CACHEFILE is not owned by $USER"
+    exit 3
+fi
+
+FIND_EXCLUDES=""
 
 for EXCLUDE in ${EXCLUDES}; do
-    FIND_OPTS="${FIND_OPTS} -path ${EXCLUDE} -prune -o"
+    FIND_EXCLUDES="${FIND_OPTS} -path ${EXCLUDE} -prune -o"
 done
 
-FIND_OPTS="${FIND_OPTS} ( -name *.log -o -name syslog -o -name catalina.out ) -size +${SIZE} -print"
+FIND_OPTS="( -name *.log -o -name syslog -o -name catalina.out ) -size +${SIZE} -print"
 
-if ! [[ $(find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null) ]]; then
-    nice -n 10 find "${FIND_OPTS}" > $CACHEFILE
+if ! find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null; then
+    eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE
+    if [ $? -gt 1 ]; then
+        echo "UNKNOWN: error during find"
+        exit 3
+    fi
 else
-    if [ "$(wc -l < $CACHEFILE)" -gt 0 ]; then
+    if ! [ -s "$CACHEFILE" ]; then
         # shellcheck disable=SC2013
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print; done)"
-
         echo -n "$files" > $CACHEFILE
     fi
 fi
