@@ -39,9 +39,8 @@ done
 FIND_OPTS="\\( -name '*.log' -o -name syslog -o -name catalina.out \\) -size +${SIZE} -print"
 
 if ! find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null; then
-    eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE
-    if [ $? != 0 ]; then
-        rm $CACHEFILE
+    if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE; then
+        rm -f $CACHEFILE
         echo "UNKNOWN: error during find"
         exit 3
     fi

@@ -53,14 +53,12 @@ done
 FIND_OPTS="-regextype posix-egrep -regex '.*/(ci_session|sess_).*' -ctime +${AGE} -print"
 
 if ! find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null > /dev/null; then
-    eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE
-    if [ $? -gt 1 ]; then
+    if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE; then
         rm $CACHEFILE
         echo "UNKNOWN: error during first find"
         exit 3
     fi
-    eval "nice -n 10 find /var/lib/php/sessions ${FIND_OPTS}" >> $CACHEFILE
-    if [ $? -gt 1 ]; then
+    if ! eval "nice -n 10 find /var/lib/php/sessions ${FIND_OPTS}" >> $CACHEFILE; then
         rm $CACHEFILE
         echo "UNKNOWN: error during second find"
         exit 3
