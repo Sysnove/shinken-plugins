@@ -25,7 +25,9 @@ for volume in ${volumes}; do
     fi
   done
   if [ "$heal" -gt 0 ]; then
-    exit_status="CRITICAL"
+    if [[ ${exit_status} != "CRITICAL" ]]; then
+      exit_status="WARNING"
+    fi
     errors=("${errors[@]}" "$heal unsynched entries")
   fi
 
