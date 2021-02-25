@@ -77,10 +77,10 @@ done #for
 
 if [[ ${exit_status} == "CRITICAL" ]]; then
     echo "CRITICAL: ${message[@]}"
-    exit 1
+    exit 2
 elif [[ ${exit_status} == "WARNING" ]]; then
     echo "WARNING: ${message[@]}"
-    exit 2
+    exit 1
 fi
 
 echo "OK ${nb_volumes} volumes running."
