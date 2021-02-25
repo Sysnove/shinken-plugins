@@ -47,7 +47,7 @@ fi
 FIND_EXCLUDES=""
 
 for EXCLUDE in ${EXCLUDES}; do
-    FIND_EXCLUDES="${FIND_OPTS} -path ${EXCLUDE} -prune -o"
+    FIND_EXCLUDES="${FIND_EXCLUDES} -path ${EXCLUDE} -prune -o"
 done
 
 FIND_OPTS="-regextype posix-egrep -regex '.*/(ci_session|sess_).*' -ctime +${AGE} -print"
