@@ -16,6 +16,20 @@ for volume in ${volumes}; do
   let $((nb_volumes++))
   unset errors
   unset msg
+
+  # get volume heal status
+  heal=0
+  for entries in $(sudo gluster volume heal "${volume}" info | awk '/^Number of entries: /{print $4}'); do
+    if [ "$entries" -gt 0 ]; then
+      let $((heal+=entries))
+    fi
+  done
+  if [ "$heal" -gt 0 ]; then
+    exit_status="CRITICAL"
+    errors=("${errors[@]}" "$heal unsynched entries")
+  fi
+
+  # get brick status
   nb_online_bricks=0
   # Le nombre de bricks que l'on devrait trouver
   nb_bricks=$(gluster volume info ${volume} | grep "Number of Bricks" | rev |cut -d ' ' -f1 | rev)
