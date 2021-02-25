@@ -52,7 +52,7 @@ done
 
 FIND_OPTS="-regextype posix-egrep -regex '.*/(ci_session|sess_).*' -ctime +${AGE} -print"
 
-if ! find $CACHEFILE -mtime -${CACHE} -print 2>/dev/null > /dev/null; then
+if ! find $CACHEFILE -mtime -${CACHE} -print > /dev/null 2>&1; then
     if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE; then
         rm $CACHEFILE
         echo "UNKNOWN: error during first find"
