@@ -58,7 +58,7 @@ if [ "$num" -eq 0 ]; then
     echo "OK: No crazy log file found."
     exit 0
 elif [ "$num" -eq 1 ]; then
-    echo "WARNING: $(cat $CACHEFILE) size is $(du -sh "$(cat $CACHEFILE)" | cut -f -1) bigger than ${SIZE}iB)."
+    echo "WARNING: $(cat $CACHEFILE) size is $(du -sh "$(cat $CACHEFILE)" | cut -f -1) (bigger than ${SIZE}iB)."
     exit 1
 else
     echo "WARNING: $num log files are bigger than ${SIZE}iB."
