@@ -58,10 +58,12 @@ if ! find $CACHEFILE -mtime -${CACHE} -print > /dev/null 2>&1; then
         echo "UNKNOWN: error during first find"
         exit 3
     fi
-    if ! eval "nice -n 10 find /var/lib/php/sessions ${FIND_OPTS}" >> $CACHEFILE; then
-        rm $CACHEFILE
-        echo "UNKNOWN: error during second find"
-        exit 3
+    if [ -d /var/lib/php/sessions ]; then
+        if ! eval "nice -n 10 find /var/lib/php/sessions ${FIND_OPTS}" >> $CACHEFILE; then
+            rm $CACHEFILE
+            echo "UNKNOWN: error during second find"
+            exit 3
+        fi
     fi
 else
     if ! [ -s "$CACHEFILE" ]; then
