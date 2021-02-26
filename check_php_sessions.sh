@@ -15,7 +15,7 @@ fi
 AGE=16
 LIST=false
 
-EXCLUDES="/var/cache /var/lib /usr/share /proc /sys"
+EXCLUDES="/var/cache /var/lib /usr/share /proc /sys /dev"
 
 while getopts "e:n:a:Lf" option; do
     case $option in

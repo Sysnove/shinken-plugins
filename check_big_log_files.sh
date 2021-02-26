@@ -8,7 +8,7 @@ CACHEFILE=/var/tmp/nagios/check_big_log_files
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
 install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
 
-EXCLUDES="/var/cache /var/lib /usr/share /proc /sys"
+EXCLUDES="/var/cache /var/lib /usr/share /proc /sys /dev"
 
 while getopts "e:s:f" option; do
     case $option in
