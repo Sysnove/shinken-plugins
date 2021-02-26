@@ -66,7 +66,7 @@ if ! find $CACHEFILE -mtime -${CACHE} -print > /dev/null 2>&1; then
         fi
     fi
 else
-    if ! [ -s "$CACHEFILE" ]; then
+    if [ -s "$CACHEFILE" ]; then
         # shellcheck disable=SC2002
         files=$(cat $CACHEFILE | xargs ls -d 2>/dev/null)
         echo "$files" > $CACHEFILE
