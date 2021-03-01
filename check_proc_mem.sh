@@ -36,7 +36,7 @@ while [ $# -gt 0 ]; do
             fi
             ;;
         --pidfile) shift
-            PIDFILE=1
+            PIDFILE=$1
             if [ -f "$PIDFILE" ]; then
                 PID=$(cat "$PIDFILE")
             else
