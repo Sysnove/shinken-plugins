@@ -30,12 +30,8 @@ while [ $# -gt 0 ]; do
             ;;
         --cmdpattern) shift
             CMDPATTERN=$1
-            if ! PID=$(pgrep -f "$CMDPATTERN"); then
+            if ! PID=$(pgrep -o -f "$CMDPATTERN"); then
                 echo "No processus found matching $CMDPATTERN."
-                exit 3
-            fi
-            if [ "$(echo "$PID" | wc -l)" -gt 1 ] ; then
-                echo "More than one processus matching this pattern."
                 exit 3
             fi
             ;;
