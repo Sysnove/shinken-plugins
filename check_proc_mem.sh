@@ -1,68 +1,102 @@
-#!/bin/bash -e
-##-------------------------------------------------------------------
-## File: check_proc_mem.sh
-## Author : Denny
-## Description :
-## --
-##
-## Link: http://www.dennyzhang.com/nagois_monitor_process_memory
-##
-## Created :
-## Updated: Time-stamp:
-##-------------------------------------------------------------------
-SCRIPTNAME=$(basename $0)
+#!/bin/bash
 
-if [ "$1" = "-w" ] && [ "$2" -gt "0" ] && \
-    [ "$3" = "-c" ] && [ "$4" -gt "0" ]; then
-pidPattern=${5?"specify how to get pid"}
+###
+### This plugin checks the RAM of a given processus Linux.
+###
+### CopyLeft 2021 Guillaume Subiron <guillaume@sysnove.fr>
+### Based upon Denny's http://www.dennyzhang.com/nagois_monitor_process_memory
+###
+### This work is free. You can redistribute it and/or modify it under the
+### terms of the Do What The Fuck You Want To Public License, Version 2,
+### as published by Sam Hocevar. See the http://www.wtfpl.net/ file for more details.
+###
+### Usage: 
+### - check_proc_mem.sh -w 1024 -c 2048 --cmdpattern "tomcat7.*java.*Dcom"
+### - check_proc_mem.sh -w 1024 -c 2048 --pidfile /var/run/tomcat7.pid
+### - check_proc_mem.sh -w 1024 -c 2048 --pid 11325
+### 
 
-if [ "$pidPattern" = "--pidfile" ]; then
-    pidfile=${6?"pidfile to get pid"}
-    pid=$(cat $pidfile)
-elif [ "$pidPattern" = "--cmdpattern" ]; then
-    cmdpattern=${6?"command line pattern to find out pid"}
-    pid=$(ps -ef | grep "$cmdpattern" | grep -v grep | grep -v ${SCRIPTNAME} | head -n 1 | awk -F' ' '{print $2}')
-elif [ "$pidPattern" = "--pid" ]; then
-    pid=${6?"pid"}
-else
-    echo "ERROR input for pidpattern"
+usage() {
+    sed -rn 's/^### ?//;T;p' "$0"
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -w|--warn) shift
+            WARN=$1
+            ;;
+        -c|--crit) shift
+            CRIT=$1
+            ;;
+        --cmdpattern) shift
+            CMDPATTERN=$1
+            if ! PID=$(pgrep -f "$CMDPATTERN"); then
+                echo "No processus found matching $CMDPATTERN."
+                exit 3
+            fi
+            if [ "$(echo "$PID" | wc -l)" -gt 1 ] ; then
+                echo "More than one processus matching this pattern."
+                exit 3
+            fi
+            ;;
+        --pidfile) shift
+            PIDFILE=1
+            if [ -f "$PIDFILE" ]; then
+                PID=$(cat "$PIDFILE")
+            else
+                echo "File $PIDFILE does not exist."
+                exit 3
+            fi
+            ;;
+        --pid) shift
+            PID=$1
+            ;;
+        -h|--help) usage
+            exit 0
+            ;;
+        *) echo "Unknown argument: $1"
+            usage
+            exit 3
+            ;;
+    esac
+    shift
+done
+
+if [ -z "$WARN" ] || [ -z "$CRIT" ]; then
+    echo "-w and -c are mandatory arguments."
+    usage
+    exit 3
+fi
+
+if [ "$WARN" -gt "$CRIT" ]; then
+    echo "CRIT should be greater than WARN."
+    exit 3
+fi
+
+if [ -z "$PID" ]; then
+    echo "You need to use --pid, --pidfile or --cmdpattern."
+    usage
+    exit 3
+fi
+
+if ! [ -f "/proc/$PID/status" ]; then
+    echo "Processus $PID is not running."
+    exit 3
+fi
+
+memVmSize=$(grep 'VmSize:' "/proc/$PID/status" | awk -F' ' '{print $2}')
+memVmSize=$((memVmSize/1024))
+
+memVmRSS=$(grep 'VmRSS:' "/proc/$PID/status" | awk -F' ' '{print $2}')
+memVmRSS=$((memVmRSS/1024))
+
+if [ "$memVmRSS" -ge "$CRIT" ]; then
+    echo "Memory: CRITICAL VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$WARN;$CRIT;0;"
     exit 2
-fi
-
-if [ -z "$pid" ]; then
-    echo "ERROR: no related process is found"
-    exit 2
-fi
-
-memVmSize=`grep 'VmSize:' /proc/$pid/status | awk -F' ' '{print $2}'`
-memVmSize=$(($memVmSize/1024))
-
-memVmRSS=`grep 'VmRSS:' /proc/$pid/status | awk -F' ' '{print $2}'`
-memVmRSS=$(($memVmRSS/1024))
-
-if [ "$memVmRSS" -ge "$4" ]; then
-    echo "Memory: CRITICAL VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$2;$4;0;"
-    $(exit 2)
-elif [ "$memVmRSS" -ge "$2" ]; then
-    echo "Memory: WARNING VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$2;$4;0;"
-    $(exit 1)
+elif [ "$memVmRSS" -ge "$WARN" ]; then
+    echo "Memory: WARNING VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$WARN;$CRIT;0;"
+    exit 1
 else
-    echo "Memory: OK VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$2;$4;0;"
-    $(exit 0)
+    echo "Memory: OK VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$WARN;$CRIT;0;"
+    exit 0
 fi
-
-else
-    echo "${SCRIPTNAME}"
-    echo ""
-    echo "Usage:"
-    echo "${SCRIPTNAME} -w -c "
-    echo ""
-    echo "Below: If tomcat use more than 1024MB resident memory, send warning"
-    echo "${SCRIPTNAME} -w 1024 -c 2048 --pidfile /var/run/tomcat7.pid"
-    echo "${SCRIPTNAME} -w 1024 -c 2048 --pid 11325"
-    echo "${SCRIPTNAME} -w 1024 -c 2048 --cmdpattern \"tomcat7.*java.*Dcom\""
-    echo ""
-    echo "Copyright (C) 2014 DennyZhang (denny.zhang001@gmail.com)"
-    exit
-fi
-## File - check_proc_mem.sh ends
