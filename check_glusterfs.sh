@@ -19,7 +19,7 @@ for volume in ${volumes}; do
 
   # get volume heal status
   heal=0
-  total_entries=$(sudo timeout -k 20 15 bash -c "gluster volume heal '${volume}' info | awk '/^Number of entries: /{print \$4}'")
+  total_entries=$(sudo timeout -k 15 10 bash -c "gluster volume heal '${volume}' info | awk '/^Number of entries: /{print \$4}'")
   code=$?
 
   if [ $code -eq 124 ] || [ $code -eq 137 ]; then
