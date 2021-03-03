@@ -19,16 +19,26 @@ for volume in ${volumes}; do
 
   # get volume heal status
   heal=0
-  for entries in $(sudo gluster volume heal "${volume}" info | awk '/^Number of entries: /{print $4}'); do
-    if [ "$entries" -gt 0 ]; then
-      let $((heal+=entries))
-    fi
-  done
-  if [ "$heal" -gt 0 ]; then
+  total_entries="$(sudo timeout -k 20 15 gluster volume heal "${volume}" info | awk '/^Number of entries: /{print $4}')"
+  code=$?
+
+  if [ $code -eq 124 ] || [ $code -eq 137 ]; then
     if [[ ${exit_status} != "CRITICAL" ]]; then
       exit_status="WARNING"
     fi
-    errors=("${errors[@]}" "$heal unsynched entries")
+    errors=("${errors[@]}" "Timeout while getting ${volume} heal info.")
+  else
+    for entries in $total_entries; do
+      if [ "$entries" -gt 0 ]; then
+        let $((heal+=entries))
+      fi
+    done
+    if [ "$heal" -gt 0 ]; then
+      if [[ ${exit_status} != "CRITICAL" ]]; then
+        exit_status="WARNING"
+      fi
+      errors=("${errors[@]}" "$heal unsynched entries")
+    fi
   fi
 
   # get brick status
