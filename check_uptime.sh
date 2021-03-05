@@ -37,7 +37,8 @@ while getopts "w:c:" option; do
     esac
 done
 
-uptime_in_seconds=$(($(date +%s) - $(date -d "$(uptime -s)" +%s)))
+#uptime_in_seconds=$(($(date +%s) - $(date -d "$(uptime -s)" +%s)))
+uptime_in_seconds=$(cut -d '.' -f 1 /proc/uptime)
 
 D=$((uptime_in_seconds/60/60/24))
 H=$((uptime_in_seconds/60/60%24))
