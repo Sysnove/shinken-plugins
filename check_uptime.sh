@@ -56,12 +56,12 @@ latestkernel=$(ls -t /boot/vmlinuz-* | sed "s/\/boot\/vmlinuz-//g" | head -n1)
 
 if [ "$latestkernel" != "$currentkernel" ] ; then
     kernel_text="$kernel_text (but $latestkernel is available)"
-    if [ -e "$WARN" ] && [ $D -gt "$WARN" ]; then
+    if [ -n "$WARN" ] && [ $D -gt "$WARN" ]; then
         status_text=WARNING
         ret_code=1
     fi
 
-    if [ -e "$CRIT" ] && [ $D -gt "$CRIT" ]; then
+    if [ -n "$CRIT" ] && [ $D -gt "$CRIT" ]; then
         status_text=CRITICAL
         ret_code=2
     fi
