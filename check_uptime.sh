@@ -55,7 +55,7 @@ currentkernel=$(uname -r)
 latestkernel=$(ls -t /boot/vmlinuz-* | sed "s/\/boot\/vmlinuz-//g" | head -n1)
 
 if [ "$latestkernel" != "$currentkernel" ] ; then
-    kernel_text="$kernel_text (but $latestkernel is available)"
+    kernel_text="$kernel_text ($latestkernel is available)"
     if [ -n "$WARN" ] && [ $D -gt "$WARN" ]; then
         status_text=WARNING
         ret_code=1
