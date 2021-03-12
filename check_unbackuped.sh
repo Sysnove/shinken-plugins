@@ -5,9 +5,8 @@ includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9]+' | cu
 shopt -s nullglob dotglob
 
 # shellcheck disable=SC2010
-for d in $(ls / | grep -Ev "^($includes|lost\\+found|dev|proc|sys|run|tmp)$" | grep -Ev '^(vmlinuz|initrd)'); do
-    files=(/"$d"/*)
-    if [ ${#files[@]} -gt 0 ]; then
+for d in $(ls / | grep -Ev "^($includes|lost\\+found|dev|proc|sys|run|tmp|clean)$" | grep -Ev '^(vmlinuz|initrd)'); do
+    if [ -n "$(find "/$d" -type f)" ]; then
         echo "Unbackuped files found in /$d !"
         exit 3
     fi
