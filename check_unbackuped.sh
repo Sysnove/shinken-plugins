@@ -1,7 +1,7 @@
 #!/bin/bash
 
-includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
-excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = /[a-z0-9]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
+includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9\.]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
+excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = /[a-z0-9\.]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
 
 shopt -s nullglob dotglob
 
