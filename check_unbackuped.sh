@@ -7,7 +7,7 @@ other_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-
 shopt -s nullglob dotglob
 
 # shellcheck disable=SC2010
-for d in $(ls / | grep -Ev "^($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log)$" | grep -Ev '^(vmlinuz|initrd|netdata-updater.log)'); do
+for d in $(ls / | grep -Ev "^($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs)$" | grep -Ev '^(vmlinuz|initrd|netdata-updater.log|maldet-)'); do
     if ! mount | grep "/$d" | grep -q '^borgfs'; then
         if find "/$d" -type f | grep -qEv "^($other_excludes)"; then
             echo "Unbackuped files found in /$d !"
