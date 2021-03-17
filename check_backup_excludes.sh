@@ -19,13 +19,13 @@ fi
 # Check if files in / that are not included nor explicitely excluded
 #
 
-root_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9\.]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/')
+root_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9\.]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
 root_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-z0-9\.]+$' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
 other_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-z0-9]+/' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/')
 
 shopt -s nullglob dotglob
 
-for d in $(find / -maxdepth 1 -mindepth 1 | grep -Ev "^($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs)$" | grep -Ev '^(vmlinuz|initrd|netdata-updater.log|maldet-)'); do
+for d in $(find / -maxdepth 1 -mindepth 1 | grep -Ev "^/($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs)$" | grep -Ev '^/(vmlinuz|initrd|netdata-updater.log|maldet-)'); do
     if ! mount | grep "$d" | grep -q '^borgfs'; then
         for d2 in $(find "$d" -maxdepth 1 -mindepth 1 | grep -Ev "^($other_excludes)$"); do
             if find "$d2" -type f | grep -qEv "^($other_excludes)"; then
