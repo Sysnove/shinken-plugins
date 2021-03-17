@@ -21,15 +21,25 @@ fi
 
 root_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9\.]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
 root_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-z0-9\.]+$' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
-other_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^includes = /[a-z0-9]+/.+' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/')
-other_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-z0-9]+/.+' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/')
+nonroot_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9]+/.+' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/')
+nonroot_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-z0-9]+/.+' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/')
+if [ -n "$nonroot_includes" ] && [ -n "$nonroot_excludes" ]; then
+    nonroot_regex="($nonroot_excludes|$nonroot_includes)"
+elif [ -n "$nonroot_includes" ]; then
+    nonroot_regex="($nonroot_includes)"
+elif [ -n "$nonroot_excludes" ]; then
+    nonroot_regex="($nonroot_excludes)"
+else
+    nonroot_regex=""
+fi
 
 shopt -s nullglob dotglob
+IFS=$'\n'
 
 for d in $(find / -maxdepth 1 -mindepth 1 | grep -Ev "^/($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs)$" | grep -Ev '^/(vmlinuz|initrd|netdata-updater.log|maldet-)'); do
     if ! mount | grep "$d" | grep -q '^borgfs'; then
-        for d2 in $(find "$d" -maxdepth 1 -mindepth 1 | grep -Ev "^($other_excludes|$other_includes)$"); do
-            if find "$d2" -type f | grep -qEv "^($other_excludes|$other_includes)"; then
+        for d2 in $(find "$d" -maxdepth 1 | grep -Ev "^$nonroot_regex$"); do
+            if find "$d2" -type f | grep -qEv "^$nonroot_regex"; then
                 echo "CRITICAL - Unbackuped files found in $d !"
                 exit 2
             fi
