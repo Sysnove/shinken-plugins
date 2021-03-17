@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Check directories that should not be excluded from backups but could be by mistake
@@ -30,7 +30,7 @@ for d in $(ls / | grep -Ev "^($root_includes|$root_excludes|lost\\+found|dev|pro
     if ! mount | grep "/$d" | grep -q '^borgfs'; then
         if find "/$d" -type f | grep -qEv "^($other_excludes)"; then
             echo "CRITICAL - Unbackuped files found in /$d !"
-            exit 3
+            exit 2
         fi
     fi
 done
