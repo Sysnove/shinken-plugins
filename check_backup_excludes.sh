@@ -25,13 +25,14 @@ other_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-
 
 shopt -s nullglob dotglob
 
-# shellcheck disable=SC2010
-for d in $(ls / | grep -Ev "^($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs)$" | grep -Ev '^(vmlinuz|initrd|netdata-updater.log|maldet-)'); do
-    if ! mount | grep "/$d" | grep -q '^borgfs'; then
-        if find "/$d" -type f | grep -qEv "^($other_excludes)"; then
-            echo "CRITICAL - Unbackuped files found in /$d !"
-            exit 2
-        fi
+for d in $(find / -maxdepth 1 -mindepth 1 | grep -Ev "^($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs)$" | grep -Ev '^(vmlinuz|initrd|netdata-updater.log|maldet-)'); do
+    if ! mount | grep "$d" | grep -q '^borgfs'; then
+        for d2 in $(find "$d" -maxdepth 1 -mindepth 1 | grep -Ev "^($other_excludes)$"); do
+            if find "$d2" -type f | grep -qEv "^($other_excludes)"; then
+                echo "CRITICAL - Unbackuped files found in $d !"
+                exit 2
+            fi
+        done
     fi
 done
 
