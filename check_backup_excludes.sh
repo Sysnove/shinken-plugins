@@ -38,12 +38,19 @@ IFS=$'\n'
 
 for d in $(find / -maxdepth 1 -mindepth 1 | grep -Ev "^/($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs)$" | grep -Ev '^/(vmlinuz|initrd|netdata-updater.log|maldet-)'); do
     if ! mount | grep "$d" | grep -q '^borgfs'; then
-        for d2 in $(find "$d" -maxdepth 1 | grep -Ev "^$nonroot_regex$"); do
-            if find "$d2" -type f | grep -qEv "^$nonroot_regex"; then
-                echo "CRITICAL - Unbackuped files found in $d !"
+        if [ -f "$d" ]; then
+            if echo "$d" | grep -qEv "^$nonroot_regex"; then
+                echo "CRITICAL - Unbackuped file $d !"
                 exit 2
             fi
-        done
+        else
+            for d2 in $(find "$d" -mindepth 1 -maxdepth 1 | grep -Ev "^$nonroot_regex$"); do
+                if find "$d2" -type f | grep -qEv "^$nonroot_regex"; then
+                    echo "CRITICAL - Unbackuped files found in $d !"
+                    exit 2
+                fi
+            done
+        fi
     fi
 done
 
