@@ -36,7 +36,7 @@ fi
 shopt -s nullglob dotglob
 IFS=$'\n'
 
-for d in $(find / -maxdepth 1 -mindepth 1 | grep -Ev "^/($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs|.postgresql_anti_restart_guard_file|.autorelabel)$" | grep -Ev '^/(vmlinuz|initrd|netdata-updater.log|maldet-)'); do
+for d in $(find / -maxdepth 1 -mindepth 1 | grep -Ev "^/($root_includes|$root_excludes|lost\\+found|dev|proc|sys|run|tmp|clean|core|ansible-runs\.log|sigs|.postgresql_anti_restart_guard_file|.autorelabel)$" | grep -Ev '^/(vmlinuz|initrd|netdata-updater|netdata-updater.log|maldet-)'); do
     if ! mount | grep "$d" | grep -q '^borgfs'; then
         if [ -f "$d" ]; then
             if echo "$d" | grep -qEv "^$nonroot_regex"; then
