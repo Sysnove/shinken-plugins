@@ -1,12 +1,42 @@
 #!/bin/bash
 
-# TODO Manage Amavis filtering. Currently this script manages only rmilter.
+###
+### This plugin checks /var/log/mail.log
+### Thresholds allow to detect usual email sendings
+###
+### CopyLeft 2021 Guillaume Subiron <guillaume@sysnove.fr>
+###
+### Usage : check_postfix_logs.sh -w 
+
+usage() {
+     sed -rn 's/^### ?//;T;p' "$0"
+}
+
+OUT_SENT_WARN=60
+OUT_DEFERRED_WARN=60
+OUT_BOUNCED_WARN=60
+OUT_SENT_CRIT=120
+OUT_DEFERRED_CRIT=120
+OUT_BOUNCED_CRIT=120
+
+while [ -n "$1" ]; do
+    case $1 in
+        --out-sent-warn) shift; OUT_SENT_WARN=$1 ;;
+        --out-deferred-warn) shift; OUT_DEFERRED_WARN=$1 ;;
+        --out-bounced-warn) shift; OUT_BOUNCED_WARN=$1 ;;
+        --out-sent-crit) shift; OUT_SENT_CRIT=$1 ;;
+        --out-deferred-crit) shift; OUT_DEFERRED_CRIT=$1 ;;
+        --out-bounced-crit) shift; OUT_BOUNCED_CRIT=$1 ;;
+        -h) usage; exit 0 ;;
+    esac
+    shift
+done
 
 LOG_FILE="/var/log/mail.log"
 
 E_OK=0
 E_WARNING=1
-#E_CRITICAL=2
+E_CRITICAL=2
 E_UNKNOWN=3
 
 LAST_RUN_FILE=/var/tmp/nagios/check_mail_logs_last_run
@@ -98,15 +128,21 @@ rate_in_ratelimit=$(compute "$in_ratelimit * 60 / $period")
 rate_in_greylist=$(compute "$in_greylist * 60 / $period")
 rate_in_reject=$(compute "$in_reject * 60 / $period")
 
-PERFDATA="o_sent=$rate_out_sent; o_bounced=$rate_out_bounced; o_deferred=$rate_out_deferred; i_accepted=$rate_in_accepted; i_virus=$rate_in_virus; i_spam=$rate_in_spam; i_ratelimit=$rate_in_ratelimit; i_greylist=$rate_in_greylist; i_reject=$rate_in_reject;"
+PERFDATA="o_sent=$rate_out_sent;$OUT_SENT_WARN;$OUT_SENT_CRIT;0; o_bounced=$rate_out_bounced;$OUT_BOUNCED_WARN;$OUT_BOUNCED_CRIT;0; o_deferred=$rate_out_deferred;$OUT_DEFERRED_WARN;$OUT_DEFERRED_CRIT;0; i_accepted=$rate_in_accepted; i_virus=$rate_in_virus; i_spam=$rate_in_spam; i_ratelimit=$rate_in_ratelimit; i_greylist=$rate_in_greylist; i_reject=$rate_in_reject;"
 
 RET_MSG="$in_accepted messages received and $out_sent messages sent in the last $period seconds | $PERFDATA"
 
-#RET_MSG="in the last $period seconds : out_sent=$out_sent ($rate_out_sent/min) out_bounced=$out_bounced  ($rate_out_bounced/min) out_deferred=$out_deferred ($rate_out_deferred/min) in_accepted=$in_accepted ($rate_in_accepted/min) in_virus=$in_virus ($rate_in_virus/min) in_spam=$in_spam ($rate_in_spam/min) in_ratelimit=$in_ratelimit ($rate_in_ratelimit/min) in_greylist=$in_greylist ($rate_in_greylist/min) in_reject=$in_reject ($rate_in_reject/min) | $PERFDATA"
+if [ "$OUT_SENT_CRIT" -gt "$rate_out_sent" ] || [ "$OUT_DEFERRED_CRIT" -gt "$rate_out_deferred" ] || [ "$OUT_BOUNCED_CRIT" -gt "$rate_out_bounced" ] ; then
+    RET_CODE=$E_CRITICAL
+    RET_MSG="CRITICAL - $RET_MSG"
+elif [ "$OUT_SENT_WARN" -gt "$rate_out_sent" ] || [ "$OUT_DEFERRED_WARN" -gt "$rate_out_deferred" ] || [ "$OUT_BOUNCED_WARN" -gt "$rate_out_bounced" ] ; then
+    RET_CODE=$E_WARNING
+    RET_MSG="WARNING - $RET_MSG"
+else
+    RET_CODE=$E_OK
+    RET_MSG="OK - $RET_MSG"
+fi
 
-
-RET_MSG="OK - $RET_MSG"
-RET_CODE=$E_OK
 
 if grep -E -q 'warning: database .* is older than source file' $tmpfile; then
     RET_MSG="WARNING - Old postfix database file - $RET_MSG"
