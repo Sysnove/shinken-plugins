@@ -67,7 +67,7 @@ tmpfile_in="/tmp/$$_in.tmp"
 tmpfile_out="/tmp/$$_out.tmp"
 
 # Outgoing
-grep 'postfix/smtp\[' $tmpfile | grep -E -v 'relay=[^\s\[]*[127\.0\.0\.1]'> $tmpfile_out
+grep 'postfix/smtp\[' $tmpfile | grep -E -v 'relay=[^ \[]*\[127\.0\.0\.1\]'> $tmpfile_out
 
 out_bounced=$(grep 'status=bounced' -c $tmpfile_out)
 out_deferred=$(grep 'status=deferred' -c $tmpfile_out)
