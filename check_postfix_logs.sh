@@ -54,23 +54,9 @@ if [ -f "$LAST_RUN_FILE" ] && [ ! -O "$LAST_RUN_FILE" ]; then
     exit $E_UNKNOWN
 fi
 
-show_help() {
-    echo "$0 [-l LOG_FILE]"
-    echo "  -l LOG_FILE : defaults to /var/log/mail.log"
-}
-
 function compute() {
     echo "$1" | bc -l | awk '{printf "%.1f", $0}'
 }
-
-# process args
-while [ -n "$1" ]; do 
-    case $1 in
-        -l)	shift; LOG_FILE=$1 ;;
-        -h)	show_help; exit 1 ;;
-    esac
-    shift
-done
 
 # check logs
 if [ -z "$LOG_FILE" ]; then
@@ -132,10 +118,10 @@ PERFDATA="o_sent=$rate_out_sent;$OUT_SENT_WARN;$OUT_SENT_CRIT;0; o_bounced=$rate
 
 RET_MSG="$in_accepted messages received and $out_sent messages sent in the last $period seconds | $PERFDATA"
 
-if [ "$OUT_SENT_CRIT" -gt "$rate_out_sent" ] || [ "$OUT_DEFERRED_CRIT" -gt "$rate_out_deferred" ] || [ "$OUT_BOUNCED_CRIT" -gt "$rate_out_bounced" ] ; then
+if [[ "$OUT_SENT_CRIT" -gt "$rate_out_sent" ]] || [[ "$OUT_DEFERRED_CRIT" -gt "$rate_out_deferred" ]] || [[ "$OUT_BOUNCED_CRIT" -gt "$rate_out_bounced" ]] ; then
     RET_CODE=$E_CRITICAL
     RET_MSG="CRITICAL - $RET_MSG"
-elif [ "$OUT_SENT_WARN" -gt "$rate_out_sent" ] || [ "$OUT_DEFERRED_WARN" -gt "$rate_out_deferred" ] || [ "$OUT_BOUNCED_WARN" -gt "$rate_out_bounced" ] ; then
+elif [[ "$OUT_SENT_WARN" -gt "$rate_out_sent" ]] || [[ "$OUT_DEFERRED_WARN" -gt "$rate_out_deferred" ]] || [[ "$OUT_BOUNCED_WARN" -gt "$rate_out_bounced" ]] ; then
     RET_CODE=$E_WARNING
     RET_MSG="WARNING - $RET_MSG"
 else

@@ -74,20 +74,22 @@ total=$(wc -l < $tmpfile)
 errors=$(grep -c 'level=error' $tmpfile)
 warnings=$(grep -c 'level=warning' $tmpfile)
 infos=$(grep -c 'level=info' $tmpfile)
+debug=$(grep -c 'level=debug' $tmpfile)
 
 rate_total=$(compute "$total * 60 / $period")
 rate_errors=$(compute "$errors * 60 / $period")
 rate_warnings=$(compute "$warnings * 60 / $period")
 rate_infos=$(compute "$infos * 60 / $period")
+rate_debug=$(compute "$debug * 60 / $period")
 
-PERFDATA="log_lines_per_min=$rate_total;;;0; errors_per_min=$rate_total;;;0; warnings_per_min=$rate_warnings;;;0; infos_per_min=$rate_infos;;;0;"
+PERFDATA="log_lines_per_min=$rate_total;;;0; errors_per_min=$rate_total;;;0; warnings_per_min=$rate_warnings;;;0; infos_per_min=$rate_infos;;;0; debug_per_min=$rate_debug;;;0;"
 
 RET_MSG="$errors errors over $total lines in the last $period seconds | $PERFDATA"
 
-if [ "$ERROR_CRIT" -gt "$rate_errors" ] ; then
+if [[ "$ERROR_CRIT" -gt "$rate_errors" ]] ; then
     RET_CODE=$E_CRITICAL
     RET_MSG="CRITICAL - $RET_MSG"
-elif [ "$ERROR_WARN" -gt "$rate_errors" ]; then
+elif [[ "$ERROR_WARN" -gt "$rate_errors" ]]; then
     RET_CODE=$E_WARNING
     RET_MSG="WARNING - $RET_MSG"
 else
