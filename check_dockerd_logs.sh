@@ -86,10 +86,10 @@ PERFDATA="log_lines_per_min=$rate_total;;;0; errors_per_min=$rate_errors;$ERROR_
 
 RET_MSG="$errors errors over $total lines in the last $period seconds | $PERFDATA"
 
-if (( $(echo "$ERROR_CRIT > $rate_errors" | bc -l) )); then
+if (( $(echo "$rate_errors > $ERROR_CRIT" | bc -l) )); then
     RET_CODE=$E_CRITICAL
     RET_MSG="CRITICAL - $RET_MSG"
-elif (( $(echo "$ERROR_WARN > $rate_warnings" | bc -l) )); then
+elif (( $(echo "$rate_warnings > $ERROR_WARN" | bc -l) )); then
     RET_CODE=$E_WARNING
     RET_MSG="WARNING - $RET_MSG"
 else
