@@ -118,10 +118,10 @@ PERFDATA="o_sent=$rate_out_sent;$OUT_SENT_WARN;$OUT_SENT_CRIT;0; o_bounced=$rate
 
 RET_MSG="$in_accepted messages received and $out_sent messages sent in the last $period seconds | $PERFDATA"
 
-if [[ "$OUT_SENT_CRIT" -gt "$rate_out_sent" ]] || [[ "$OUT_DEFERRED_CRIT" -gt "$rate_out_deferred" ]] || [[ "$OUT_BOUNCED_CRIT" -gt "$rate_out_bounced" ]] ; then
+if (( $(echo "$OUT_SENT_CRIT > $rate_out_sent" | bc -l) )) || (( $(echo "$OUT_DEFERRED_CRIT > $rate_out_deferred" | bc -l) )) || (( $(echo "$OUT_BOUNCED_CRIT > $rate_out_bounced" | bc -l) )); then
     RET_CODE=$E_CRITICAL
     RET_MSG="CRITICAL - $RET_MSG"
-elif [[ "$OUT_SENT_WARN" -gt "$rate_out_sent" ]] || [[ "$OUT_DEFERRED_WARN" -gt "$rate_out_deferred" ]] || [[ "$OUT_BOUNCED_WARN" -gt "$rate_out_bounced" ]] ; then
+elif (( $(echo "$OUT_SENT_WARN > $rate_out_sent" | bc -l) )) || (( $(echo "$OUT_DEFERRED_WARN > $rate_out_deferred" | bc -l) )) || (( $(echo "$OUT_BOUNCED_WARN > $rate_out_bounced" | bc -l) )); then
     RET_CODE=$E_WARNING
     RET_MSG="WARNING - $RET_MSG"
 else
