@@ -82,7 +82,7 @@ rate_warnings=$(compute "$warnings * 60 / $period")
 rate_infos=$(compute "$infos * 60 / $period")
 rate_debug=$(compute "$debug * 60 / $period")
 
-PERFDATA="log_lines_per_min=$rate_total;;;0; errors_per_min=$rate_total;;;0; warnings_per_min=$rate_warnings;;;0; infos_per_min=$rate_infos;;;0; debug_per_min=$rate_debug;;;0;"
+PERFDATA="log_lines_per_min=$rate_total;;;0; errors_per_min=$rate_errors;$ERROR_WARN;$ERROR_CRIT;0; warnings_per_min=$rate_warnings;;;0; infos_per_min=$rate_infos;;;0; debug_per_min=$rate_debug;;;0;"
 
 RET_MSG="$errors errors over $total lines in the last $period seconds | $PERFDATA"
 
