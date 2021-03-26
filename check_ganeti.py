@@ -53,6 +53,10 @@ def main():
                 # Consider N+1 fault as warning and not error.
                 status = "WARNING"
 
+            # Ignore volumes/export orphan
+            if ecode == 'ENODEORPHANLV' and "volume volumes/export" in msg:
+                status = 'OK'
+
             if status == "WARNING":
                 ret_code = max(ret_code, STATUS_WARNING)
             if status == "ERROR":
