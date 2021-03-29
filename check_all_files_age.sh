@@ -12,25 +12,9 @@ if [ ! -d "$DIR" ]; then
     exit 2
 fi
 
-warnings=""
-errors=""
-oks=""
-
-for f in $(find "$DIR" -maxdepth 1 -type f); do
-    if [ -e /usr/lib64/nagios/plugins/check_file_age ] ; then
-        /usr/lib64/nagios/plugins/check_file_age -w 90000 -c 180000 -f "$f" > /dev/null
-    else
-        /usr/lib/nagios/plugins/check_file_age -w 90000 -c 180000 -f "$f" > /dev/null
-    fi
-    ret=$?
-    if [ $ret -gt 1 ]; then
-        errors="$errors $f"
-    elif [ $ret -eq 1 ]; then
-        warnings="$warnings $f"
-    else
-        oks="$oks $f"
-    fi
-done
+warnings=$(find "${DIR}" -mmin +1500 -mmin -3000 -type f)
+errors=$(find "${DIR}" -mmin +3000 -type f)
+oks=$(find "${DIR}" -mmin -1500 -type f)
 
 nb_ok="$(echo "$oks" | wc -w)"
 
