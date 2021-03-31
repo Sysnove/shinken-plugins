@@ -16,11 +16,13 @@ usage() {
 
 ERROR_WARN=5
 ERROR_CRIT=10
+DATEFORMAT=rsyslog
 
 while [ -n "$1" ]; do
     case $1 in
         --error-warn) shift; ERROR_WARN=$1 ;;
         --error-crit) shift; ERROR_CRIT=$1 ;;
+        --iso) DATEFORMAT="%O" ;;
         -h) usage; exit 0 ;;
     esac
     shift
@@ -68,7 +70,7 @@ period=$(( now_s - since_s ))
 
 tmpfile="/tmp/$$.tmp"
 
-/usr/local/bin/dategrep -format rsyslog --start "$since" "$LOG_FILE" > $tmpfile
+/usr/local/bin/dategrep -format "${DATEFORMAT}" --start "$since" "$LOG_FILE" > $tmpfile
 
 total=$(wc -l < $tmpfile)
 errors=$(grep -c 'level=error' $tmpfile)

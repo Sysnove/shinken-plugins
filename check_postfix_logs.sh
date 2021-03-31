@@ -18,6 +18,7 @@ OUT_BOUNCED_WARN=60
 OUT_SENT_CRIT=120
 OUT_DEFERRED_CRIT=120
 OUT_BOUNCED_CRIT=120
+DATEFORMAT=rsyslog
 
 while [ -n "$1" ]; do
     case $1 in
@@ -27,6 +28,7 @@ while [ -n "$1" ]; do
         --out-sent-crit) shift; OUT_SENT_CRIT=$1 ;;
         --out-deferred-crit) shift; OUT_DEFERRED_CRIT=$1 ;;
         --out-bounced-crit) shift; OUT_BOUNCED_CRIT=$1 ;;
+        --iso) DATEFORMAT="%O" ;;
         -h) usage; exit 0 ;;
     esac
     shift
@@ -76,7 +78,7 @@ echo "$now" > $LAST_RUN_FILE
 
 tmpfile="/tmp/$$.tmp"
 
-/usr/local/bin/dategrep -format rsyslog --start "$since" "$LOG_FILE" | grep ' postfix/'  > $tmpfile
+/usr/local/bin/dategrep -format "${DATEFORMAT}" --start "$since" "$LOG_FILE" | grep ' postfix/'  > $tmpfile
 
 tmpfile_in="/tmp/$$_in.tmp"
 
