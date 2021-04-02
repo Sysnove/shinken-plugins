@@ -20,7 +20,10 @@ STATUS_UNKNOWN = 3
 def main():
 
     try:
-        p = subprocess.Popen(["/usr/sbin/gnt-cluster", "verify", "--error-codes"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ["/usr/sbin/gnt-cluster", "verify", "--error-codes"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         out, err = p.communicate()
     except Exception as e:
         print(e)
@@ -34,8 +37,13 @@ def main():
     ret_out = []
 
     # ftype:ecode:edomain:name:msg
-    # List of ecodes can be found in `gnt-cluster verfify` man page: http://docs.ganeti.org/ganeti/2.7/html/man-gnt-cluster.html#verify
-    status_re = re.compile(r'^.* +- (?P<ftype>WARNING|ERROR):(?P<ecode>\w+):(?P<edomain>\w+):(?P<name>[\w.-]+):(?P<msg>.*)$')
+    # List of ecodes can be found in `gnt-cluster verfify` man page:
+    # http://docs.ganeti.org/ganeti/2.7/html/man-gnt-cluster.html#verify
+    status_re = re.compile(
+        r'^.* +- (?P<ftype>WARNING|ERROR):'
+        + r'(?P<ecode>\w+):(?P<edomain>\w+):'
+        + r'(?P<name>[\w.-]+):(?P<msg>.*)$'
+    )
 
     for line in out.splitlines():
         match = status_re.match(line)
@@ -64,6 +72,7 @@ def main():
     else:
         print('\n'.join(ret_out))
     return ret_code
+
 
 if __name__ == "__main__":
     sys.exit(main())
