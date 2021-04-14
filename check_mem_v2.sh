@@ -79,15 +79,15 @@ cache_k=${array[3]}
 shared_k=${array[5]}
 slab_reclaimable_k=${array[6]}
 #slab_unreclaimable_k=${array[7]}
-# We consided reclaimable slab as cache
-cache_k=$((cache_k + slab_reclaimable_k))
+# We consided reclaimable slab as cache. But we need to separate shared.
+cache_k=$((cache_k + slab_reclaimable_k - shared_k))
 #used_k=$((total_k - free_k - buffer_k - cache_k))
 total_m=$((total_k / 1024))
 free_m=$((free_k / 1024))
 buffer_m=$((buffer_k / 1024))
 cache_m=$((cache_k / 1024))
 shared_m=$((shared_k / 1024))
-used_m=$((total_m - free_m - buffer_m - cache_m))
+used_m=$((total_m - free_m - buffer_m - cache_m - shared_m))
 
 # Shared is count as "used" because it is not reclaimable like cache.
 # Shared + Used is what is causing OOM errors
