@@ -175,7 +175,7 @@ else
   elif [[ -n $(echo $cdbresp | grep -i "You are not a server admin") ]]; then
     echo "COUCHDB REPLICATION CRITICAL - You are not a server admin"
     exit $STATE_CRITICAL
-  elif [[ -n $(echo $cdbresp | grep -i missing) ]]; then
+  elif [[ -n $(echo $cdbresp | grep -i '"reason":"missing"') ]]; then
     echo "COUCHDB REPLICATION CRITICAL - Replication for $repid not found"
     exit $STATE_CRITICAL
   elif [[ -z $cdbresp ]]; then
