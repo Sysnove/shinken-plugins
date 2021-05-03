@@ -92,9 +92,9 @@ def main():
     if values["IdleWorkers"] < 2:
         print("%s WARNING (IdleWorkers < 2) - %s" % (version, perfdata))
         raise SystemExit(1)
-    if values["TotalWorkers"] >= values["WarnWorkers"]:
+    if values["BusyWorkers"] >= values["WarnWorkers"]:
         print(
-            "%s WARNING (TotalWorkers > WarnWorkers=%s) - %s"
+            "%s WARNING (BusyWorkers > WarnWorkers=%s) - %s"
             % (version, values["WarnWorkers"], perfdata)
         )
         raise SystemExit(1)
