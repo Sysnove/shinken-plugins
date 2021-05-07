@@ -92,8 +92,8 @@ fi
 
 # Get current node status.
 # shellcheck disable=SC2016
-CURRENT_NODE=$(echo "${STATUS}" | ${JQ} --arg FQDN "$(hostname --fqdn)" \
-    '.nodes | map(select(.hostname | test("^(" + $FQDN + "|127.0.0.1|localhost)")))[0]')
+CURRENT_NODE=$(echo "${STATUS}" | ${JQ} --arg FQDN "$(hostname --fqdn)" --arg CBHOST "${CBHOST}" \
+    '.nodes | map(select(.hostname | test("^(" + $FQDN + "|127.0.0.1|localhost|" + $CBHOST+ ")")))[0]')
 
 if [ -z "${CURRENT_NODE}" ] || [ "${CURRENT_NODE}" = "null" ]; then
     crit "No node information found."
