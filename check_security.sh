@@ -12,6 +12,7 @@ warning () {
     [ $RET -eq 0 ] && RET=1
 }
 
+
 # shellcheck disable=SC2013
 for user in $(awk -F':' '/^sysnove:/{print $4}' /etc/group | sed "s/,/ /g"); do
     if [ -n "$(find "/home/$user" -name "id_(rsa|dsa|ecdsa|ed25519)")" ]; then
@@ -85,30 +86,30 @@ check_user_home () {
 
 check_user_home root 0 /root
 
-while IFS= read -r line; do
-    username=$(echo "$line" | cut -d ':' -f 1)
-    uid=$(echo "$line" | cut -d ':' -f 3)
-    home=$(echo "$line" | cut -d ':' -f 6)
 
-    if [ -n "$username" ]; then
+while IFS=: read -ra line; do
+    #username=$(echo "$line" | cut -d ':' -f 1)
+    #uid=$(echo "$line" | cut -d ':' -f 3)
+    #home=$(echo "$line" | cut -d ':' -f 6)
+    username=${line[0]}
+    uid=${line[2]}
+    home=${line[5]}
+
+    # uid > 5000 = ispconfig web user
+    if [ -n "$username" ] && [ "$username" != "ispconfig" ] && [[ "$home" != /var/www/clients/* ]]; then
         if [ "$uid" -eq 0 ] && [ "$username" != "root" ]; then
             critical "$username uid = 0"
         fi
 
-        # uid > 5000 = ispconfig web user
-        if [ "$uid" -ge 1000 ] && [ "$uid" -lt 5000 ] && [ "$username" != "nobody" ]; then
+        if [ "$uid" -ge 1000 ] && [ "$username" != "nobody" ]; then
             check_user_home "$username" "$uid" "$home"
         fi
 
-        # shellcheck disable=SC2016
-        if [ "$uid" -lt 5000 ]; then
-            if grep -q "^$username:\$1\\$" /etc/shadow; then
-                warning "$username password is stored in md5 in /etc/shadow"
-            fi
+        if grep -q "^$username:\$1\\$" /etc/shadow; then
+            warning "$username password is stored in md5 in /etc/shadow"
         fi
     fi
 done < /etc/passwd
-
 
 
 ROOT_PATH="$(sudo -Hiu root env | grep '^PATH=' | cut -d '=' -f 2)"
@@ -119,6 +120,7 @@ if [[ $(hostname) =~ ^(infra|sysnove)- ]]; then
         critical "Wrong root PATH: $ROOT_PATH"
     fi
 fi
+
 
 for dir in ${ROOT_PATH//:/ }; do
     # On Debian, /usr/local is writable by staff group.
