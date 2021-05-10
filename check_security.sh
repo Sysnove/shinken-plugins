@@ -88,14 +88,11 @@ check_user_home root 0 /root
 
 
 while IFS=: read -ra line; do
-    #username=$(echo "$line" | cut -d ':' -f 1)
-    #uid=$(echo "$line" | cut -d ':' -f 3)
-    #home=$(echo "$line" | cut -d ':' -f 6)
     username=${line[0]}
     uid=${line[2]}
     home=${line[5]}
 
-    # uid > 5000 = ispconfig web user
+    # Ignore ISPConfig shell users
     if [ -n "$username" ] && [ "$username" != "ispconfig" ] && [[ "$home" != /var/www/clients/* ]]; then
         if [ "$uid" -eq 0 ] && [ "$username" != "root" ]; then
             critical "$username uid = 0"
