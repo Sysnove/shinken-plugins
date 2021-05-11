@@ -129,6 +129,11 @@ for DEVICE in $(ls /sys/block); do
 
         PCT_BUSY=$((100 * TIME_IO / (TIME * 1000)))
 
+        if [ "$PCT_BUSY" -lt 0 ]; then
+            echo "UNKNOWN : PCT_BUSY < 0. Maybe the server has just rebooted?"
+            exit $E_UNKNOWN
+        fi
+
         READS_PER_SEC=$(((NEW_READ - OLD_READ) / TIME))
         WRITES_PER_SEC=$(((NEW_WRITE - OLD_WRITE) / TIME))
         
