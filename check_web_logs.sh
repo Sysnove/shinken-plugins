@@ -107,7 +107,7 @@ now_s=$(date -d "$now" +%s)
 since_s=$(date -d "$since" +%s)
 period=$(( now_s - since_s ))
 
-ratetotal=$((total / period))
+ratetotal=$(bc <<< "scale=1; $total / $period")
 #rate2=$((count2 / period))
 #rate3=$((count3 / period))
 #rate4=$((count4 / period))
