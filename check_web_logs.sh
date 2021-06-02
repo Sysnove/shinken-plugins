@@ -113,7 +113,7 @@ rate3=$((count3 / period))
 rate4=$((count4 / period))
 rate5=$((count5 / period))
 
-RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) | total=$total;;;0;100 2xx=${rate2}%%;;;0;100 3xx=${rate3}%%;$WARN_3;$CRIT_3;0;100 4xx=${rate4}%%;$WARN_4;$CRIT_4;0;100 5xx=${rate5}%%;$WARN_5;$CRIT_5;0;100"
+RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) | total=$total;;;0;100 2xx=${rate2}%;;;0;100 3xx=${rate3}%;$WARN_3;$CRIT_3;0;100 4xx=${rate4}%;$WARN_4;$CRIT_4;0;100 5xx=${rate5}%;$WARN_5;$CRIT_5;0;100"
 
 if [[ ($pourcent3 -gt $WARN_3 && $count3 -ge $MIN) || ($pourcent4 -gt $WARN_4 && $count4 -ge $MIN) || ($pourcent5 -gt $WARN_5 && $count5 -ge $MIN) ]]; then
     if [[ $pourcent3 -gt $CRIT_3 || $pourcent4 -gt $CRIT_4 || $pourcent5 -gt $CRIT_5 ]]; then
