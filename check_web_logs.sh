@@ -82,7 +82,7 @@ tmpfile="/tmp/$$.tmp"
 
 /usr/local/bin/dategrep --sort-files -format apache --start "$since" "$LOGS" | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
 
-total=$(wc -l $tmpfile)
+total=$(wc -l < $tmpfile)
 
 count2=$(grep '2..' -c $tmpfile)
 count3=$(grep '3..' -c $tmpfile)
