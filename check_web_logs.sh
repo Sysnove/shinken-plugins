@@ -16,7 +16,7 @@ E_WARNING=1
 E_CRITICAL=2
 E_UNKNOWN=3
 
-LAST_RUN_FILE=/var/tmp/nagios/check_web_logs_last_run
+LAST_RUN_FILE=/var/tmp/nagios/check_web_logs_v2_last_run
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
 install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$LAST_RUN_FILE")"
@@ -59,77 +59,115 @@ if [ -z "$LOGS" ]; then
     exit $E_UNKNOWN
 fi
 
-# shellcheck disable=SC2086
-nb_logs=$(echo $LOGS | wc -w)
-if [ "$nb_logs" -gt 20 ]; then
-    echo "UNKNOWN : Too many log files to check ($nb_logs log files found for $LOGS)"
-    exit $E_UNKNOWN
-fi
-
-# find last check
-if [ ! -f $LAST_RUN_FILE ]; then
-    date +%H:%M:%S -d '5 min ago' > $LAST_RUN_FILE
-fi
-
-since=$(<$LAST_RUN_FILE)
-now=$(date +%H:%M:%S)
-
-echo "$now" > $LAST_RUN_FILE
-
-tmpfile="/tmp/$$.tmp"
-touch $tmpfile
-log_files_not_readable=0
-log_files_read=0
-
-#/usr/local/bin/dategrep --sort-files -format apache --start "$since" "$LOGS" | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
+log_files_readable=0
+log_files_non_readable=0
 for log in $LOGS; do
     if [ -r "$log" ]; then
-        (/usr/local/bin/dategrep -format apache --start "$since" "$log" || exit 3) | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 >> $tmpfile
-        log_files_read=$((log_files_read + 1))
+        log_files_readable=$((log_files_readable + 1))
     else
-        >&2 echo "$log is not readable."
-        log_files_not_readable=$((log_files_not_readable + 1))
+        log_files_non_readable=$((log_files_non_readable + 1))
     fi
 done
 
-total=$(wc -l < $tmpfile)
+if [ $log_files_readable = 0 ]; then
+    echo "UNKNOWN - No readable log file in $LOGS"
+    exit 3
+fi
 
-count2=$(grep '2..' -c $tmpfile)
-count3=$(grep '3..' -c $tmpfile)
-count4=$(grep '4..' -c $tmpfile)
-count5=$(grep '5..' -c $tmpfile)
 
-rm $tmpfile
+old_count2=-1
+old_count3=-1
+old_count4=-1
+old_count499=-1
+old_count5=-1
+old_countall=-1
+last_check=-1
+# shellcheck disable=SC1090
+source $LAST_RUN_FILE
+
+new_count2=0
+new_count3=0
+new_count4=0
+new_count499=0
+new_count5=0
+new_countall=0
+now=$(date +%H:%M:%S)
+
+IFS=$'\n'
+# shellcheck disable=SC2086
+for line in $(grep -v check_http $LOGS | grep -o '" [2-5].. ' | cut -d ' ' -f 2 | sort | uniq -c); do
+    code=$(echo $line | awk '{print $2}')
+    count=$(echo $line | awk '{print $1}')
+    if [[ "$code" == 2* ]]; then
+        new_count2=$((new_count2 + count))
+    elif [[ "$code" == 3* ]]; then
+        new_count3=$((new_count3 + count))
+    elif [[ "$code" == 4* ]]; then
+        new_count4=$((new_count4 + count))
+        if [ $code -eq 499 ]; then
+            count499=$((new_count499 + count))
+        fi
+    elif [[ "$code" == 5* ]]; then
+        new_count5=$((new_count5 + count))
+    fi
+    new_countall=$((new_countall + count))
+done
+
+echo "
+old_count2=$new_count2
+old_count3=$new_count3
+old_count4=$new_count4
+old_count499=$new_count499
+old_count5=$new_count5
+old_countall=$new_countall
+last_check=$now
+" > $LAST_RUN_FILE
+
+if [ $new_countall -le $old_countall ] ||
+    [ "$old_countall" == -1 ] ||
+    [ "$old_count2" == -1 ] ||
+    [ "$old_count3" == -1 ] ||
+    [ "$old_count4" == -1 ] ||
+    [ "$old_count499" == -1 ] ||
+    [ "$old_count5" == -1 ] ; then
+    echo "UNKNOWN - Inconsistent database, please run the check again."
+    exit 3
+fi
+
+count2=$((new_count2 - old_count2))
+count3=$((new_count3 - old_count3))
+count4=$((new_count4 - old_count4))
+count499=$((new_count499 - old_count499))
+count5=$((new_count5 - old_count5))
+countall=$((new_countall - old_countall))
 
 pourcent2=0
 pourcent3=0
 pourcent4=0
+pourcent499=0
 pourcent5=0
 
-if [ "$total" -gt 0 ] ; then
-    pourcent2=$(((count2 * 100) / total))
-    pourcent3=$(((count3 * 100) / total))
-    pourcent4=$(((count4 * 100) / total))
-    pourcent5=$(((count5 * 100) / total))
+if [ "$countall" -gt 0 ] ; then
+    pourcent2=$(((count2 * 100) / countall))
+    pourcent3=$(((count3 * 100) / countall))
+    pourcent4=$(((count4 * 100) / countall))
+    pourcent499=$(((count499 * 100) / countall))
+    pourcent5=$(((count5 * 100) / countall))
 fi
 
 now_s=$(date -d "$now" +%s)
-since_s=$(date -d "$since" +%s)
-period=$(( now_s - since_s ))
+last_check_s=$(date -d "$last_check" +%s)
+period=$(( now_s - last_check_s ))
 
-ratetotal=$(bc <<< "scale=1; $total / $period")
-#rate2=$((count2 / period))
-#rate3=$((count3 / period))
-#rate4=$((count4 / period))
-#rate5=$((count5 / period))
+ratetotal=$(bc <<< "scale=1; $countall / $period")
 
-if [ $log_files_not_readable -gt 0 ]; then
-    log_files_read_str="($log_files_read log files read, $log_files_not_readable not readable)"
+if [ $log_files_non_readable -gt 0 ]; then
+    log_files_read_str="($log_files_readable log files read, $log_files_non_readable not readable)"
 else
-    log_files_read_str="($log_files_read log files)"
+    log_files_read_str="($log_files_readable log files)"
 fi
 
-RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) $log_files_read_str | total=${ratetotal}req_per_sec;;;0;100 2xx=${pourcent2}%;;;0;100 3xx=${pourcent3}%;$WARN_3;$CRIT_3;0;100 4xx=${pourcent4}%;$WARN_4;$CRIT_4;0;100 5xx=${pourcent5}%;$WARN_5;$CRIT_5;0;100"
+RET_MSG="$countall requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) $log_files_read_str | total=${ratetotal}req_per_sec;;;0;100 2xx=${pourcent2}%;;;0;100 3xx=${pourcent3}%;$WARN_3;$CRIT_3;0;100 4xx=${pourcent4}%;$WARN_4;$CRIT_4;0;100 499=${pourcent499}%;$WARN_5;$CRIT_5;0;100 5xx=${pourcent5}%;$WARN_5;$CRIT_5;0;100"
 
 if [[ ($pourcent3 -gt $WARN_3 && $count3 -ge $MIN) || ($pourcent4 -gt $WARN_4 && $count4 -ge $MIN) || ($pourcent5 -gt $WARN_5 && $count5 -ge $MIN) ]]; then
     if [[ $pourcent3 -gt $CRIT_3 || $pourcent4 -gt $CRIT_4 || $pourcent5 -gt $CRIT_5 ]]; then
