@@ -71,15 +71,17 @@ echo "$now" > $LAST_RUN_FILE
 
 tmpfile="/tmp/$$.tmp"
 touch $tmpfile
-not_readable=0
+log_files_not_readable=0
+log_files_read=0
 
 #/usr/local/bin/dategrep --sort-files -format apache --start "$since" "$LOGS" | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
 for log in $LOGS; do
     if [ -r "$log" ]; then
         (/usr/local/bin/dategrep -format apache --start "$since" "$log" || exit 3) | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 >> $tmpfile
+        log_files_read=$((log_files_read + 1))
     else
         echo "$log is not readable."
-        not_readable=$((not_readable + 1))
+        log_files_not_readable=$((log_files_not_readable + 1))
     fi
 done
 
@@ -114,11 +116,13 @@ ratetotal=$(bc <<< "scale=1; $total / $period")
 #rate4=$((count4 / period))
 #rate5=$((count5 / period))
 
-if [ $not_readable -gt 0 ]; then
-    not_readable_str="(could not read $not_readable log files!) "
+if [ $log_files_not_readable -gt 0 ]; then
+    log_files_read_str="($log_files_read log files read, $log_files_not_readable not readable)"
+else
+    log_files_read_str="($log_files_read log files)"
 fi
 
-RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) $not_readable_str| total=${ratetotal}req_per_sec;;;0;100 2xx=${pourcent2}%;;;0;100 3xx=${pourcent3}%;$WARN_3;$CRIT_3;0;100 4xx=${pourcent4}%;$WARN_4;$CRIT_4;0;100 5xx=${pourcent5}%;$WARN_5;$CRIT_5;0;100"
+RET_MSG="$total requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) $log_files_read_str | total=${ratetotal}req_per_sec;;;0;100 2xx=${pourcent2}%;;;0;100 3xx=${pourcent3}%;$WARN_3;$CRIT_3;0;100 4xx=${pourcent4}%;$WARN_4;$CRIT_4;0;100 5xx=${pourcent5}%;$WARN_5;$CRIT_5;0;100"
 
 if [[ ($pourcent3 -gt $WARN_3 && $count3 -ge $MIN) || ($pourcent4 -gt $WARN_4 && $count4 -ge $MIN) || ($pourcent5 -gt $WARN_5 && $count5 -ge $MIN) ]]; then
     if [[ $pourcent3 -gt $CRIT_3 || $pourcent4 -gt $CRIT_4 || $pourcent5 -gt $CRIT_5 ]]; then
