@@ -28,7 +28,7 @@ fi
 
 if [ -f "$LAST_RUN_FILE" ] && [ ! -O "$LAST_RUN_FILE" ]; then
     echo "UNKNOWN: $LAST_RUN_FILE is not owned by $USER"
-    exit 3
+    exit $E_UNKNOWN
 fi
 
 show_help() {
@@ -59,6 +59,13 @@ if [ -z "$LOGS" ]; then
     exit $E_UNKNOWN
 fi
 
+# shellcheck disable=SC2086
+nb_logs=$(echo $LOGS | wc -w)
+if [ "$nb_logs" -gt 20 ]; then
+    echo "UNKNOWN : Too many log files to check ($nb_logs log files found for $LOGS)"
+    exit $E_UNKNOWN
+fi
+
 # find last check
 if [ ! -f $LAST_RUN_FILE ]; then
     date +%H:%M:%S -d '5 min ago' > $LAST_RUN_FILE
@@ -80,7 +87,7 @@ for log in $LOGS; do
         (/usr/local/bin/dategrep -format apache --start "$since" "$log" || exit 3) | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 >> $tmpfile
         log_files_read=$((log_files_read + 1))
     else
-        echo "$log is not readable."
+        >&2 echo "$log is not readable."
         log_files_not_readable=$((log_files_not_readable + 1))
     fi
 done
