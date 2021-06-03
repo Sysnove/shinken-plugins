@@ -123,14 +123,18 @@ old_countall=$new_countall
 last_check=$now
 " > $LAST_RUN_FILE
 
-if [ $new_countall -lt $old_countall ] ||
-    [ "$old_countall" == -1 ] ||
+if [ $new_countall -lt $old_countall ] ; then
+    echo "UNKNOWN - Logs seem to have shrink since last run, please run the check again."
+    exit 3
+fi
+
+if [ "$old_countall" == -1 ] ||
     [ "$old_count2" == -1 ] ||
     [ "$old_count3" == -1 ] ||
     [ "$old_count4" == -1 ] ||
     [ "$old_count499" == -1 ] ||
     [ "$old_count5" == -1 ] ; then
-    echo "UNKNOWN - Inconsistent database, please run the check again."
+    echo "UNKNOWN - Variables missing in database, please run the check again."
     exit 3
 fi
 
