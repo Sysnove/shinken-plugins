@@ -95,7 +95,7 @@ now=$(date +%H:%M:%S)
 
 IFS=$'\n'
 # shellcheck disable=SC2086
-for line in $(grep -v check_http $LOGS | grep -o '" [2-5].. ' | cut -d ' ' -f 2 | sort | uniq -c); do
+for line in $(grep -o '" [2-5].. ' $LOGS | cut -d ' ' -f 2 | sort | uniq -c); do
     code=$(echo $line | awk '{print $2}')
     count=$(echo $line | awk '{print $1}')
     if [[ "$code" == 2* ]]; then
