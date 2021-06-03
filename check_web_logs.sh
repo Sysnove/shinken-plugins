@@ -123,7 +123,7 @@ old_countall=$new_countall
 last_check=$now
 " > $LAST_RUN_FILE
 
-if [ $new_countall -le $old_countall ] ||
+if [ $new_countall -lt $old_countall ] ||
     [ "$old_countall" == -1 ] ||
     [ "$old_count2" == -1 ] ||
     [ "$old_count3" == -1 ] ||
