@@ -39,7 +39,7 @@ show_help() {
 # process args
 while [ -n "$1" ]; do 
     case $1 in
-        -l)	shift; LOGS_WITH_GLOB=$1 ;;
+        -l)	shift; LOGS=$1 ;;
         -m) shift; MIN=$1 ;;
         -w3) shift; WARN_3=$1 ;;
         -w4) shift; WARN_4=$1 ;;
@@ -53,18 +53,9 @@ while [ -n "$1" ]; do
 done
 
 # check args
-if [ -z "$LOGS_WITH_GLOB" ]; then
+if [ -z "$LOGS" ]; then
 	echo "Need log files"
     show_help
-    exit $E_UNKNOWN
-fi
-
-# shellcheck disable=SC2086
-LOGS=$(ls $LOGS_WITH_GLOB 2>/dev/null)
-
-# check logs
-if [ -z "$LOGS" ]; then
-    echo "File(s) not found : $LOGS_WITH_GLOB"
     exit $E_UNKNOWN
 fi
 
@@ -79,8 +70,16 @@ now=$(date +%H:%M:%S)
 echo "$now" > $LAST_RUN_FILE
 
 tmpfile="/tmp/$$.tmp"
+touch $tmpfile
 
-/usr/local/bin/dategrep --sort-files -format apache --start "$since" "$LOGS" | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
+#/usr/local/bin/dategrep --sort-files -format apache --start "$since" "$LOGS" | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 > $tmpfile
+for log in $LOGS; do
+    if [ ! -r "$log" ]; then
+        echo "UNKNOWN : $log is not readable."
+        exit 3
+    fi
+    (/usr/local/bin/dategrep -format apache --start "$since" "$log" || exit 3) | grep -v check_http | grep -E -o '" [0-9]{3} ' | cut -d ' ' -f 2 >> $tmpfile
+done
 
 total=$(wc -l < $tmpfile)
 
