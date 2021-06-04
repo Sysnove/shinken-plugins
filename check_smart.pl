@@ -304,7 +304,7 @@ foreach $device ( split(":",$device) ){
 					if ($opt_b) {
 						if (($raw_value > 0) && ($raw_value >= $opt_b)) {
 							push(@error_messages, "$raw_value Sectors pending re-allocation");
-							escalate_status('WARNING');
+							#escalate_status('WARNING');
 							warn "(debug) Current_Pending_Sector is non-zero ($raw_value)\n\n" if $opt_debug;
 						}
 						elsif (($raw_value > 0) && ($raw_value < $opt_b)) {
@@ -313,7 +313,7 @@ foreach $device ( split(":",$device) ){
 						}
 					} else {
 						push(@error_messages, "Sectors pending re-allocation");
-						escalate_status('WARNING');
+						#escalate_status('WARNING');
 						warn "(debug) Current_Pending_Sector is non-zero ($raw_value)\n\n" if $opt_debug;
 					}
 				}
