@@ -28,7 +28,7 @@ def main():
     with open(mtab_file) as f:
         mtab = [x.strip() for x in f.readlines()]
 
-    mounts = [l for l in mtab if (l.startswith("/") or ":/" in l)]
+    mounts = [l for l in mtab if (l.startswith("/") or ":/" in l or 'fuse.glusterfs' in l)]
 
     ##ISPConfig
     mounts = [
@@ -44,7 +44,7 @@ def main():
     with open('/etc/fstab') as f:
         fstab_lines = [l.strip() for l in f.readlines()]
         fstab_lines = [re.sub(' +', ' ', l.replace('\t', ' ')) for l in fstab_lines]
-        fstab_lines = [l for l in fstab_lines if l and (l.startswith("/") or l.startswith('UUID') or ":/" in l) and not (l.startswith('#') or l.startswith("/var/log/ispconfig/httpd"))]
+        fstab_lines = [l for l in fstab_lines if l and (l.startswith("/") or l.startswith('UUID') or ":/" in l or 'glusterfs' in l) and not (l.startswith('#') or l.startswith("/var/log/ispconfig/httpd"))]
         fstab_lines = [l for l in fstab_lines if l.split(' ')[1] not in ['none', 'swap', '/media/cdrom0', '/media/usb0', '/media/usb1']]
         fstab_lines = [l for l in fstab_lines if l.split(' ')[2] not in ['swap', 'tmpfs']]
 
