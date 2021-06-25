@@ -7,8 +7,8 @@ nb_pools_down=0
 pools_down=""
 nb_pools_unknown=0
 pool_unknown=""
-nb_pools_max_children_reached=0
-pools_max_children_reached=""
+#nb_pools_max_children_reached=0
+#pools_max_children_reached=""
 
 ret=0
 
@@ -44,7 +44,7 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
     pool_listen_queue=$(echo "$output" | grep '^listen queue:' | awk '{print $3}')
     pool_idle_processes=$(echo "$output" | grep '^idle processes:' | awk '{print $3}')
     pool_active_processes=$(echo "$output" | grep '^active processes:' | awk '{print $3}')
-    pool_max_children_reached=$(echo "$output" | grep '^max children reached:' | awk '{print $4}')
+    #pool_max_children_reached=$(echo "$output" | grep '^max children reached:' | awk '{print $4}')
 
     if [ -z "$pool_name" ]; then
         nb_pools_unknown=$(($nb_pools_unknown + 1))
@@ -56,10 +56,10 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
         perfdata="$perfdata ${socket_name}_listen_queue=${pool_listen_queue:-0} ${socket_name}_idle_procs=${pool_idle_processes:-0} ${socket_name}_active_procs=${pool_active_processes:-0}"
     fi
 
-    if [[ $pool_max_children_reached > 1 ]] ; then
-        nb_pools_max_children_reached=$(($nb_pools_max_children_reached + 1))
-        pools_max_children_reached="$pools_max_children_reached $socket_name:$pool_max_children_reached "
-    fi
+    #if [[ $pool_max_children_reached > 1 ]] ; then
+        #nb_pools_max_children_reached=$(($nb_pools_max_children_reached + 1))
+        #pools_max_children_reached="$pools_max_children_reached $socket_name:$pool_max_children_reached "
+    #fi
 done
 
 if [ $nb_pools -eq 0 ] ; then
@@ -77,10 +77,10 @@ if [ $nb_pools_unknown -gt 0 ] ; then
     exit 3
 fi
 
-if [ $nb_pools_max_children_reached -gt 0 ] ; then
-    echo "WARNING - $nb_pools_max_children_reached/$nb_pools pools have reached max_children ($pools_max_children_reached) | $perfdata"
-    exit 1
-fi
+#if [ $nb_pools_max_children_reached -gt 0 ] ; then
+    #echo "WARNING - $nb_pools_max_children_reached/$nb_pools pools have reached max_children ($pools_max_children_reached) | $perfdata"
+    #exit 1
+#fi
 
 echo "OK - $nb_pools PHP-FPM pools found | $perfdata"
 
