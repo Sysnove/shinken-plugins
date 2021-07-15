@@ -111,7 +111,7 @@ CBQ="${CBQ} ${CBQOPTS}"
 if [[ "${DELETEOLDER}" -ge 0 ]]; then
     # shellcheck disable=SC2090
     ${CBQ} -script "\
-        DELETE FROM system:completed_request \
+        DELETE FROM system:completed_requests \
         WHERE requestTime < date_add_str(now_local(), -${DELETEOLDER}, 'hour');"
 
     # shellcheck disable=2181
@@ -123,7 +123,7 @@ fi
 # Query completed_request
 # shellcheck disable=SC2090
 RESULT=$(${CBQ} -script "\
-SELECT count(*) AS count FROM system:completed_request \
+SELECT count(*) AS count FROM system:completed_requests \
 WHERE requestTime > date_add_str(now_local(), -5, 'minute');")
 
 # shellcheck disable=2181
