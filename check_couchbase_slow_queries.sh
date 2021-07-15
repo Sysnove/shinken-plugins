@@ -95,14 +95,14 @@ do
 done
 
 # shellcheck disable=SC2089
-CBQOPTS="-quiet -e 'http://${CBHOST}'"
+CBQOPTS="-quiet -e ${CBHOST}"
 
 if [[ -n "$CBUSER" ]]; then
-    CBQOPTS="${CBQOPTS} -user '${CBUSER}'"
+    CBQOPTS="${CBQOPTS} -user ${CBUSER}"
 fi
 
 if [[ -n "$CBPASSWORD" ]]; then
-    CBQOPTS="${CBQOPTS} -password '${CBPASSWORD}'"
+    CBQOPTS="${CBQOPTS} -password ${CBPASSWORD}"
 fi
 
 CBQ="${CBQ} ${CBQOPTS}"
@@ -124,7 +124,7 @@ fi
 # shellcheck disable=SC2090
 RESULT=$(${CBQ} -script "\
 SELECT count(*) AS count FROM system:completed_request \
-WHERE requestTime < date_add_str(now_local(), -${DELETEOLDER}, 'hour');")
+WHERE requestTime > date_add_str(now_local(), -5, 'minute');")
 
 # shellcheck disable=2181
 if [[ $? -ne 0 ]]; then
@@ -135,6 +135,7 @@ COUNT=$(echo "${RESULT}" | ${JQ} '.results[0].count')
 
 # shellcheck disable=2181
 if [[ $? -ne 0 ]]; then
+    COUNT=U
     crit "Unable to parse cbq result."
 fi
 
