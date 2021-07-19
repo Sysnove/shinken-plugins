@@ -22,7 +22,7 @@ services="addok addok-wrapper apache2 atd bind9 ceph clamav-daemon couchdb cron 
 down=""
 
 for service in $services ; do
-    if [ -f "/etc/init.d/$service" ] || [ -f "/lib/systemd/system/${service}.service" ] ; then
+    if [ -f "/etc/init.d/$service" ] || [ -f "/lib/systemd/system/${service}.service" ] || [ -f "/etc/systemd/system/${service}.service" ]; then
         service "$service" status > /dev/null || down="$down $service"
     fi
 done
