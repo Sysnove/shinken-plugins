@@ -41,7 +41,7 @@ if list=$(borg list "$REPOSITORY" --format="{name} {time}{NEWLINE}" 2>&1); then
 
     msg="Last backup is $last_name"
 
-    if [ ${#last_name} -eq 10 ]; then # We need to check that we don't have a -checkpoint backup
+    if [ ${#last_name} -eq 10  -o ${#last_name} -eq 13 ]; then # We need to check that we don't have a -checkpoint backup
         if [ "$last_date" -gt "$warn_date" ]; then
             if [[ $count -gt $MAX_BACKUPS ]]; then
                 echo "WARNING: $count backups, please check borg prune."
