@@ -43,6 +43,7 @@ def main():
     )
 
     for line in out.splitlines():
+        line = line.decode('utf-8')
         match = status_re.match(line)
         if match:
             status = match.group('ftype')
