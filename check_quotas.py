@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import subprocess
 import csv
@@ -18,6 +18,7 @@ THRESHOLD_ERROR = 90
 # Force C locale
 myenv = dict(os.environ)
 myenv['LC_ALL'] = 'C'
+
 
 def hbytes(num):
     i = int(num)
@@ -52,8 +53,7 @@ def main():
                     ret_level = max(ret_level, STATUS_WARNING)
                 else:
                     ret_level = max(ret_level, STATUS_OK)
-                ret_print.append('%s: %s%% (%s/%s)' %
-            (row['User'], percent, hbytes(row['BlockUsed']), hbytes(row['BlockHardLimit'])))
+                ret_print.append('%s: %s%% (%s/%s)' % (row['User'], percent, hbytes(row['BlockUsed']), hbytes(row['BlockHardLimit'])))
     except KeyError:
         return STATUS_UNKNOWN, ['Cannot parse quotas from repquota output']
     return ret_level, ret_print
