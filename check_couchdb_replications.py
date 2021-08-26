@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 '''Check to make sure that all the replications on the local CouchDB server
 are actually running.'''
 
@@ -9,10 +9,10 @@ from datetime import datetime, timedelta
 from operator import itemgetter
 import requests
 import sys
-import tempfile
 
 # Nagios status codes
 OK, WARNING, CRITICAL, UNKNOWN = range(4)
+
 
 def main(host, replicator, replication, auth, age_timeout):
     headers = {
@@ -28,15 +28,15 @@ def main(host, replicator, replication, auth, age_timeout):
         replications = requests.get(replicator_url, headers=headers)
         active_tasks = requests.get(host + '/_active_tasks', headers=headers)
     except Exception:
-        print 'REPLICATION STATUS UNKNOWN - Error connecting to server'
+        print('REPLICATION STATUS UNKNOWN - Error connecting to server')
         return UNKNOWN
 
     if replications.status_code >= 400:
-        print 'REPLICATION STATUS UNKNOWN - Error connecting to server (HTTP %i)' % replications.status_code
+        print('REPLICATION STATUS UNKNOWN - Error connecting to server (HTTP %i)' % replications.status_code)
         return UNKNOWN
 
     if active_tasks.status_code >= 400:
-        print 'REPLICATION STATUS UNKNOWN - Error connecting to server (HTTP %i)' % replications.status_code
+        print('REPLICATION STATUS UNKNOWN - Error connecting to server (HTTP %i)' % replications.status_code)
         return UNKNOWN
 
     reps = filter(lambda x: 'source' in x, [x['doc'] for x in replications.json()['rows']])
@@ -59,9 +59,9 @@ def main(host, replicator, replication, auth, age_timeout):
     problems = []
     for rep in reps:
         if '_replication_id' in rep:
-	    task = tasks.get(rep['_replication_id'])
-	    if task:
-	        rep.update(task)
+            task = tasks.get(rep['_replication_id'])
+            if task:
+                rep.update(task)
 
         doc_id = rep['_id']
         rep_state = rep.get('_replication_state', 'N/A')
@@ -114,7 +114,7 @@ def main(host, replicator, replication, auth, age_timeout):
     if len(problems) > 0:
         output += ': ' + ', '.join(problems)
 
-    print output
+    print(output)
     return status
 
 
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     try:
         status = main(args.host, args.replicator, args.replication, args.auth, args.age_timeout)
     except Exception as e:
-        print 'REPLICATION STATUS UNKNOWN - Python exception %s' % str(e)
+        print('REPLICATION STATUS UNKNOWN - Python exception %s' % str(e))
         status = UNKNOWN
 
     sys.exit(status)
