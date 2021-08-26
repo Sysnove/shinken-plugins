@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 '''Check to make sure that all the replications on the local CouchDB server
 are actually running.'''
 

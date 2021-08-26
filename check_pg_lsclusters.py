@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
@@ -12,9 +12,6 @@
 # as published by Sam Hocevar. See the http://www.wtfpl.net/ file for more
 # details.
 #
-
-from __future__ import (unicode_literals, absolute_import,
-                        division, print_function)
 
 import subprocess
 import sys

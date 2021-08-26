@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # Alexis Lahouze, Sysnove, 2014
@@ -14,8 +14,6 @@
 # as published by Sam Hocevar. See the http://www.wtfpl.net/ file for more
 # details.
 #
-
-from __future__ import print_function
 
 from datetime import datetime
 import argparse
