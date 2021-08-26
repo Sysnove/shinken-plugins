@@ -36,6 +36,7 @@ def main():
     online = list()
 
     for cluster in lsclusters:
+        cluster = cluster.decode('utf-8')
         cluster = cluster.split()
         cversion = cluster[0]
         cname = cluster[1]
