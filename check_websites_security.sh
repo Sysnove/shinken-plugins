@@ -27,6 +27,11 @@ check_website() {
     fi
 }
 
+if [ -d "/usr/local/ispconfig" ]; then
+    echo "This script is disabled on ISPConfig servers."
+    exit 0
+fi
+
 if [ -d "/etc/nginx/sites-enabled" ]; then
     for domain in $(grep -hRE '^[^#]*[^\$#]server_name' /etc/nginx/sites-enabled | grep -v '_;' | sed 's/;//g' | sed 's/server_name//g' | xargs -n 1 | sort | uniq); do
         check_website "$domain"
