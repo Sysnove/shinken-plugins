@@ -1,5 +1,7 @@
 #!/bin/bash
 
+LAST_FILE=/tmp/couchbase_slow
+
 # Return codes
 OK=0
 WARN=1
@@ -57,13 +59,14 @@ unkn(){
 # Needed binaries
 JQ=/usr/bin/jq
 CBQ=/opt/couchbase/bin/cbq
+CURL=/usr/bin/curl
 
 [ ! -x ${JQ} ] && crit "Please install jq."
 [ ! -x ${CBQ} ] && crit "Please check cbq path."
+[ ! -x ${CURL} ] && crit "Please check curl path."
 
 # Argument parsing
-CBHOST=localhost:8091
-DELETEOLDER=-1
+CBHOST=localhost:8093
 WARNING_THRESHOLD=2
 CRITICAL_THRESHOLD=7
 
@@ -96,48 +99,64 @@ done
 
 # shellcheck disable=SC2089
 CBQOPTS="-quiet -e ${CBHOST}"
+CURLOPTS="-s"
 
-if [[ -n "$CBUSER" ]]; then
+if [[ -n "$CBUSER" ]] && [[ -n "${CBPASSWORD}" ]]; then
     CBQOPTS="${CBQOPTS} -user ${CBUSER}"
+    CURLOPTS="${CURLOPTS} -u ${CBUSER}:${CBPASSWORD}"
 fi
 
-if [[ -n "$CBPASSWORD" ]]; then
-    CBQOPTS="${CBQOPTS} -password ${CBPASSWORD}"
-fi
-
+CURL="${CURL} ${CURLOPTS}"
+BASE_URL="http://${CBHOST}"
 CBQ="${CBQ} ${CBQOPTS}"
 
-# Delete older, may be needed to improve performance.
-if [[ "${DELETEOLDER}" -ge 0 ]]; then
-    # shellcheck disable=SC2090
-    ${CBQ} -script "\
-        DELETE FROM system:completed_requests \
-        WHERE requestTime < date_add_str(now_local(), -${DELETEOLDER}, 'hour');"
+UPTIME="$(${CURL} ${BASE_URL}/admin/vitals | ${JQ} -r .uptime)"
 
-    # shellcheck disable=2181
-    if [[ $? -ne 0 ]]; then
-        crit "Error while running cbq on delete query."
-    fi
+# shellcheck disable=2181
+if [[ $? -ne 0 ]]; then
+    crit "Error while getting vitals."
 fi
+
+# parse uptime: 2715h32m7.526712691s
+HOURS="$(echo ${UPTIME} | cut -d 'h' -f 1)"
+MINUTES="$(echo ${UPTIME} | cut -d 'h' -f 2 | cut -d 'm' -f 1)"
+SECONDS="$(echo ${UPTIME} | cut -d 'h' -f 2 | cut -d 'm' -f 2 | cut -d 's' -f 1)"
+
+UPTIME=$(echo "$SECONDS + $MINUTES * 60 + $HOURS * 3600" | bc)
 
 # Query completed_request
 # shellcheck disable=SC2090
-RESULT=$(${CBQ} -script "\
-SELECT count(*) AS count FROM system:completed_requests \
-WHERE requestTime > date_add_str(now_local(), -5, 'minute');")
+RESULT="$(${CURL} ${BASE_URL}/admin/stats)"
 
 # shellcheck disable=2181
 if [[ $? -ne 0 ]]; then
-    crit "Error while running cbq on delete query."
+    crit "Error while getting stats."
 fi
 
-COUNT=$(echo "${RESULT}" | ${JQ} '.results[0].count')
+COUNT_5000="$(echo "${RESULT}" | jq '.requests_5000ms.count')"
+COUNT_1000="$(echo "${RESULT}" | jq '.requests_1000ms.count')"
 
-# shellcheck disable=2181
-if [[ $? -ne 0 ]]; then
-    COUNT=U
-    crit "Unable to parse cbq result."
+TOTAL_COUNT="$(echo "${COUNT_1000} + ${COUNT_5000}" | bc)"
+
+if ! [[ -r ${LAST_FILE} ]]; then
+    echo "${UPTIME}" > "${LAST_FILE}"
+    echo "${TOTAL_COUNT}" >> "${LAST_FILE}"
+
+    unkn "Last file does not exists, creating it."
 fi
+
+LAST_UPTIME=$(sed -n 1p ${LAST_FILE})
+LAST_TOTAL_COUNT=$(sed -n "2p" ${LAST_FILE})
+
+echo "${UPTIME}" > "${LAST_FILE}"
+echo "${TOTAL_COUNT}" >> "${LAST_FILE}"
+
+if [[ ${UPTIME} -lt ${LAST_UPTIME} ]]; then
+    unkn "Couchbase has been restarted, resetting stats."
+fi
+
+DURATION=$(echo ${UPTIME} - ${LAST_UPTIME} | bc)
+COUNT=$(echo "(${TOTAL_COUNT} - ${LAST_TOTAL_COUNT}) / ${DURATION}" | bc)
 
 if [[ ${COUNT} -ge ${CRITICAL_THRESHOLD} ]]; then
     crit "Found more than ${CRITICAL_THRESHOLD} slow queries in last 5 minutes: ${COUNT}"
