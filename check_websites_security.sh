@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tmp_file=$(mktemp "/tmp/$0.XXXXXX")
+tmp_file=$(mktemp "/tmp/$(basename "$0").XXXXXX")
 
 critical () {
     echo "CRITICAL : $1" >> "$tmp_file"
