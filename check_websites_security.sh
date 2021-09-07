@@ -18,7 +18,7 @@ check_website() {
         critical "http://$domain/.env is readable."
     fi
 
-    if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.htaccess" | grep -Eq '(Rewrite|IfModule|SetEnv|Auth(Type|Name|UserFile)|Require) '; then
+    if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.htaccess" | grep -Eq '(Rewrite|IfModule|SetEnv|Auth(Type|Name|UserFile)) '; then
         critical "http://$domain/.htaccess is readable."
     fi
 
