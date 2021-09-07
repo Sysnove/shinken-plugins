@@ -23,16 +23,23 @@ perfdata() {
     echo
 }
 
+# Argument parsing
+CBHOST=localhost:8093
+WARNING_THRESHOLD=2
+CRITICAL_THRESHOLD=7
+
 # Utility function
 usage() {
     cat <<EOF
 Usage: $0 [-h HOST[:PORT]] [-u USERNAME] [-p PASSWORD]
 
 Options:
-    -h  Host to connect to, default to localhost:8091
+    -h  Host to connect to (default: ${CBHOST})
     -u  Username used to connect to host
     -p  Password used to connect to host
     -b  Bucket to do an active check with upsert
+    -w  Warning threshold (default: ${WARNING_THRESHOLD})
+    -c  Critical threshold (default: ${CRITICAL_THRESHOLD})
 EOF
 
     exit $UNKN
@@ -65,11 +72,6 @@ CURL=/usr/bin/curl
 [ ! -x ${CBQ} ] && crit "Please check cbq path."
 [ ! -x ${CURL} ] && crit "Please check curl path."
 
-# Argument parsing
-CBHOST=localhost:8093
-WARNING_THRESHOLD=2
-CRITICAL_THRESHOLD=7
-
 while getopts "u:p:h:d:w:c:" option
 do
     case $option in
@@ -81,9 +83,6 @@ do
             ;;
         h)
             CBHOST=$OPTARG
-            ;;
-        d)
-            DELETEOLDER=$OPTARG
             ;;
         w)
             WARNING_THRESHOLD=$OPTARG
