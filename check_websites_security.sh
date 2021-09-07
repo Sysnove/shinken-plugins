@@ -14,17 +14,18 @@ warning () {
 
 check_website() {
     domain=$1
-    if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.env" | grep '(_DB|DB_|HOST|PORT|REDIS|MONGO|MYSQL|environment|ENVIRONMENT)'; then
-        critical "http://$domain/.env is readable."
-    fi
-
     if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.htaccess" | grep -Eq '(Rewrite|IfModule|SetEnv|Auth(Type|Name|UserFile)) '; then
-        critical "http://$domain/.htaccess is readable."
+        warning "http://$domain/.htaccess is readable."
     fi
 
     if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.git/config" | grep -q '\[branch'; then
         critical "http://$domain/.git/config is readable."
     fi
+
+    if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.env" | grep '(_DB|DB_|HOST|PORT|REDIS|MONGO|MYSQL|environment|ENVIRONMENT)'; then
+        critical "http://$domain/.env is readable."
+    fi
+
 }
 
 if [ -d "/usr/local/ispconfig" ]; then
