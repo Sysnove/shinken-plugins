@@ -1,29 +1,27 @@
 #!/bin/bash
 
-RET=0 # OK
+tmp_file=$(mktemp "/tmp/$0.XXXXXX")
 
 critical () {
-    echo "SECURITY CRITICAL : $1"
-    RET=2
+    echo "CRITICAL : $1" >> "$tmp_file"
 }
 
 warning () {
-    echo "SECURITY WARNING : $1"
-    [ $RET -eq 0 ] && RET=1
+    echo "WARNING : $1" >> "$tmp_file"
 }
 
 check_website() {
-    domain=$1
-    if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.htaccess" | grep -Eq '(Rewrite|IfModule|SetEnv|Auth(Type|Name|UserFile)) '; then
-        warning "http://$domain/.htaccess is readable."
+    website=$1
+    if LC_ALL=C curl --max-time 5 -sL -A "Sysnove check_websites_security" "http://$website/.htaccess" | grep -Eq '(Rewrite|IfModule|SetEnv|Auth(Type|Name|UserFile)) '; then
+        warning "http://$website/.htaccess is readable."
     fi
 
-    if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.git/config" | grep -q '\[branch'; then
-        critical "http://$domain/.git/config is readable."
+    if LC_ALL=C curl --max-time 5 -sL -A "Sysnove check_websites_security" "http://$website/.git/config" | grep -q '\[branch'; then
+        critical "http://$website/.git/config is readable."
     fi
 
-    if LC_ALL=C curl --max-time 1 -sL -A "Sysnove check_websites_security" "http://$domain/.env" | grep '(_DB|DB_|HOST|PORT|REDIS|MONGO|MYSQL|environment|ENVIRONMENT)'; then
-        critical "http://$domain/.env is readable."
+    if LC_ALL=C curl --max-time 5 -sL -A "Sysnove check_websites_security" "http://$website/.env" | grep '(_DB|DB_|HOST|PORT|REDIS|MONGO|MYSQL|environment|ENVIRONMENT)'; then
+        critical "http://$website/.env is readable."
     fi
 
 }
@@ -34,21 +32,38 @@ if [ -d "/usr/local/ispconfig" ]; then
 fi
 
 if [ -d "/etc/nginx/sites-enabled" ]; then
-    for domain in $(grep -hRE '^[^#]*[^\$#]server_name' /etc/nginx/sites-enabled | grep -v '_;' | sed 's/;//g' | sed 's/server_name//g' | xargs -n 1 | sort | uniq); do
-        check_website "$domain"
-    done
+    websites=$(grep -hRE '^[^#]*[^\$#]server_name' /etc/nginx/sites-enabled | grep -v '_;' | sed 's/;//g' | sed 's/server_name//g' | sed 's/\*/wildcard/g' | xargs -n 1 | sort | uniq)
+    server="Nginx"
 fi
 
 if [ -d "/etc/apache2/sites-enabled" ]; then
     # COMMENT I think we don't need to check ServerAlias because we follow redirections
-    for domain in $(grep -hRE '^[^#]*[^\$#]ServerName' /etc/apache2/sites-enabled/ | sed 's/ServerName//g' | xargs -n 1 | sort | uniq); do
-        check_website "$domain"
-    done
+    websites=$(grep -hRE '^[^#]*[^\$#]ServerName' /etc/apache2/sites-enabled/ | sed 's/ServerName//g' | sed 's/\*/wildcard/g' | xargs -n 1 | sort | uniq)
+    server="Apache2"
 fi
 
+for website in $websites; do
+    check_website "$website" &
+done
+
+wait
+
+NB_ERRORS=$(wc -l < "$tmp_file")
+
+if grep '^CRITICAL' "$tmp_file"; then
+    RET=2
+elif grep '^WARNING' "$tmp_file"; then
+    RET=1
+else
+    RET=0
+fi
+
+rm "$tmp_file"
 
 if [ $RET -eq 0 ]; then
-    echo "Everything seems OK"
+    echo "$(echo "$websites" | wc -w) $server websites checked - Everything seems OK"
+else
+    echo "$NB_ERRORS dangerous files found in $(echo "$websites" | wc -w) $server websites"
 fi
 
 exit $RET
