@@ -44,7 +44,12 @@ RESULT=$(echo "${RESULT}" | jq '.snapshots | map(select(.state == "SUCCESS")) | 
 NB_SNAPSHOTS=$(echo "${RESULT}" | jq 'length')
 
 if [ "${NB_SNAPSHOTS}" -eq 0 ]; then
-    echo "CRITICAL - No snapshots found."
+    echo "CRITICAL - No snapshots found in $REPOSITORY snapshot repository."
+    exit 2
+fi
+
+if [ "${NB_SNAPSHOTS}" -gt 1 ]; then
+    echo "CRITICAL : More than one snapshot found in $REPOSITORY snapshot repository."
     exit 2
 fi
 
