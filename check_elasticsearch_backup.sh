@@ -3,6 +3,8 @@
 # user is in parameter 1
 USER="$1"
 
+REPOSITORY="dumps"
+
 # Password is in paramter 2, if user is provided
 if [ -n "$USER" ]; then
     PASSWORD="$2"
@@ -22,7 +24,7 @@ function curl(){
     /usr/bin/curl ${PARAMS} "$@"
 }
 
-RESULT=$(curl -X GET http://localhost:9200/_snapshot/dump/_all)
+RESULT=$(curl -X GET http://localhost:9200/_snapshot/$REPOSITORY/_all)
 
 if [ $? -ne 0 ]; then
     echo "CRITICAL - Impossible to connect to ElasticSearch."
