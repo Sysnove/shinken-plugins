@@ -147,7 +147,16 @@ for DEVICE in $(ls /sys/block); do
         DATA="$DATA$DEVICE=$PCT_BUSY% "
 
         # check TPS
-        if ! [[ $(uname -r) == "4.19"* && $DEVICE == "nvme"* ]]; then # Because of a bug in 4.19 kernel https://github.com/netdata/netdata/issues/5744
+        NVMEBUG=0
+        if [[ $(uname -r) == "4.19"* ]]; then # Because of a bug in 4.19 kernel https://github.com/netdata/netdata/issues/5744
+            if [[ $DEVICE == "nvme"* ]]; then
+                NVMEBUG=1
+            elif grep -q "^HPE" "/sys/block/${DEVICE}/device/vendor" && grep -q "^LOGICAL VOLUME" "/sys/block/${DEVICE}/device/model"; then
+                NVMEBUG=1
+            fi
+        fi
+
+        if [[ $NVMEBUG -eq 0 ]]; then
             if [ $PCT_BUSY -gt "$WARNING" ]; then
                 if [ $PCT_BUSY -gt "$CRITICAL" ]; then
                     OUTPUT="CRITICAL : $DEVICE I/O utilization is $PCT_BUSY% (>$CRITICAL%)"
