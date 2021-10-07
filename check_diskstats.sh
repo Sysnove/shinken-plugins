@@ -9,23 +9,23 @@ E_CRITICAL=2
 E_UNKNOWN=3
 
 show_help() {
-	echo "$0 [-w pct_business] [-c pct_business] | -h"
-	echo
-	echo "This plug-in is used to be alerted when maximum hard drive io utilization is reached."
-	echo
-	echo "  -w/c PCT_BUSINESS  Percentage of disk business."
-	echo
-	echo " example: $0 -w 80 -c 90"
+    echo "$0 [-w pct_business] [-c pct_business] | -h"
+    echo
+    echo "This plug-in is used to be alerted when maximum hard drive io utilization is reached."
+    echo
+    echo "  -w/c PCT_BUSINESS  Percentage of disk business."
+    echo
+    echo " example: $0 -w 80 -c 90"
 }
 
 # process args
-while [ -n "$1" ]; do 
-	case $1 in
-		-w)	shift; WARNING=$1 ;;
-		-c)	shift; CRITICAL=$1 ;;
-		-h)	show_help; exit 1 ;;
-	esac
-	shift
+while [ -n "$1" ]; do
+    case $1 in
+        -w)    shift; WARNING=$1 ;;
+        -c)    shift; CRITICAL=$1 ;;
+        -h)    show_help; exit 1 ;;
+    esac
+    shift
 done
 
 # generate HISTFILE filename
@@ -49,26 +49,26 @@ fi
 SECTORBYTESIZE=512
 
 sanitize() {
-	if [ -z "$WARNING" ]; then
-		echo "Need warning threshold"
-		exit $E_UNKNOWN
-	fi
-	if [ -z "$CRITICAL" ]; then
-		echo "Need critical threshold"
-		exit $E_UNKNOWN
-	fi
+    if [ -z "$WARNING" ]; then
+        echo "Need warning threshold"
+        exit $E_UNKNOWN
+    fi
+    if [ -z "$CRITICAL" ]; then
+        echo "Need critical threshold"
+        exit $E_UNKNOWN
+    fi
 }
 
 readdiskstat() {
-	if [ ! -f "/proc/diskstats" ]; then
-		return $E_UNKNOWN
-	fi
+    if [ ! -f "/proc/diskstats" ]; then
+        return $E_UNKNOWN
+    fi
 
-	cat /proc/diskstats
+    cat /proc/diskstats
 }
 
 readhistdiskstat() {
-	[ -f $HISTFILE ] && cat $HISTFILE
+    [ -f $HISTFILE ] && cat $HISTFILE
 }
 
 # check args
@@ -77,19 +77,19 @@ sanitize
 
 NEWDISKSTAT="$(readdiskstat)"
 if [ $? -eq $E_UNKNOWN ]; then
-	echo "Cannot read disk stats, check /proc/diskstats"
-	exit $E_UNKNOWN
+    echo "Cannot read disk stats, check /proc/diskstats"
+    exit $E_UNKNOWN
 fi
 
 if [ ! -f $HISTFILE ]; then
-	echo "$NEWDISKSTAT" >$HISTFILE
-	echo "UNKNOWN - Initial buffer creation..." 
-	exit $E_UNKNOWN
+    echo "$NEWDISKSTAT" >$HISTFILE
+    echo "UNKNOWN - Initial buffer creation..."
+    exit $E_UNKNOWN
 fi
 
 if ! OLDDISKSTAT=$(readhistdiskstat); then
-	echo "Cannot read histfile $HISTFILE..."
-	exit $E_UNKNOWN
+    echo "Cannot read histfile $HISTFILE..."
+    exit $E_UNKNOWN
 fi
 OLDDISKSTAT_EPOCH=$(date -r $HISTFILE +%s)
 NEWDISKSTAT_EPOCH=$(date +%s)
@@ -101,10 +101,10 @@ OUTPUT="Disk business is OK"
 EXITCODE=$E_OK
 
 echo "$NEWDISKSTAT" >$HISTFILE
-# now we have old and current stat; 
+# now we have old and current stat;
 # let compare it for each device
 for DEVICE in $(ls /sys/block); do
-	if [ -L "/sys/block/$DEVICE/device" ]; then
+    if [ -L "/sys/block/$DEVICE/device" ]; then
         OLD_READ=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $4}')
         NEW_READ=$(echo "$NEWDISKSTAT" | grep " $DEVICE " | awk '{print $4}')
         OLD_WRITE=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $8}')
@@ -136,7 +136,7 @@ for DEVICE in $(ls /sys/block); do
 
         READS_PER_SEC=$(((NEW_READ - OLD_READ) / TIME))
         WRITES_PER_SEC=$(((NEW_WRITE - OLD_WRITE) / TIME))
-        
+
         BYTES_READ_PER_SEC=$((SECTORS_READ * SECTORBYTESIZE / TIME))
         BYTES_WRITTEN_PER_SEC=$((SECTORS_WRITE * SECTORBYTESIZE / TIME))
         #KBYTES_READ_PER_SEC=$((BYTES_READ_PER_SEC / 1024))
@@ -167,7 +167,7 @@ for DEVICE in $(ls /sys/block); do
                 fi
             fi
         fi
-	fi
+    fi
 done
 
 echo "$OUTPUT ($DATA) | $PERFDATA"
