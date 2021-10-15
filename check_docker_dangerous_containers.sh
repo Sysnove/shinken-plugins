@@ -45,6 +45,10 @@ for image in $images; do
             count_mongo=$((count_mongo+1))
             count=$((count+1))
             ;;
+        elasticsearch)
+            count_elasticsearch=$((count_elasticsearch+1))
+            count=$((count+1))
+            ;;
     esac
 
     count_total=$((count_total+1))
@@ -65,6 +69,9 @@ if [ -n "$count_couchdb" ]; then
 fi
 if [ -n "$count_mongo" ]; then
     msg="$msg$count_mongo mongo, "
+fi
+if [ -n "$count_elasticsearch" ]; then
+    msg="$msg$count_elasticsearch elasticsearch, "
 fi
 
 if [ -n "$count" ]; then
