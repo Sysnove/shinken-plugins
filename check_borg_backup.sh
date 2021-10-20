@@ -1,6 +1,7 @@
 #!/bin/bash
 
 MAX_BACKUPS=45 # 31 days + 12 months + some margin
+BORG_TIMEOUT=55
 
 export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
 export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
@@ -61,7 +62,7 @@ else
 fi
 
 # Check last backup
-if list=$(borg list "$REPOSITORY" --format="{name} {time}{NEWLINE}" 2>&1); then
+if list=$(timeout $BORG_TIMEOUT borg list "$REPOSITORY" --format="{name} {time}{NEWLINE}" 2>&1); then
     count=$(echo "$list" | wc -l)
     last=$(echo "$list" | tail -n 1)
     last_date=$(date -d "$(echo "$last" | cut -d ' ' -f2-)" +%s)
@@ -87,6 +88,11 @@ if list=$(borg list "$REPOSITORY" --format="{name} {time}{NEWLINE}" 2>&1); then
     echo "CRITICAL: $msg"
     exit 2
 else
-    echo "CRITICAL: $list" | head -n 1
-    exit 2
+    if [ $? -eq 124 ]; then
+        echo "borg list did not return before $BORG_TIMEOUT seconds."
+        exit 3
+    else
+        echo "CRITICAL: $list" | head -n 1
+        exit 2
+    fi
 fi
