@@ -36,6 +36,31 @@ fi
 warn_date="$(date +'%s' -d "-$WARN hour")"
 crit_date="$(date +'%s' -d "-$CRIT hour")"
 
+# Abort if we are too close from backupninja, to avoid locking borg repository
+if pgrep -f /usr/sbin/backupninja > /dev/null; then
+    echo "UNKNOWN : Avoiding to run the check during backupninja execution."
+    exit 3
+fi
+
+backupninja_when="$(grep '^when =' /etc/backupninja.conf | cut -d '=' -f 2)"
+
+if echo "$backupninja_when" | grep -q '^ everyday at'; then
+    backupninja_hour=$(echo "$backupninja_hour" | cut -d ' ' -f 4)
+    if [ "$(date --date 'now + 1 minutes' +%H:%M)" == "$backupninja_hour" ] || [ "$(date +%H:%M)" == "$backupninja_hour" ]; then
+        echo "UNKNOWN : Avoiding to run the check one minute before backupninja"
+        exit 3
+    fi
+elif [ "$backupninja_when" == ' hourly' ]; then
+    if [ "$(date --date 'now + 1 minutes' +%M)" -eq 0 ] || [ "$(date +%M)" -eq 0 ]; then
+        echo "UNKNOWN : Avoiding to run the check one minute before backupninja"
+        exit 3
+    fi
+else
+    echo "UNKNOWN : Could not parse 'when' variable in /etc/backupninja.conf"
+    exit 3
+fi
+
+# Check last backup
 if list=$(borg list "$REPOSITORY" --format="{name} {time}{NEWLINE}" 2>&1); then
     count=$(echo "$list" | wc -l)
     last=$(echo "$list" | tail -n 1)
