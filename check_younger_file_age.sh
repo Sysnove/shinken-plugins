@@ -18,26 +18,6 @@ EOF
     exit ${UNKN}
 }
 
-critical() {
-	echo "CRITICAL - $*"
-	exit ${CRIT}
-}
-
-warning() {
-	echo "WARNING - $*"
-	exit ${WARN}
-}
-
-ok() {
-	echo "OK - $*"
-	exit ${OK}
-}
-
-unknown() {
-	echo "UNKNOWN - $*"
-	exit ${UNKN}
-}
-
 WARN_THRESHOLD=7
 CRIT_THRESHOLD=13
 
@@ -59,19 +39,17 @@ do
     esac
 done
 
+[ -z "$DIRECTORY" ] && usage
 
-THRESHOLD=${CRIT_THRESHOLD}
-
-NB=$(find "${DIRECTORY}" -mmin -$((THRESHOLD * 60)) -type f -ls | wc -l)
-
-[[ "${NB}" -eq 0 ]] && critical "No file younger than ${THRESHOLD} hours."
-
-if [ "${WARN_THRESHOLD}" -le "${CRIT_THRESHOLD}" ]; then
-    THRESHOLD=${WARN_THRESHOLD}
-
-    NB=$(find "${DIRECTORY}" -mmin -$((THRESHOLD * 60)) -type f -ls | wc -l)
-
-    [[ "${NB}" -eq 0 ]] && warning "No file younger than ${THRESHOLD} hours."
+# head makes find quit after first file found and speed up script
+if [ -z "$(find "$DIRECTORY" -mmin -$((WARN_THRESHOLD * 60)) -type f | head -n 1)" ]; then
+    if [ -z "$(find "$DIRECTORY" -mmin -$((CRIT_THRESHOLD * 60)) -type f | head -n 1)" ]; then
+        echo "CRITICAL - No file younger than $CRIT_THRESHOLD hours in $DIRECTORY."
+        exit $CRIT
+    fi
+    echo "WARNING - No file younger than $WARN_THRESHOLD hours in $DIRECTORY."
+    exit $WARN
 fi
 
-ok "${NB} files found younger than ${THRESHOLD} hours."
+echo "OK - There is at least one files younger than $WARN_THRESHOLD hours in $DIRECTORY."
+exit $OK
