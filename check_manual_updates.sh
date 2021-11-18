@@ -2,17 +2,21 @@
 
 apps=""
 
-nginx_installed=$(aptitude versions nginx | grep '^i' | awk '{print $2}')
-if [ -n "$nginx_installed" ] ; then
-    apps="$apps nginx"
+if [ -f /etc/debian_version ]; then
+    if apt-cache policy nginx | grep -q 'http://nginx.org'; then
+        nginx_installed=$(aptitude versions nginx | grep '^i' | awk '{print $2}')
+        if [ -n "$nginx_installed" ] ; then
+            apps="$apps nginx"
 
-    nginx_installed_major=$(echo "$nginx_installed" | cut -f1,2 -d'.')
+            nginx_installed_major=$(echo "$nginx_installed" | cut -f1,2 -d'.')
 
-    nginx_latest=$(aptitude versions nginx | awk '{print $2}' | grep "^$nginx_installed_major" | tail -n 1)
+            nginx_latest=$(aptitude versions nginx | awk '{print $2}' | grep "^$nginx_installed_major" | tail -n 1)
 
-    if [ -n "$nginx_latest" ] && [[ "$nginx_latest" > "$nginx_installed" ]]; then
-        echo "WARNING : Nginx $nginx_installed is installed, but $nginx_latest is available."
-        exit 1
+            if [ -n "$nginx_latest" ] && [[ "$nginx_latest" > "$nginx_installed" ]]; then
+                echo "WARNING : Nginx $nginx_installed is installed, but $nginx_latest is available."
+                exit 1
+            fi
+        fi
     fi
 fi
 
