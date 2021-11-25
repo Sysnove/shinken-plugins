@@ -6,7 +6,9 @@ CACHE=1 # days
 CACHEFILE=/var/tmp/nagios/check_big_log_files
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
-install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
+if ! [ -d "$(dirname "$CACHEFILE")" ]; then
+    install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
+fi
 
 EXCLUDES="/var/cache /var/lib /usr/share /lost+found /proc /sys /dev /run"
 

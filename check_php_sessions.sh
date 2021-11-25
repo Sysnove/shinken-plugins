@@ -4,7 +4,9 @@ CACHEFILE=/var/tmp/nagios/check_php_sessions
 CACHE=1 # days
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
-install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
+if ! [ -d "$(dirname "$CACHEFILE")" ]; then
+    install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
+fi
 
 if [ -d /usr/local/ispconfig ] ; then
     NUMBER=30000

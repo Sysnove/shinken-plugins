@@ -44,11 +44,8 @@ E_UNKNOWN=3
 LAST_RUN_FILE=/var/tmp/nagios/check_mail_logs_last_run
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
-install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$LAST_RUN_FILE")"
-
-# :COMMENT:maethor:20210121: Temporaire
-if [ -f "${LAST_RUN_FILE/nagios\//}" ] && [ ! -f "$LAST_RUN_FILE" ]; then
-    mv ${LAST_RUN_FILE/nagios\//} "$LAST_RUN_FILE"
+if ! [ -d "$(dirname "$LAST_RUN_FILE")" ]; then
+    install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$LAST_RUN_FILE")"
 fi
 
 if [ -f "$LAST_RUN_FILE" ] && [ ! -O "$LAST_RUN_FILE" ]; then

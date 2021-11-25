@@ -37,7 +37,9 @@ done
 HISTFILE=/var/tmp/nagios/check_diskstat.$DISK
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
-install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$HISTFILE")"
+if ! [ -d "$(dirname "$HISTFILE")" ]; then
+    install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$HISTFILE")"
+fi
 
 # :COMMENT:maethor:20210121: Temporaire
 if [ -f "${HISTFILE/nagios\//}" ] && [ ! -f "$HISTFILE" ]; then

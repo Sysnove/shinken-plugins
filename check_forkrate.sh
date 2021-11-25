@@ -6,7 +6,9 @@ DATAFILE="/var/tmp/nagios/nagios_check_forkrate.dat"
 VALID_INTERVAL=600
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
-install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$DATAFILE")"
+if ! [ -d "$(dirname "$DATAFILE")" ]; then
+    install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$DATAFILE")"
+fi
 
 # :COMMENT:maethor:20210121: Temporaire
 if [ -f "${DATAFILE/nagios\//}" ] && [ ! -f "$DATAFILE" ]; then
