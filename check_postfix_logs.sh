@@ -96,7 +96,7 @@ in_virus=$(grep 'Infected' -c $tmpfile_in)
 in_spam=$(grep 'Spam message rejected' -c $tmpfile_in)
 in_ratelimit=$(grep 'Rate limit exceeded' -c $tmpfile_in)
 in_greylist=$(grep 'Try again later' -c $tmpfile_in)
-in_reject=$(grep postfix/smtpd | grep 'NOQUEUE: reject' -c $tmpfile)
+in_reject=$(grep 'NOQUEUE: reject' -c $tmpfile)
 
 now_s=$(date -d "$now" +%s)
 since_s=$(date -d "$since" +%s)
