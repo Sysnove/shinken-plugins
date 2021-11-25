@@ -23,8 +23,10 @@ fi
 containers=$(echo "$containers" | grep -E -v "^(base_mongo_proxy|registry_portus_mariadb|drone-)")
 
 # Filter out excludes
-count_ignored=$(echo "$containers" | grep -E "^$ignored_names\\." | wc -l)
-containers=$(echo "$containers" | grep -E -v "^$ignored_names\\.")
+if [ -n "$ignored_names" ]; then
+    count_ignored=$(echo "$containers" | grep -E -c "^$ignored_names\\.")
+    containers=$(echo "$containers" | grep -E -v "^$ignored_names\\.")
+fi
 
 
 # Get images
@@ -83,7 +85,7 @@ if [ -n "$count_elasticsearch" ]; then
     msg="$msg$count_elasticsearch elasticsearch, "
 fi
 
-if [ $count_ignored -gt 0 ]; then
+if [ "$count_ignored" -gt 0 ]; then
     msg_ignored=" ($count_ignored ignored)"
 fi
 
