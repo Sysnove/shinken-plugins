@@ -4,7 +4,7 @@
 # Check directories that should not be excluded from backups but could be by mistake
 #
 
-FORBIDDEN_EXCLUDES='^(/srv|/var|/var/(www|vmail|backups|lib/docker))$'
+FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/(www|vmail|backups|lib/docker))$'
 
 backup_excludes=$(grep '^exclude =' /etc/backup.d/90.borg | awk '{print $3}')
 bind_mounts=$(grep bind /etc/fstab | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
