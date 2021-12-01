@@ -76,7 +76,21 @@ if list=$(timeout $BORG_TIMEOUT borg list "$REPOSITORY" --format="{name} {time}{
                 echo "WARNING: $count backups, please check borg prune."
                 exit 1
             else
-                echo "OK: $msg" 
+                if stats=$(timeout 5 borg info "$REPOSITORY" --json | jq -r .cache.stats); then
+                    #total_chunks=$(echo "$stats" | jq -r '.total_chunks')
+                    #total_csize=$(echo "$stats" | jq -r '.total_csize')
+                    total_size=$(echo "$stats" | jq -r '.total_size')
+                    #total_unique_chunks=$(echo "$stats" | jq -r '.total_unique_chunks')
+                    unique_csize=$(echo "$stats" | jq -r '.unique_csize')
+                    unique_size=$(echo "$stats" | jq -r '.unique_size')
+                    total_size_gb=$(( total_size / 1024 / 1024 / 1024 ))
+                    unique_size_gb=$(( unique_size / 1024 / 1024 / 1024 ))
+                    unique_csize_gb=$(( unique_csize / 1024 / 1024 / 1024 ))
+                    stats_msg="| total_size=${total_size_gb}GB;;;0; unique_size=${unique_size_gb}GB;;;0;  unique_size_compressed=${unique_csize_gb}GB;;;0;"
+                else
+                    stats_msg="(but could not retrieve stats)"
+                fi
+                echo "OK: $msg $stats_msg" 
                 exit 0
             fi
         elif [ "$last_date" -gt "$crit_date" ]; then
