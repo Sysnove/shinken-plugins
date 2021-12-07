@@ -87,6 +87,7 @@ grep 'postfix/smtp\[' $tmpfile | grep -E -v 'relay=[^ \[]*\[127\.0\.0\.1\]'> $tm
 out_bounced=$(grep 'status=bounced' -c $tmpfile_out)
 out_deferred=$(grep 'status=deferred' -c $tmpfile_out)
 out_sent=$(grep 'status=sent' -c $tmpfile_out)
+out_all=$((out_bounced + out_deferred + out_sent))
 
 # Incoming
 grep -E 'postfix/(pipe|cleanup)\[' $tmpfile > $tmpfile_in
@@ -97,6 +98,7 @@ in_spam=$(grep 'Spam message rejected' -c $tmpfile_in)
 in_ratelimit=$(grep 'Rate limit exceeded' -c $tmpfile_in)
 in_greylist=$(grep 'Try again later' -c $tmpfile_in)
 in_reject=$(grep 'NOQUEUE: reject' -c $tmpfile)
+in_all=$((in_accepted + in_virus + in_spam + in_ratelimit + in_greylist + in_reject))
 
 now_s=$(date -d "$now" +%s)
 since_s=$(date -d "$since" +%s)
@@ -115,17 +117,18 @@ rate_in_reject=$(compute "$in_reject * 60 / $period")
 
 PERFDATA="o_sent=$rate_out_sent;$OUT_SENT_WARN;$OUT_SENT_CRIT;0; o_bounced=$rate_out_bounced;$OUT_BOUNCED_WARN;$OUT_BOUNCED_CRIT;0; o_deferred=$rate_out_deferred;$OUT_DEFERRED_WARN;$OUT_DEFERRED_CRIT;0; i_accepted=$rate_in_accepted; i_virus=$rate_in_virus; i_spam=$rate_in_spam; i_ratelimit=$rate_in_ratelimit; i_greylist=$rate_in_greylist; i_reject=$rate_in_reject;"
 
-RET_MSG="$in_accepted messages received and $out_sent messages sent in the last $period seconds | $PERFDATA"
+MSG_OK="$in_all messages received and $out_all messages sent in the last $period seconds | $PERFDATA"
+MSG_ERR="$out_sent messages sent, $out_deferred deferred and $out_bounced bounced in the last $period seconds | $PERFDATA"
 
 if (( $(echo "$rate_out_sent > $OUT_SENT_CRIT" | bc -l) )) || (( $(echo "$rate_out_deferred > $OUT_DEFERRED_CRIT" | bc -l) )) || (( $(echo "$rate_out_bounced > $OUT_BOUNCED_CRIT" | bc -l) )); then
     RET_CODE=$E_CRITICAL
-    RET_MSG="CRITICAL - $RET_MSG"
+    RET_MSG="CRITICAL - $MSG_ERR"
 elif (( $(echo "$rate_out_sent > $OUT_SENT_WARN" | bc -l) )) || (( $(echo "$rate_out_deferred > $OUT_DEFERRED_WARN" | bc -l) )) || (( $(echo "$rate_out_bounced > $OUT_BOUNCED_WARN" | bc -l) )); then
     RET_CODE=$E_WARNING
-    RET_MSG="WARNING - $RET_MSG"
+    RET_MSG="WARNING - $MSG_ERR"
 else
     RET_CODE=$E_OK
-    RET_MSG="OK - $RET_MSG"
+    RET_MSG="OK - $MSG_OK"
 fi
 
 
