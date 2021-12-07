@@ -49,6 +49,7 @@ while [ -n "$1" ]; do
         -c3) shift; CRIT_3=$1 ;;
         -c4) shift; CRIT_4=$1 ;;
         -c5) shift; CRIT_5=$1 ;;
+        -t) shift; LAST_RUN_FILE=$1 ;;
         -h)	show_help; exit 1 ;;
     esac
     shift
@@ -85,7 +86,7 @@ old_count5=-1
 old_countall=-1
 last_check=-1
 # shellcheck disable=SC1090
-source $LAST_RUN_FILE
+source "$LAST_RUN_FILE"
 
 new_count2=0
 new_count3=0
@@ -123,7 +124,7 @@ old_count499=$new_count499
 old_count5=$new_count5
 old_countall=$new_countall
 last_check=$now
-" > $LAST_RUN_FILE
+" > "$LAST_RUN_FILE"
 
 if [ $new_countall -lt $old_countall ] ; then
     echo "UNKNOWN - Logs seem to have shrink since last run, please run the check again."
