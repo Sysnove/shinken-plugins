@@ -19,8 +19,8 @@ fi
 # Check if files in / that are not included nor explicitely excluded
 #
 
-root_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9\.]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
-root_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-z0-9\.]+$' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
+root_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-zA-Z0-9._-]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
+root_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-zA-Z0-9._-]+$' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
 nonroot_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9]+/.+' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/')
 nonroot_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-z0-9]+/.+' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/')
 if [ -n "$nonroot_includes" ] && [ -n "$nonroot_excludes" ]; then
