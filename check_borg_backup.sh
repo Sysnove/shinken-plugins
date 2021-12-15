@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MAX_BACKUPS=45 # 31 days + 12 months + some margin
-BORG_TIMEOUT=25
+BORG_TIMEOUT=45
 
 export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
 export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
@@ -71,7 +71,7 @@ if list=$(timeout $BORG_TIMEOUT borg list "$REPOSITORY" --format="{name} {time}{
     msg="Last backup is $last_name"
 
     if [ ${#last_name} -eq 10 ] || [ ${#last_name} -eq 13 ]; then # We need to check that we don't have a "-checkpoint" backup
-        if stats=$(timeout $BORG_TIMEOUT borg info "$REPOSITORY" --json); then
+        if stats=$(timeout 13 borg info "$REPOSITORY" --json); then
             stats=$(echo "$stats" | jq -r .cache.stats)
             #total_chunks=$(echo "$stats" | jq -r '.total_chunks')
             #total_csize=$(echo "$stats" | jq -r '.total_csize')
