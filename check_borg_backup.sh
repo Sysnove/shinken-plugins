@@ -111,3 +111,6 @@ else
         exit 2
     fi
 fi
+
+# Timeouts can leave unwanted borg tmp files.
+find /tmp/ -maxdepth 1 -mtime +1 -name '_MEI*' -type d -exec rm -rf {} \;
