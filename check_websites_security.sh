@@ -1,6 +1,7 @@
 #!/bin/bash
 
 tmp_file=$(mktemp "/tmp/$(basename "$0").XXXXXX")
+trap 'rm -f -- "$tmp_file"' EXIT
 
 critical () {
     echo "CRITICAL : $1" >> "$tmp_file"
