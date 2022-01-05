@@ -27,8 +27,8 @@ if [[ $nb_security_updates -gt 0 ]]; then
 fi
 
 if [[ $nb_updates -gt 0 ]]; then
-    echo "OK: $nb_updates / $nb_on_hold packages on hold are available for upgrade : $(echo "$updates" | xargs)"
-    exit 1
+    echo "OK but $nb_updates/$nb_on_hold packages on hold are available for upgrade : $(echo "$updates" | xargs)"
+    exit 0
 fi
 
 if [[ $nb_on_hold -gt 0 ]]; then
