@@ -2,7 +2,9 @@
 
 nb_on_hold=0
 nb_updates=0
+updates=""
 nb_security_updates=0
+security_updates=""
 
 for pkg in $(apt-mark showhold); do
     nb_on_hold=$((nb_on_hold + 1))
@@ -10,20 +12,22 @@ for pkg in $(apt-mark showhold); do
     installed=$(echo "$policy" | head -n 2 | tail -n 1 | awk '{print $2}')
     candidate=$(echo "$policy" | head -n 3 | tail -n 1 | awk '{print $2}')
     if [[ "$installed" != "$candidate" ]]; then
+        updates="$updates $pkg"
         nb_updates=$((nb_updates + 1))
         if echo "$policy" | grep -F -B 20 '***' | grep Packages | grep -q security; then
-            nb_security_updates=$((nb_updates + 1))
+            security_updates="$security_updates $pkg"
+            nb_security_updates=$((nb_security_updates + 1))
         fi
     fi
 done
 
 if [[ $nb_security_updates -gt 0 ]]; then
-    echo "CRITICAL: $nb_updates packages on hold are available for upgrade ($nb_security_updates security)."
+    echo "CRITICAL: $nb_security_updates packages on hold need a security update : $(echo "$security_updates" | xargs)"
     exit 2
 fi
 
 if [[ $nb_updates -gt 0 ]]; then
-    echo "WARNING: $nb_updates packages on hold are available for upgrade."
+    echo "OK: $nb_updates / $nb_on_hold packages on hold are available for upgrade : $(echo "$updates" | xargs)"
     exit 1
 fi
 
