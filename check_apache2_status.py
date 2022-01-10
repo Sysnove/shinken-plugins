@@ -98,7 +98,7 @@ def main():
             % (version, values["WarnWorkers"], perfdata)
         )
         raise SystemExit(1)
-    if values["TotalWorkers"] >= values["MaxWorkers"]:
+    if values["TotalWorkers"] > values["MaxWorkers"]:
         print(
             "%s WARNING (TotalWorkers > MaxWorkers=%s) - %s"
             % (version, values["MaxWorkers"], perfdata)
