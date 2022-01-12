@@ -1,21 +1,20 @@
 #!/bin/bash
 
 MAX_BACKUPS=45 # 31 days + 12 months + some margin
-BORG_TIMEOUT=45
 
 export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
 export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
 
-REPOSITORY="backups:$(hostname)"
 WARN=24
 CRIT=48
+BORG_LIST=/var/backups/borglist.json
+BORG_INFO=/var/backups/borginfo.json
+WARN_NFILES=1000000
+WARN_DURATION=3600
 
-while getopts "r:w:c:n:" option
+while getopts "w:c:n:f:d:" option
 do
     case $option in
-        r)
-            REPOSITORY="backups:$OPTARG"
-            ;;
         w)
             WARN=$OPTARG
             ;;
@@ -25,7 +24,16 @@ do
         n)
             MAX_BACKUPS=$OPTARG
             ;;
+        f)
+            WARN_NFILES=$OPTARG
+            ;;
+        d)
+            WARN_DURATION=$OPTARG
+            ;;
         *)
+            echo "Wrong argument"
+            exit 3
+            ;;
     esac
 done
 
@@ -37,80 +45,55 @@ fi
 warn_date="$(date +'%s' -d "-$WARN hour")"
 crit_date="$(date +'%s' -d "-$CRIT hour")"
 
-# Abort if we are too close from backupninja, to avoid locking borg repository
-if pgrep -f /usr/sbin/backupninja > /dev/null; then
-    echo "UNKNOWN : Avoiding to run the check during backupninja execution."
+if ! [ -f $BORG_LIST ]; then
+    echo "Could not found borg list file : $BORG_LIST"
     exit 3
 fi
 
-backupninja_when="$(grep '^when =' /etc/backupninja.conf | cut -d '=' -f 2)"
-
-if echo "$backupninja_when" | grep -q '^ everyday at'; then
-    backupninja_hour=$(echo "$backupninja_hour" | cut -d ' ' -f 4)
-    if [ "$(date --date 'now + 1 minutes' +%H:%M)" == "$backupninja_hour" ] || [ "$(date +%H:%M)" == "$backupninja_hour" ]; then
-        echo "UNKNOWN : Avoiding to run the check one minute before backupninja"
-        exit 3
-    fi
-elif [ "$backupninja_when" == ' hourly' ]; then
-    if [ "$(date --date 'now + 1 minutes' +%M)" -eq 0 ] || [ "$(date +%M)" -eq 0 ]; then
-        echo "UNKNOWN : Avoiding to run the check one minute before backupninja"
-        exit 3
-    fi
-else
-    echo "UNKNOWN : Could not parse 'when' variable in /etc/backupninja.conf"
+if ! [ -f $BORG_INFO ]; then
+    echo "Could not found borg info file : $BORG_INFO"
     exit 3
 fi
 
-# Check last backup
-if list=$(timeout $BORG_TIMEOUT borg list "$REPOSITORY" --format="{name} {time}{NEWLINE}" 2>&1); then
-    count=$(echo "$list" | wc -l)
-    last=$(echo "$list" | tail -n 1)
-    last_date=$(date -d "$(echo "$last" | cut -d ' ' -f2-)" +%s)
-    last_name=$(echo "$last" | cut -d ' ' -f 1)
+count=$(jq -r '.archives | length' /tmp/borglist.json)
+last_date=$(date -d "$(jq -r '.archives[0].start' /tmp/borginfo.json)" +%s)
+last_name=$(jq -r '.archives[0].name' /tmp/borginfo.json)
+last_duration=$(jq -r '.archives[0].duration' /tmp/borginfo.json | cut -d '.' -f 1)
+nfiles=$(jq -r '.archives[0].stats.nfiles' /tmp/borginfo.json)
 
-    msg="Last backup is $last_name"
+msg="Last backup is $last_name"
+total_size=$(jq -r '.cache.stats.total_size' /tmp/borginfo.json)
+unique_csize=$(jq -r '.cache.stats.unique_csize' /tmp/borginfo.json)
+unique_size=$(jq -r '.cache.stats.unique_size' /tmp/borginfo.json)
+total_size_gb=$(( total_size / 1024 / 1024 / 1024 ))
+unique_size_gb=$(( unique_size / 1024 / 1024 / 1024 ))
+unique_csize_gb=$(( unique_csize / 1024 / 1024 / 1024 ))
+stats_msg="| total_size=${total_size_gb}GB;;;0; unique_size=${unique_size_gb}GB;;;0;  unique_size_compressed=${unique_csize_gb}GB;;;0; nfiles=${nfiles};;;0; duration=${last_duration};;;0;"
 
-    if [ ${#last_name} -eq 10 ] || [ ${#last_name} -eq 13 ]; then # We need to check that we don't have a "-checkpoint" backup
-        if stats=$(timeout 13 borg info "$REPOSITORY" --json); then
-            stats=$(echo "$stats" | jq -r .cache.stats)
-            #total_chunks=$(echo "$stats" | jq -r '.total_chunks')
-            #total_csize=$(echo "$stats" | jq -r '.total_csize')
-            total_size=$(echo "$stats" | jq -r '.total_size')
-            #total_unique_chunks=$(echo "$stats" | jq -r '.total_unique_chunks')
-            unique_csize=$(echo "$stats" | jq -r '.unique_csize')
-            unique_size=$(echo "$stats" | jq -r '.unique_size')
-            total_size_gb=$(( total_size / 1024 / 1024 / 1024 ))
-            unique_size_gb=$(( unique_size / 1024 / 1024 / 1024 ))
-            unique_csize_gb=$(( unique_csize / 1024 / 1024 / 1024 ))
-            stats_msg="| total_size=${total_size_gb}GB;;;0; unique_size=${unique_size_gb}GB;;;0;  unique_size_compressed=${unique_csize_gb}GB;;;0;"
-        else
-            stats_msg="(but could not retrieve stats)"
-        fi
-        if [ "$last_date" -gt "$warn_date" ]; then
-            if [[ $count -gt $MAX_BACKUPS ]]; then
-                echo "WARNING: $count backups, please check borg prune $stats_msg"
-                exit 1
-            else
-                echo "OK: $msg $stats_msg" 
-                exit 0
-            fi
-        elif [ "$last_date" -gt "$crit_date" ]; then
-            echo "WARNING: $msg $stats_msg"
-            exit 1
-        fi
-    fi
-
+if [ "$last_date" -lt "$crit_date" ]; then
     echo "CRITICAL: $msg $stats_msg"
     exit 2
-else
-    if [ $? -eq 124 ]; then
-        echo "borg list did not return before $BORG_TIMEOUT seconds."
-        exit 3
-    else
-        echo "CRITICAL: $list" | head -n 1
-        exit 2
-    fi
 fi
 
-# Timeouts can leave unwanted borg tmp files.
-find /tmp/ -maxdepth 1 -mtime +1 -name '_MEI*' -type d -exec rm -rf {} \;
+if [ "$last_date" -lt "$warn_date" ]; then
+    echo "WARNING: $msg $stats_msg"
+    exit 1
+fi
+
+if [ "$count" -gt "$MAX_BACKUPS" ]; then
+    echo "WARNING: $count backups, please check borg prune $stats_msg"
+    exit 1
+fi
+
+if [ -n "$WARN_NFILES" ] && [ "$nfiles" -gt "$WARN_NFILES" ]; then
+    echo "WARNING: $nfiles files in backup. Please check backup excludes. $stats_msg"
+    exit 1
+fi
+
+if [ -n "$WARN_DURATION" ] && [ "$last_duration" -gt "$WARN_DURATION" ]; then
+    echo "WARNING: last backup took more than $last_duration seconds. Please check backup excludes. $stats_msg"
+    exit 1
+fi
+
+echo "OK: $msg $stats_msg" 
+exit 0
