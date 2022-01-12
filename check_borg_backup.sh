@@ -55,16 +55,16 @@ if ! [ -f $BORG_INFO ]; then
     exit 3
 fi
 
-count=$(jq -r '.archives | length' /tmp/borglist.json)
-last_date=$(date -d "$(jq -r '.archives[0].start' /tmp/borginfo.json)" +%s)
-last_name=$(jq -r '.archives[0].name' /tmp/borginfo.json)
-last_duration=$(jq -r '.archives[0].duration' /tmp/borginfo.json | cut -d '.' -f 1)
-nfiles=$(jq -r '.archives[0].stats.nfiles' /tmp/borginfo.json)
+count=$(jq -r '.archives | length' $BORG_LIST)
+last_date=$(date -d "$(jq -r '.archives[0].start' $BORG_INFO)" +%s)
+last_name=$(jq -r '.archives[0].name' $BORG_INFO)
+last_duration=$(jq -r '.archives[0].duration' $BORG_INFO | cut -d '.' -f 1)
+nfiles=$(jq -r '.archives[0].stats.nfiles' $BORG_INFO)
 
 msg="Last backup is $last_name"
-total_size=$(jq -r '.cache.stats.total_size' /tmp/borginfo.json)
-unique_csize=$(jq -r '.cache.stats.unique_csize' /tmp/borginfo.json)
-unique_size=$(jq -r '.cache.stats.unique_size' /tmp/borginfo.json)
+total_size=$(jq -r '.cache.stats.total_size' $BORG_INFO)
+unique_csize=$(jq -r '.cache.stats.unique_csize' $BORG_INFO)
+unique_size=$(jq -r '.cache.stats.unique_size' $BORG_INFO)
 total_size_gb=$(( total_size / 1024 / 1024 / 1024 ))
 unique_size_gb=$(( unique_size / 1024 / 1024 / 1024 ))
 unique_csize_gb=$(( unique_csize / 1024 / 1024 / 1024 ))
