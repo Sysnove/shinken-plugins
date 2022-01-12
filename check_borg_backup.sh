@@ -85,12 +85,12 @@ if [ "$count" -gt "$MAX_BACKUPS" ]; then
     exit 1
 fi
 
-if [ -n "$WARN_NFILES" ] && [ "$nfiles" -gt "$WARN_NFILES" ]; then
+if [ -n "$WARN_NFILES" ] && [ "$WARN_NFILES" -ne 0 ] && [ "$nfiles" -gt "$WARN_NFILES" ]; then
     echo "WARNING: $nfiles files in backup. Please check backup excludes. $stats_msg"
     exit 1
 fi
 
-if [ -n "$WARN_DURATION" ] && [ "$last_duration" -gt "$WARN_DURATION" ]; then
+if [ -n "$WARN_DURATION" ] && [ "$WARN_DURATION" -ne 0 ] && [ "$last_duration" -gt "$WARN_DURATION" ]; then
     echo "WARNING: last backup took more than $last_duration seconds. Please check backup excludes. $stats_msg"
     exit 1
 fi
