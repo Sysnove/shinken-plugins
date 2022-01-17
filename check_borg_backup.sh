@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Check age only : check_borg_backup.sh
+# Check duration only :  check_borg_backup.sh -w 0 -c 0 -d 3600
+# Check duration, number of files and number of backups : check_borg_backup.sh -w 0 -c 0 -n 45 -f 1000000 -d 3600 -p
+
 export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
 export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
 
