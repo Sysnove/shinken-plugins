@@ -40,13 +40,10 @@ do
     esac
 done
 
-if [ "$WARN" -ge "$CRIT" ]; then
+if [ "$WARN" -gt "$CRIT" ]; then
     echo "CRIT should be greater than WARN"
     exit 3
 fi
-
-warn_date="$(date +'%s' -d "-$WARN hour")"
-crit_date="$(date +'%s' -d "-$CRIT hour")"
 
 if ! [ -f $BORG_LIST ]; then
     echo "Could not found borg list file : $BORG_LIST"
@@ -77,14 +74,21 @@ if $PERFDATA; then
     stats_msg="| total_size=${total_size_gb}GB;;;0; unique_size=${unique_size_gb}GB;;;0;  unique_size_compressed=${unique_csize_gb}GB;;;0; nfiles=${nfiles};;;0; duration=${last_duration};;;0;"
 fi
 
-if [ "$last_date" -lt "$crit_date" ]; then
-    echo "CRITICAL: $msg $stats_msg"
-    exit 2
+if [ "$CRIT" -gt 0 ]; then
+    crit_date="$(date +'%s' -d "-$CRIT hour")"
+
+    if [ "$last_date" -lt "$crit_date" ]; then
+        echo "CRITICAL: $msg $stats_msg"
+        exit 2
+    fi
 fi
 
-if [ "$last_date" -lt "$warn_date" ]; then
-    echo "WARNING: $msg $stats_msg"
-    exit 1
+if [ "$WARN" -gt 0 ]; then
+    warn_date="$(date +'%s' -d "-$WARN hour")"
+    if [ "$last_date" -lt "$warn_date" ]; then
+        echo "WARNING: $msg $stats_msg"
+        exit 1
+    fi
 fi
 
 if [ "$WARN_BACKUPS" -ne 0 ] && [ "$count" -gt "$WARN_BACKUPS" ]; then
