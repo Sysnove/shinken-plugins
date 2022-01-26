@@ -40,7 +40,7 @@ done
 
 FIND_OPTS="\\( -name '*.log' -o -name syslog -o -name catalina.out \\) -size +${SIZE} -print"
 
-if ! find $CACHEFILE -mtime -${CACHE} -print > /dev/null 2>&1; then
+if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
     if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE; then
         rm -f $CACHEFILE
         echo "UNKNOWN: error during find"
@@ -50,7 +50,7 @@ else
     if [ -s "$CACHEFILE" ]; then
         # shellcheck disable=SC2013
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print; done)"
-        echo -n "$files" > $CACHEFILE
+        echo -e "$files" > $CACHEFILE
     fi
 fi
 
