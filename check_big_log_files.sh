@@ -47,7 +47,7 @@ if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
         exit 3
     fi
 else
-    if [ -s "$CACHEFILE" ]; then
+    if [ -s "$CACHEFILE" ] && [ "$(cat $CACHEFILE)" != "" ]; then
         # shellcheck disable=SC2013
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print; done)"
         echo -e "$files" > $CACHEFILE
