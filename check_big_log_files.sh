@@ -47,7 +47,7 @@ if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
         exit 3
     fi
 else
-    if [ -s "$CACHEFILE" ] && [ "$(cat $CACHEFILE)" != "" ]; then
+    if [ -s "$CACHEFILE" ]; then
         # shellcheck disable=SC2013
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print; done)"
         echo -e "$files" > $CACHEFILE
@@ -56,7 +56,7 @@ fi
 
 num=$(wc -l < $CACHEFILE)
 
-if [ "$num" -eq 0 ]; then
+if [ -s "$CACHEFILE" ]; then
     echo "OK: No crazy log file found."
     exit 0
 elif [ "$num" -eq 1 ]; then
