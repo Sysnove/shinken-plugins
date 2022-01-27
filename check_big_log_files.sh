@@ -56,7 +56,7 @@ fi
 
 num=$(wc -l < $CACHEFILE)
 
-if [ -s "$CACHEFILE" ]; then
+if ! [ -s "$CACHEFILE" ]; then
     echo "OK: No crazy log file found."
     exit 0
 elif [ "$num" -eq 1 ]; then
