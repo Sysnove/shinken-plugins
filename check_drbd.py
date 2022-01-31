@@ -40,7 +40,7 @@ def main():
                             if f == id:
                                 res = os.path.basename(root)
 
-                    error_msg='DRBD %s (%s) state is %s (ro:%s, ds:%s)' % (res, id, cs, ro, ds)
+                    error_msg='DRBD %s (drbd%s) state is %s (ro:%s, ds:%s)' % (res, id, cs, ro, ds)
 
                     if cs not in ('Connected', 'SyncSource', 'SyncTarget') or 'Unknown' in ro or 'Unknown' in ds:
                         print(error_msg)
