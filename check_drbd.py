@@ -15,6 +15,7 @@
 
 import sys
 import re
+import os
 
 # nagios exit code
 STATUS_OK = 0
@@ -32,6 +33,13 @@ def main():
                     cs = match.group(2)
                     ro = match.group(3)
                     ds = match.group(4)
+                    res = id
+
+                    for root, dirs, files in os.walk('/dev/drbd/by-res/'):
+                        for f in files:
+                            if f == id:
+                                res = os.path.basename(root)
+
                     error_msg='DRBD %s state is %s (ro:%s, ds:%s)' % (id, cs, ro, ds)
 
                     if cs not in ('Connected', 'SyncSource', 'SyncTarget') or 'Unknown' in ro or 'Unknown' in ds:
