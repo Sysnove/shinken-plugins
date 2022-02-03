@@ -8,6 +8,8 @@ FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/(www|vmail|backups|lib/docker))/?$'
 
 backup_excludes=$(grep '^exclude =' /etc/backup.d/90.borg | awk '{print $3}')
 bind_mounts=$(grep bind /etc/fstab | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
+nfs_mounts=$(grep ' nfs ' /etc/fstab  | awk '{print $2}')
+sshfs_mounts=$(grep '^sshfs#' /etc/fstab | awk '{print $2}')
 
 
 if echo "$backup_excludes" | grep -E -q "$FORBIDDEN_EXCLUDES"; then
@@ -61,6 +63,18 @@ done
 missing=""
 
 for source in $bind_mounts; do
+    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
+        missing="$missing$source "
+    fi
+done
+
+for source in $nfs_mounts; do
+    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
+        missing="$missing$source "
+    fi
+done
+
+for source in $sshfs_mounts; do
     if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
         missing="$missing$source "
     fi
