@@ -69,7 +69,7 @@ fi
 if repmgr_installed=$(sudo -u postgres repmgr --version); then
     repmgr_running=$(sudo -u postgres psql -A -t -d repmgr -c "select extversion from pg_extension where extname='repmgr';")
     if [ -n "$repmgr_running" ]; then
-        repmgr_installed=$(echo "$repmgr_installed" | cut -d ' ' -f 2)
+        repmgr_installed=$(echo "$repmgr_installed" | cut -d ' ' -f 2 | cut -d '.' -f 1-2)
         if [ "$repmgr_running" != "$repmgr_installed" ]; then
             echo "WARNING : Repmgr $repmgr_running is running, but $repmgr_installed is installed."
             exit 1
