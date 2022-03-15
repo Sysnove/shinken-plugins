@@ -12,9 +12,11 @@ if [ ! -d "$DIR" ]; then
     exit 2
 fi
 
-warnings=$(find "${DIR}" -mmin +1500 -mmin -3000 -type f)
-errors=$(find "${DIR}" -mmin +3000 -type f)
-oks=$(find "${DIR}" -mmin -1500 -type f)
+FIND=(find "${DIR}" -type f -not -name "README.txt")
+
+warnings=$("${FIND[@]}" -mmin +1500 -mmin -3000)
+errors=$("${FIND[@]}" -mmin +3000)
+oks=$("${FIND[@]}" -mmin -1500)
 
 nb_ok="$(echo "$oks" | wc -w)"
 
