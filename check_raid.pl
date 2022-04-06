@@ -1662,7 +1662,7 @@ $fatpacked{"App/Monitoring/Plugin/CheckRaid/Plugins/cciss.pm"} = '#line '.(1+__L
   		close $fh;
   		return 0 unless $line;
   
-  		if (my($v) = $line =~ /^cciss_vol_status version ([\d.]+)$/) {
+  		if (my($v) = $line =~ /^cciss_vol_status version ([\d.]+)[a-z]?$/) {
   			return 0 + $v;
   		}
   		return 0;
@@ -1753,10 +1753,11 @@ $fatpacked{"App/Monitoring/Plugin/CheckRaid/Plugins/cciss.pm"} = '#line '.(1+__L
   		# /dev/cciss/c0d0: (Smart Array P400i) RAID 1 Volume 0 status: OK
   		# /dev/sda: (Smart Array P410i) RAID 1 Volume 0 status: OK.
   		# /dev/sda: (Smart Array P410i) RAID 5 Volume 0 status: OK.   At least one spare drive designated.  At least one spare drive has failed.
+  		# /dev/sda: (Smart Array P420i) RAID 1(1+0) Volume 0 status: OK.
   		if (my($file, $board_name, $raid_level, $volume_number, $certain, $status, $spare_drive_status) = m{
   			^(/dev/[^:]+):\s        # File
   			\(([^)]+)\)\s           # Board Name
-  			(RAID\s\d+|\([^)]+\))\s # RAID level
+  			(RAID\s\d+(?:\(\d\+\d\))?|\([^)]+\))\s # RAID level with optional '(X+Y)')
   			Volume\s(\d+)           # Volume number
   			(\(\?\))?\s             # certain?
   			status:\s(.*?)\.        # status (without a dot)
@@ -1789,7 +1790,7 @@ $fatpacked{"App/Monitoring/Plugin/CheckRaid/Plugins/cciss.pm"} = '#line '.(1+__L
   		if (my ($phys1, $phys2, $box, $bay, $model, $serial_no, $fw_rev, $status) = m{
   			\sconnector\s(.)(.)\s # Phys connector 1&2
   			box\s(\d+)\s          # phys_box_on_bus
-  			bay\s(\d+)\s          # phys_bay_in_box
+  			bay\s(\d+)\s{1,2}     # phys_bay_in_box
   			(.{40})\s             # model
   			(.{40})\s             # serial no
   			(.{8})\s              # fw rev
@@ -1830,6 +1831,8 @@ $fatpacked{"App/Monitoring/Plugin/CheckRaid/Plugins/cciss.pm"} = '#line '.(1+__L
   			my $cache = $c{$cdev}{cache};
   			my %map = (
   				configured => qr/Cache configured: (.+)/,
+  				total_cache_memory => qr/Total cache memory: (.+)/,
+  				cache_ratio => qr/Cache Ratio: (.+)/,
   				read_cache_memory => qr/Read cache memory: (.+)/,
   				write_cache_memory => qr/Write cache memory: (.+)/,
   				write_cache_enabled => qr/Write cache enabled: (.+)/,
@@ -1954,6 +1957,8 @@ $fatpacked{"App/Monitoring/Plugin/CheckRaid/Plugins/cciss.pm"} = '#line '.(1+__L
   			}
   
   			push(@cstatus, "FlashCache") if $cache->{flash_cache};
+  			push(@cstatus, "TotalMem:$cache->{total_cache_memory}") if $cache->{total_cache_memory};
+  			push(@cstatus, "Ratio:'$cache->{cache_ratio}'") if $cache->{cache_ratio};
   			push(@cstatus, "ReadMem:$cache->{read_cache_memory}") if $cache->{read_cache_memory};
   			push(@cstatus, "WriteMem:$cache->{write_cache_memory}") if $cache->{write_cache_memory};
   
@@ -3163,11 +3168,11 @@ $fatpacked{"App/Monitoring/Plugin/CheckRaid/Plugins/hpacucli.pm"} = '#line '.(1+
   	# print those only if not ok and configured
   	if (($s = $c->{'Cache Status'}) && $s !~ /^(OK|Not Configured)/) {
   		push(@s, "Cache: $s");
-  		$this->critical;
+  		$this->cache_fail;
   	}
   	if (($s = $c->{'Battery/Capacitor Status'}) && $s !~ /^(OK|Not Configured)/) {
   		push(@s, "Battery: $s");
-  		$this->critical;
+  		$this->bbulearn;
   	}
   
   	# start with identifyier
@@ -4056,7 +4061,7 @@ $fatpacked{"App/Monitoring/Plugin/CheckRaid/Plugins/megacli.pm"} = '#line '.(1+_
   	}
   
   	my %dstatus;
-  	foreach my $dev (@{$c->{physical}}) {
+  	foreach my $dev (sort {$a->{dev} <=> $b->{dev}} @{$c->{physical}}) {
   		if ($dev->{state} eq 'Online' || $dev->{state} eq 'Hotspare' || $dev->{state} eq 'Unconfigured(good)' || $dev->{state} eq 'JBOD') {
   			push(@{$dstatus{$dev->{state}}}, sprintf "%02d", $dev->{dev});
   
@@ -6371,11 +6376,11 @@ $fatpacked{"Monitoring/Plugin/Performance.pm"} = '#line '.(1+__LINE__).' "'.__FI
 MONITORING_PLUGIN_PERFORMANCE
 
 $fatpacked{"Monitoring/Plugin/Range.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'MONITORING_PLUGIN_RANGE';
-  package Monitoring::Plugin::Range;use 5.006;use strict;use warnings;use Carp;use base qw(Class::Accessor::Fast);__PACKAGE__->mk_accessors(qw(start end start_infinity end_infinity alert_on));use Monitoring::Plugin::Functions qw(:DEFAULT $value_re);our ($VERSION)=$Monitoring::Plugin::Functions::VERSION;use overload 'eq'=>sub {shift->_stringify},'""'=>sub {shift->_stringify};use constant OUTSIDE=>0;use constant INSIDE=>1;sub _stringify {my$self=shift;return "" unless$self->is_set;return (($self->alert_on)? "@" : "").(($self->start_infinity==1)? "~:" : (($self->start==0)?"":$self->start.":")).(($self->end_infinity==1)? "" : $self->end)}sub is_set {my$self=shift;(!defined$self->alert_on)? 0 : 1}sub _set_range_start {my ($self,$value)=@_;$self->start($value+0);$self->start_infinity(0)}sub _set_range_end {my ($self,$value)=@_;$self->end($value+0);$self->end_infinity(0)}sub parse_range_string {my ($class,$string)=@_;my$valid=0;my$range=$class->new(start=>0,start_infinity=>0,end=>0,end_infinity=>1,alert_on=>OUTSIDE);$string =~ s/\s//g;unless ($string =~ /[\d~]/ && $string =~ m/^\@?($value_re|~)?(:($value_re)?)?$/){carp "invalid range definition '$string'";return undef}if ($string =~ s/^\@//){$range->alert_on(INSIDE)}if ($string =~ s/^~//){$range->start_infinity(1)}if ($string =~ m/^($value_re)?:/){my$start=$1;$range->_set_range_start($start)if defined$start;$range->end_infinity(1);$string =~ s/^($value_re)?://;$valid++}if ($string =~ /^($value_re)$/){$range->_set_range_end($string);$valid++}if ($valid && ($range->start_infinity==1 || $range->end_infinity==1 || $range->start <= $range->end)){return$range}return undef}sub check_range {my ($self,$value)=@_;my$false=0;my$true=1;if ($self->alert_on==INSIDE){$false=1;$true=0}if ($self->end_infinity==0 && $self->start_infinity==0){if ($self->start <= $value && $value <= $self->end){return$false}else {return$true}}elsif ($self->start_infinity==0 && $self->end_infinity==1){if ($value >= $self->start){return$false}else {return$true}}elsif ($self->start_infinity==1 && $self->end_infinity==0){if ($value <= $self->end){return$false}else {return$true}}else {return$false}}sub new {shift->SUPER::new({@_})}1;
+  package Monitoring::Plugin::Range;use 5.006;use strict;use warnings;use Carp;use base qw(Class::Accessor::Fast);__PACKAGE__->mk_accessors(qw(start end start_infinity end_infinity alert_on));use Monitoring::Plugin::Functions qw(:DEFAULT $value_re);our ($VERSION)=$Monitoring::Plugin::Functions::VERSION;use overload 'eq'=>sub {shift->_stringify},'""'=>sub {shift->_stringify};use constant OUTSIDE=>0;use constant INSIDE=>1;sub _stringify {my$self=shift;return "" unless$self->is_set;return (($self->alert_on)? "@" : "").(($self->start_infinity==1)? "~:" : (($self->start==0)?"":$self->start.":")).(($self->end_infinity==1)? "" : $self->end)}sub is_set {my$self=shift;(!defined$self->alert_on)? 0 : 1}sub _set_range_start {my ($self,$value)=@_;$self->start($value+0);$self->start_infinity(0)}sub _set_range_end {my ($self,$value)=@_;$self->end($value+0);$self->end_infinity(0)}sub parse_range_string {my ($class,$string)=@_;my$valid=0;my$range=$class->new(start=>0,start_infinity=>0,end=>0,end_infinity=>1,alert_on=>OUTSIDE);$string =~ s/\s//g;unless ($string =~ /[\d~]/ && $string =~ m/^\@?($value_re|~)?(:($value_re)?)?$/){carp "invalid range definition '$string'";return undef}if ($string =~ s/^\@//){$range->alert_on(INSIDE)}if ($string =~ s/^~//){$range->start_infinity(1)}if ($string =~ m/^($value_re)?:/){my$start=$1;$range->_set_range_start($start)if defined$start;$range->end_infinity(1);$string =~ s/^($value_re)?://;$valid++}if ($string =~ /^($value_re)$/){$range->_set_range_end($string);$valid++}if ($valid && ($range->start_infinity==1 || $range->end_infinity==1 || $range->start <= $range->end)){return$range}return undef}sub check_range {my ($self,$value)=@_;my$false=0;my$true=1;if ($self->alert_on==INSIDE){$false=1;$true=0}if ($self->end_infinity==0 && $self->start_infinity==0){if ($self->start <= $value && $value <= $self->end){return$false}else {return$true}}elsif ($self->start_infinity==0 && $self->end_infinity==1){if ($value >= $self->start){return$false}else {return$true}}elsif ($self->start_infinity==1 && $self->end_infinity==0){if ($value <= $self->end){return$false}else {return$true}}else {return$false}}sub new {shift->SUPER::new({@_ })}1;
 MONITORING_PLUGIN_RANGE
 
 $fatpacked{"Monitoring/Plugin/Threshold.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'MONITORING_PLUGIN_THRESHOLD';
-  package Monitoring::Plugin::Threshold;use 5.006;use strict;use warnings;use base qw(Class::Accessor::Fast);__PACKAGE__->mk_accessors(qw(warning critical));use Monitoring::Plugin::Range;use Monitoring::Plugin::Functions qw(:codes plugin_die);our ($VERSION)=$Monitoring::Plugin::Functions::VERSION;sub get_status {my ($self,$value)=@_;$value=[$value ]if (ref$value eq "");for my$v (@$value){if ($self->critical->is_set){return CRITICAL if$self->critical->check_range($v)}}for my$v (@$value){if ($self->warning->is_set){return WARNING if$self->warning->check_range($v)}}return OK}sub _inflate {my ($self,$value,$key)=@_;return Monitoring::Plugin::Range->new if!defined$value;if (ref$value){plugin_die("Invalid $key object: type " .ref$value)unless$value->isa("Monitoring::Plugin::Range");return$value}return Monitoring::Plugin::Range->new if$value eq "";my$range=Monitoring::Plugin::Range->parse_range_string($value);plugin_die("Cannot parse $key range: '$value'")unless(defined($range));return$range}sub set_thresholds {my ($self,%arg)=@_;return$self->new(%arg)unless ref$self;$self->set($_,$arg{$_})foreach qw(warning critical)}sub set {my$self=shift;my ($key,$value)=@_;$self->SUPER::set($key,$self->_inflate($value,$key))}sub new {my ($self,%arg)=@_;$self->SUPER::new({map {$_=>$self->_inflate($arg{$_},$_)}qw(warning critical)})}1;
+  package Monitoring::Plugin::Threshold;use 5.006;use strict;use warnings;use base qw(Class::Accessor::Fast);__PACKAGE__->mk_accessors(qw(warning critical));use Monitoring::Plugin::Range;use Monitoring::Plugin::Functions qw(:codes plugin_die);our ($VERSION)=$Monitoring::Plugin::Functions::VERSION;sub get_status {my ($self,$value)=@_;$value=[$value ]if (ref$value eq "");for my$v (@$value){if ($self->critical->is_set){return CRITICAL if$self->critical->check_range($v)}}for my$v (@$value){if ($self->warning->is_set){return WARNING if$self->warning->check_range($v)}}return OK}sub _inflate {my ($self,$value,$key)=@_;return Monitoring::Plugin::Range->new if!defined$value;if (ref$value){plugin_die("Invalid $key object: type " .ref$value)unless$value->isa("Monitoring::Plugin::Range");return$value}return Monitoring::Plugin::Range->new if$value eq "";my$range=Monitoring::Plugin::Range->parse_range_string($value);plugin_die("Cannot parse $key range: '$value'")unless(defined($range));return$range}sub set_thresholds {my ($self,%arg)=@_;return$self->new(%arg)unless ref$self;$self->set($_,$arg{$_})foreach qw(warning critical)}sub set {my$self=shift;my ($key,$value)=@_;$self->SUPER::set($key,$self->_inflate($value,$key))}sub new {my ($self,%arg)=@_;$self->SUPER::new({map {$_=>$self->_inflate($arg{$_},$_)}qw(warning critical) })}1;
 MONITORING_PLUGIN_THRESHOLD
 
 $fatpacked{"Params/Validate.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'PARAMS_VALIDATE';
@@ -6458,7 +6463,7 @@ use warnings;
 use strict;
 
 my $PROGNAME = 'check_raid';
-my $VERSION = q/4.0.9/;
+my $VERSION = q/4.0.10/;
 my $URL = 'https://github.com/glensc/nagios-plugin-check_raid';
 my $BUGS_URL = 'https://github.com/glensc/nagios-plugin-check_raid#reporting-bugs';
 
