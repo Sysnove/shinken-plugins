@@ -95,8 +95,8 @@ used_and_shared_m=$((used_m + shared_m))
 used_and_shared_pct=$(((100 * used_and_shared_m) / total_m))
 
 if [ $total_m -gt 1000 ]; then
-    total_g=$(python3 -c "print('%.1f' % ($total_m/1024.))")
-    used_and_shared_g=$(python3 -c "print('%.1f' % (($used_and_shared_m) /1024.))")
+    total_g=$(bc <<< "scale=1; $total_m/1024")
+    used_and_shared_g=$(bc <<< "scale=1; $used_and_shared_m/1024")
     ratio_txt="$used_and_shared_g/$total_g GB"
 else
     ratio_txt="$used_and_shared_m/$total_m MB"
