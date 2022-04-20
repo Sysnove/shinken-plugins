@@ -23,6 +23,11 @@ down=""
 
 for service in $services ; do
     if [ -f "/etc/init.d/$service" ] || [ -f "/lib/systemd/system/${service}.service" ] || [ -f "/etc/systemd/system/${service}.service" ]; then
+	if [ "$service" = "drbd" ] && [ ! -x /usr/sbin/gnt-cluster ]; then
+	    # Ignore drbd service on Ganeti nodes.
+	    continue
+	fi
+
         service "$service" status > /dev/null || down="$down $service"
     fi
 done
