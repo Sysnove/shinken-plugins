@@ -67,7 +67,19 @@ if [ -f /srv/.nextcloud/version.php ]; then
     fi
 fi
 
-if repmgr_installed=$(sudo -u postgres repmgr --version); then
+if [ -f /srv/.snappymail/data/VERSION ]; then
+    apps="$apps snappymail"
+
+    snappymail_installed="v$(cat /srv/.snappymail/data/VERSION)"
+    snappymail_latest=$(curl https://api.github.com/repos/the-djmaze/snappymail/releases/latest -s | jq .name -r)
+
+    if [[ "$snappymail_latest" > "$snappymail_installed" ]]; then
+        echo "WARNING : Snappymail $snappymail_installed is installed, but $snappymail_latest is available."
+        exit 1
+    fi
+fi
+
+if repmgr_installed=$(sudo -u postgres repmgr --version 2>&1); then
     repmgr_running=$(sudo -u postgres psql -A -t -d repmgr -c "select extversion from pg_extension where extname='repmgr';")
     if [ -n "$repmgr_running" ]; then
         repmgr_installed=$(echo "$repmgr_installed" | cut -d ' ' -f 2 | cut -d '.' -f 1-2)
