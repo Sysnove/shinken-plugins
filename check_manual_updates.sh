@@ -58,7 +58,7 @@ if [ -f /srv/.nextcloud/version.php ]; then
     apps="$apps nextcloud"
 
     nextcloud_installed=$(php -r "require_once '/srv/.nextcloud/version.php'; print(\$OC_VersionString);")
-    nextcloud_latest=$(curl -s https://nextcloud.com/changelog/ | grep Version | grep '<h3 id=' | head -1 | awk '{print $3}')
+    nextcloud_latest=$(curl -s https://nextcloud.com/changelog/ | grep Version | grep '<h3 id=' | head -1 | awk '{print $3}' | grep -Eo '([0-9]\.?)+')
     #nextcloud_latest=$(curl -s https://raw.githubusercontent.com/nextcloud/updater_server/master/config/config.php | grep latest | grep -v '\*' | head -1 | cut -d "'" -f 4)
 
     if [[ "$nextcloud_latest" > "$nextcloud_installed" ]]; then
