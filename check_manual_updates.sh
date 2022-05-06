@@ -60,6 +60,8 @@ if [ -f /srv/.nextcloud/version.php ]; then
     nextcloud_installed=$(php -r "require_once '/srv/.nextcloud/version.php'; print(\$OC_VersionString);")
     nextcloud_latest=$(curl -s https://nextcloud.com/changelog/ | grep Version | grep '<h3 id=' | head -1 | awk '{print $3}' | grep -Eo '([0-9]\.?)+')
     #nextcloud_latest=$(curl -s https://raw.githubusercontent.com/nextcloud/updater_server/master/config/config.php | grep latest | grep -v '\*' | head -1 | cut -d "'" -f 4)
+    # Best solution seems to be
+    # https://updates.nextcloud.com/updater_server/?version=23x0x4x1xxxstablexx2022-04-21T15:41:38+00:00%203d4015ae4dc079d1a2be0d3a573edef20264d701x23x0x4
 
     if [[ "$nextcloud_latest" > "$nextcloud_installed" ]]; then
         echo "WARNING : Nextcloud $nextcloud_installed is installed, but $nextcloud_latest is available."
