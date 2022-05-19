@@ -22,7 +22,7 @@ MINUTES=5
 LINES=100000
 
 # Try pgbadger
-pgbadger=$(tail -n $LINES $LOGFILE | pgbadger -x text -o - - -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" --disable-query --disable-hourly 2>/dev/null)
+pgbadger=$(tail -n $LINES $LOGFILE | grep -Ev "(connection (received|authorized)|disconnection):" | pgbadger -x text -o - - -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" --disable-query --disable-hourly 2>/dev/null)
 
 ret=$?
 
@@ -73,7 +73,7 @@ peak=$(echo "$pgbadger" | grep '^Query peak:' | cut -d ' ' -f 3 | sed 's/,//')
 
 # Count slow queries (more than 1000ms)
 # We begin by the grep because it is a lot more efficient than dategrep
-nb_slow=$(tail -n $LINES $LOGFILE | egrep 'duration: [0-9]{4,}\.' | dategrep --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | wc -l)
+nb_slow=$(tail -n $LINES $LOGFILE | grep -E 'duration: [0-9]{4,}\.' | dategrep --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | wc -l)
 slow_per_s=$(echo "scale=3;$nb_slow/300" | bc | awk '{printf "%.3f", $0}')
 
 
