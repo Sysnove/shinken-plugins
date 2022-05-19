@@ -14,6 +14,11 @@ if [ -z "$LOGFILE" ]; then
         echo "UNKNOWN: Couldn't find a PostgreSQL logfile"
         exit 3
     fi
+
+    if [ ! -r "$LOGFILE" ]; then
+        echo "UNKNOWN: Couldn't read $LOGFILE"
+        exit 3
+    fi
 fi
 
 MINUTES=5
@@ -27,17 +32,8 @@ pgbadger=$(tail -n $LINES $LOGFILE | grep -Ev "(connection (received|authorized)
 ret=$?
 
 if [ $ret -gt 1 ]; then
-    if [ $ret -eq 2 ]; then
-        echo "UNKNOWN: $LOGFILE doesn't exist"
-        exit 3
-    elif [ $ret -eq 13 ]; then
-        echo "UNKNOWN: Can't open file $LOGFILE, permission denied"
-        exit 3
-    elif [ $ret -eq 127 ]; then
+    if [ $ret -eq 127 ]; then
         echo "UNKNOWN: pgbadger command not found"
-        exit 3
-    elif [ $ret -eq 255 ]; then
-        echo "UNKNOWN: Unknown log format in $LOGFILE"
         exit 3
     else
         echo "UNKNOWN: pgbadger returned $ret"
