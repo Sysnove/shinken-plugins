@@ -17,7 +17,7 @@
 STATE_OK=0
 STATE_WARNING=1
 
-services="addok addok-wrapper apache2 atd bind9 ceph clamav-daemon couchdb cron dibbler-client docker dovecot elasticsearch exim4 fail2ban lm-sensors logstash lsyncd mailgraph memcached mongodb mongod nagios-nrpe-server nfs-kernel-server nginx npcd ntp openvpn pdns pgbouncer php5-fpm php7.0-fpm php7.1-fpm php7.2-fpm postfix pure-ftpd-mysql rabbitmq-server redis-server repmgrd resolvconf rspamd rsyslog sentry-worker shorewall shorewall6 slapd ssh uwsgi unbound varnish"
+services="addok addok-wrapper apache2 atd atop bind9 ceph clamav-daemon couchdb cron dibbler-client docker dovecot elasticsearch exim4 fail2ban lm-sensors logstash lsyncd mailgraph memcached mongodb mongod nagios-nrpe-server nfs-kernel-server nginx npcd ntp openvpn pdns pgbouncer php5-fpm php7.0-fpm php7.1-fpm php7.2-fpm postfix pure-ftpd-mysql rabbitmq-server redis-server repmgrd resolvconf rspamd rsyslog sentry-worker shorewall shorewall6 slapd ssh uwsgi unbound varnish"
 
 down=""
 
