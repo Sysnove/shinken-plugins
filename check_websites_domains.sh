@@ -14,9 +14,10 @@
 ###
 
 SCRIPT=$(basename "${BASH_SOURCE[0]}")
-CACHE_DIR=/var/tmp/nagios/check_domain
 
-mkdir -p $CACHE_DIR
+CACHE_DIR="/var/tmp/$USER/check_domain"
+
+mkdir -p "$CACHE_DIR"
 
 VERBOSE=false
 NAGIOSMODE=false
