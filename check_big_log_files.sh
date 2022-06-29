@@ -47,7 +47,7 @@ if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
         exit 3
     fi
 else
-    if grep -q '^/' /var/tmp/nagios/check_big_log_files; then
+    if grep -q '^/' $CACHEFILE; then
         # shellcheck disable=SC2013
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print 2>/dev/null; done)"
         if [ -n "$files" ]; then
@@ -58,7 +58,7 @@ else
     fi
 fi
 
-num=$(grep -c '^/' /var/tmp/nagios/check_big_log_files) # grep avoids to count empty lines
+num=$(grep -c '^/' $CACHEFILE) # grep avoids to count empty lines
 
 if [ "$num" -eq 0 ]; then
     echo "OK: No crazy log file found."
