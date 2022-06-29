@@ -52,6 +52,8 @@ else
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print 2>/dev/null; done)"
         if [ -n "$files" ]; then
             echo -e "$files" > $CACHEFILE
+        else
+            truncate -s 0 $CACHEFILE
         fi
     fi
 fi
