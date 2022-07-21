@@ -60,7 +60,7 @@ if [ -f /srv/.nextcloud/version.php ]; then
     nextcloud_installed=$(php -r "require_once '/srv/.nextcloud/version.php'; print(\$OC_VersionString);")
     php_version=$(php -v | head -1 | awk '{print $2}' | sed 's/\./x/g')
     nextcloud_call_updater=$(curl -s -A "Nextcloud Updater" https://updates.nextcloud.com/updater_server/?version="$(echo $nextcloud_installed | sed 's/\./x/g')"x1xxxstablexx2022-04-21T15:41:38+00:00%203d4015ae4dc079d1a2be0d3a573edef20264d701x"$php_version")
-    nextcloud_latest=$(echo "$nextcloud_call_updater" | grep "<version>" | sed 's/..version.//g')
+    nextcloud_latest=$(echo "$nextcloud_call_updater" | grep "<version>" | sed 's/..version.//g' | awk -F '.' '{print $1, ".", $2, ".", $3}')
 
     if [[ "$nextcloud_latest" > "$nextcloud_installed" ]]; then
         echo "WARNING : Nextcloud $nextcloud_installed is installed, but $nextcloud_latest is available."
