@@ -74,7 +74,11 @@ done
 
 if [ $log_files_readable = 0 ]; then
     echo "UNKNOWN - No readable log file in $LOGS"
-    exit 3
+    if [ "$LOGS" == "/var/log/docker/docker/base_traefik.log" ]; then
+        exit 0
+    else
+        exit 3
+    fi
 fi
 
 
