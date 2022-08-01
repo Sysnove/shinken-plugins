@@ -9,9 +9,9 @@ if ! [ -d "$(dirname "$CACHEFILE")" ]; then
 fi
 
 if [ -d /usr/local/ispconfig ] ; then
-    NUMBER=30000
+    THRESHOLD=30000
 else
-    NUMBER=10000
+    THRESHOLD=10000
 fi
 
 AGE=16
@@ -25,7 +25,7 @@ while getopts "e:n:a:Lf" option; do
             EXCLUDES="${EXCLUDES} ${OPTARG}"
             ;;
         n)
-            NUMBER=${OPTARG}
+            THRESHOLD=${OPTARG}
             ;;
         a)
             AGE=${OPTARG}
@@ -54,10 +54,10 @@ done
 
 FIND_OPTS="-regextype posix-egrep -regex '.*/(ci_session|sess_).*' -ctime +${AGE} -print"
 
-if ! find $CACHEFILE -mtime -${CACHE} -print > /dev/null 2>&1; then
+if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
     if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE; then
-        rm $CACHEFILE
-        echo "UNKNOWN: error during first find"
+        rm -f $CACHEFILE
+        echo "UNKNOWN: error during find"
         exit 3
     fi
     if [ -d /var/lib/php/sessions ]; then
@@ -68,21 +68,24 @@ if ! find $CACHEFILE -mtime -${CACHE} -print > /dev/null 2>&1; then
         fi
     fi
 else
-    if [ -s "$CACHEFILE" ]; then
-        # shellcheck disable=SC2002
+    if grep -q '^/' $CACHEFILE; then
+        # shellcheck disable=SC2013
         files=$(cat $CACHEFILE | xargs ls -d 2>/dev/null)
-        echo "$files" > $CACHEFILE
+        if [ -n "$files" ]; then
+            echo -e "$files" > $CACHEFILE
+        else
+            truncate -s 0 $CACHEFILE
+        fi
     fi
 fi
 
 if $LIST; then
     cat $CACHEFILE
 else
-    total=$(wc -l < $CACHEFILE)
-
+    total=$(grep -c '^/' $CACHEFILE) # grep avoids to count empty lines
     msg="$total PHP old session files found | total=$total;;;;;"
 
-    if [ "$total" -lt "${NUMBER}" ] ; then
+    if [ "$total" -lt "${THRESHOLD}" ] ; then
         echo "OK: $msg"
         exit 0
     else
