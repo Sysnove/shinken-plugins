@@ -4,7 +4,7 @@ databases=""
 
 if pgrep -f /usr/bin/mongod > /dev/null; then
     if [ ! -f /etc/backup.d/30.mongodb ]; then
-        if ! grep -q mongodb /etc/backup.d/.backupninja_ignores; then
+        if ! grep -q "# ignore mongodb" /etc/backupninja.conf; then
             echo "CRITICAL : Missing mongodb backup"
             exit 2
         fi
@@ -15,7 +15,7 @@ fi
 
 if pgrep postgres -u postgres > /dev/null; then
     if [ ! -f /etc/backup.d/20.pgsql ]; then
-        if ! grep -q postgres /etc/backup.d/.backupninja_ignores; then
+        if ! grep -q "# ignore postgres" /etc/backupninja.conf; then
             echo "CRITICAL : Missing postgresql backup"
             exit 2
         fi
@@ -26,7 +26,7 @@ fi
 
 if pgrep mysql -u mysql > /dev/null; then
     if [ ! -f /etc/backup.d/20.mysql ]; then
-        if ! grep -q mysql /etc/backup.d/.backupninja_ignores; then
+        if ! grep -q "# ignore mysql" /etc/backupninja.conf; then
             echo "CRITICAL : Missing mysql backup"
             exit 2
         fi
@@ -37,7 +37,7 @@ fi
 
 if pgrep slapd > /dev/null; then
     if [ ! -f /etc/backup.d/30.ldap ]; then
-        if ! grep -q ldap /etc/backup.d/.backupninja_ignores; then
+        if ! grep -q "# ignore ldap" /etc/backupninja.conf; then
             echo "CRITICAL : Missing ldap backup"
             exit 2
         fi
@@ -48,7 +48,7 @@ fi
 
 if pgrep beam -u couchbase > /dev/null; then
     if [ ! -f /etc/backup.d/41.sh ]; then
-        if ! grep -q couchbase /etc/backup.d/.backupninja_ignores; then
+        if ! grep -q "# ignore couchbase" /etc/backupninja.conf; then
             echo "CRITICAL : Missing couchbase backup"
             exit 2
         fi
@@ -59,7 +59,7 @@ fi
 
 if pgrep java -u elasticsearch > /dev/null; then
     if [ ! -f /etc/backup.d/40.sh ]; then
-        if ! grep -q elasticsearch /etc/backup.d/.backupninja_ignores; then
+        if ! grep -q "# ignore elasticsearch" /etc/backupninja.conf; then
             echo "CRITICAL : Missing elasticsearch backup"
             exit 2
         fi
