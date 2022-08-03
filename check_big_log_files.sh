@@ -41,6 +41,7 @@ done
 FIND_OPTS="\\( -name '*.log' -o -name syslog -o -name catalina.out \\) -size +${SIZE} -print"
 
 if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
+    # locate --regex '.*(\.log|syslog|catalina.out)$' | xargs -L1 du -sm | awk '$1>1000{print $2}' ?
     if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE; then
         rm -f $CACHEFILE
         echo "UNKNOWN: error during find"

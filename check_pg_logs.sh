@@ -9,6 +9,7 @@ SLOW_CRITICAL=$2
 LOGFILE="$3"
 
 if [ -z "$LOGFILE" ]; then
+    # shellcheck disable=SC2012
     LOGFILE=$(ls -tr /var/log/postgresql/*.log | tail -n 1)
     if [ -z "$LOGFILE" ]; then
         echo "UNKNOWN: Couldn't find a PostgreSQL logfile"
@@ -27,7 +28,7 @@ MINUTES=5
 LINES=100000
 
 # Try pgbadger
-pgbadger=$(tail -n $LINES $LOGFILE | grep -Ev "(connection (received|authorized)|disconnection):" | pgbadger -x text -o - - -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" --disable-query --disable-hourly 2>/dev/null)
+pgbadger=$(tail -n $LINES "$LOGFILE" | grep -Ev "(connection (received|authorized)|disconnection):" | pgbadger -x text -o - - -f stderr --begin "$(date --date="$MINUTES minutes ago" '+%Y-%m-%d %H:%M:%S')" --disable-query --disable-hourly 2>/dev/null)
 
 ret=$?
 
@@ -69,18 +70,18 @@ peak=$(echo "$pgbadger" | grep '^Query peak:' | cut -d ' ' -f 3 | sed 's/,//')
 
 # Count slow queries (more than 1000ms)
 # We begin by the grep because it is a lot more efficient than dategrep
-nb_slow=$(tail -n $LINES $LOGFILE | grep -E 'duration: [0-9]{4,}\.' | dategrep --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | wc -l)
+nb_slow=$(tail -n $LINES "$LOGFILE" | grep -E 'duration: [0-9]{4,}\.' | dategrep --last-minutes $MINUTES --format '%Y-%m-%d %H:%M:%S' 2>/dev/null | wc -l)
 slow_per_s=$(echo "scale=3;$nb_slow/300" | bc | awk '{printf "%.3f", $0}')
 
 
-msg="$total queries logged on last $MINUTES minutes | select=${select_per_m}rpm;;;;; insert=${insert_per_m}rpm;;;;; update=${update_per_m}rpm;;;;; delete=${delete_per_m}rpm;;;;; others=${others_per_m}rpm;;;;; peak=${peak}rps;;;;; slow=${slow_per_s}rps;$SLOW_WARNING;$SLOW_CRITICAL;;;"
+msg="$total queries logged on last $MINUTES minutes (${slow_per_s}/s) | select=${select_per_m}rpm;;;;; insert=${insert_per_m}rpm;;;;; update=${update_per_m}rpm;;;;; delete=${delete_per_m}rpm;;;;; others=${others_per_m}rpm;;;;; peak=${peak}rps;;;;; slow=${slow_per_s}rps;$SLOW_WARNING;$SLOW_CRITICAL;;;"
 
 
 if [[ $slow_per_s > $SLOW_CRITICAL ]]; then
-    echo "CRITICAL - $slow_per_s slow queries over $msg"
+    echo "CRITICAL - $msg"
     exit 2
 elif [[ $slow_per_s > $SLOW_WARNING ]]; then
-    echo "WARNING - $slow_per_s slow queries over $msg"
+    echo "WARNING - $msg"
     exit 1
 else
     echo "OK - $msg"
