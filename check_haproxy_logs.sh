@@ -17,7 +17,7 @@ show_help() {
 while [ -n "$1" ]; do 
     case $1 in
         -l)	shift; LOGFILE=$1 ;;
-        -b) shift; BACKEND_FILTER=" $1" ;;
+        -b) shift; BACKEND_FILTER=" $1[/ ]" ;;
         -t) shift; LAST_RUN_FILE=$1 ;;
         -h)	show_help; exit 1 ;;
     esac
@@ -45,7 +45,7 @@ last_check=-1
 # shellcheck disable=SC1090
 source "$LAST_RUN_FILE"
 
-new_count=$(grep -c "$BACKEND_FILTER" "$LOGFILE")
+new_count=$(grep -Ec "$BACKEND_FILTER" "$LOGFILE")
 now=$(date +%s)
 
 echo "
