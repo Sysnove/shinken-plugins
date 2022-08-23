@@ -1,10 +1,8 @@
 #!/bin/bash
 
-LOGS=
-
 E_OK=0
-E_WARNING=1
-E_CRITICAL=2
+#E_WARNING=1
+#E_CRITICAL=2
 E_UNKNOWN=3
 
 LAST_RUN_FILE=/var/tmp/nagios/check_haproxy_logs_last_run
@@ -19,7 +17,7 @@ show_help() {
 while [ -n "$1" ]; do 
     case $1 in
         -l)	shift; LOGFILE=$1 ;;
-        -b) shift; BACKEND_FILTER=" $1 " ;;
+        -b) shift; BACKEND_FILTER=" $1" ;;
         -t) shift; LAST_RUN_FILE=$1 ;;
         -h)	show_help; exit 1 ;;
     esac
@@ -47,7 +45,7 @@ last_check=-1
 # shellcheck disable=SC1090
 source "$LAST_RUN_FILE"
 
-new_count=$(grep -c "$BACKEND_FILTER" $LOGFILE)
+new_count=$(grep -c "$BACKEND_FILTER" "$LOGFILE")
 now=$(date +%s)
 
 echo "
@@ -57,12 +55,12 @@ last_check=$now
 
 if [ $last_check -eq -1 ]; then
     echo "UNKNOWN - First run, please run the check again."
-    exit 3
+    exit $E_UNKNOWN
 fi
 
-if [ $new_count -lt $old_count ] ; then
+if [ "$new_count" -lt $old_count ] ; then
     echo "UNKNOWN - Logs seem to have shrink since last run, please run the check again."
-    exit 3
+    exit $E_UNKNOWN
 fi
 
 count=$((new_count - old_count))
@@ -71,4 +69,4 @@ period=$((now - last_check))
 rate=$(bc <<< "scale=1; $count / $period")
 
 echo "OK - $count requests in $period seconds ($rate req/s) | rate=${rate}req_per_sec"
-exit 0
+exit $E_OK
