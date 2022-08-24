@@ -20,6 +20,11 @@ while [ -n "$1" ]; do
     shift
 done
 
+if [ -z "$LOGFILE" ]; then
+    echo "UNKNOWN: You need to specify a logfile"
+    exit 3
+fi
+
 if [ -z "$LAST_RUN_FILE" ]; then
     LAST_RUN_FILE=/var/tmp/nagios/check_website_logs_last_run_$(echo "$LOGFILE$FILTER" | md5sum | cut -d ' ' -f 1)
 fi
@@ -46,9 +51,9 @@ last_check=-1
 # shellcheck disable=SC1090
 source "$LAST_RUN_FILE"
 
-new_nb_lines=$(grep -Ec "$FILTER" $LOGFILE)
-new_nb_lines_with_time=$(grep -Ec "$FILTER.* [0-9.]+ [0-9.]+$" $LOGFILE)
-new_total_time=$(grep -E "$FILTER.* [0-9.]+ [0-9.]+$" $LOGFILE | awk '{s+=$(NF-1)} END {print s}')
+new_nb_lines=$(grep -Ec "$FILTER" "$LOGFILE")
+new_nb_lines_with_time=$(grep -Ec "$FILTER.* [0-9.]+ [0-9.]+$" "$LOGFILE")
+new_total_time=$(grep -E "$FILTER.* [0-9.]+ [0-9.]+$" "$LOGFILE" | awk '{s+=$(NF-1)} END {print s}')
 now=$(date +%s)
 
 echo "
