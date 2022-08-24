@@ -79,7 +79,7 @@ nb_lines_with_time=$((new_nb_lines_with_time - old_nb_lines_with_time))
 total_time=$(echo "scale=3; $new_total_time - $old_total_time" | bc)
 period=$((now - last_check))
 
-rate=$(bc <<< "scale=1; $nb_lines / $period")
+rate=$(echo "scale=1; $nb_lines / $period" | bc |  awk '{printf "%.1f\n", $0}')
 pct_lines_with_time=$(echo "($nb_lines_with_time * 100) / $nb_lines" | bc)
 time_per_line="$(echo "scale=3; $total_time / $nb_lines_with_time" | bc | awk '{printf "%.3f\n", $0}')"
 time_per_line_ms="$(echo "$time_per_line * 1000" | bc | awk '{printf "%.0f\n", $0}')"
