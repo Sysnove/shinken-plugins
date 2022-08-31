@@ -85,7 +85,7 @@ def main():
     )
 
     perfdata = (
-        "Uptime: %(Uptime)s, ReqPerSec: %(ReqPerSec)s, BytesPerSec: %(BytesPerSec)s, Workers: %(TotalWorkers)s (Busy: %(BusyWorkers)s, Idle: %(IdleWorkers)s)|Uptime=%(Uptime)ss; ReqPerSec=%(ReqPerSec)s; BytesPerSec=%(BytesPerSec)s; BusyWorkers=%(BusyWorkers)s:%(WarnWorkers)s:%(MaxWorkers)s; IdleWorkers=%(IdleWorkers)s;"
+        "Uptime: %(Uptime)s, ReqPerSec: %(ReqPerSec)s, BytesPerSec: %(BytesPerSec)s, Workers: %(TotalWorkers)s (Busy: %(BusyWorkers)s, Idle: %(IdleWorkers)s)|Uptime=%(Uptime)ss; ReqPerSec=%(ReqPerSec)s; BytesPerSec=%(BytesPerSec)s; BusyWorkers=%(BusyWorkers)s;%(WarnWorkers)s;%(MaxWorkers)s;0;%(MaxWorkers)s; IdleWorkers=%(IdleWorkers)s;"
         % values
     )
 
