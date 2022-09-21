@@ -17,7 +17,7 @@ for dbms in "${!dbs[@]}"; do
         if ! grep -q "# ignore $dbms" /etc/backupninja.conf; then
             ignored="$ignored $dbms"
         else
-            if ! grep -qR "^### backupninja $dbms" /etc/backup.d; then
+            if grep -qR "^### backupninja $dbms" /etc/backup.d; then
                 echo "CRITICAL : Missing $dbms backupninja handler"
                 exit 2
             fi
