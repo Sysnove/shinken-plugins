@@ -3,7 +3,7 @@
 declare -A dbs=(
     ['mongodb']="pgrep -f /usr/bin/mongod"
     ['postgres']="pgrep postgres -u postgres"
-    ['mysql']="pgrep mysql -u mysql"
+    ['mysql']="pgrep mysql -u mysql || pgrep mariadb -u mysql"
     ['slapd']="pgrep slapd"
     ['couchbase']="pgrep beam -u couchbase"
     ['elasticsearch']="pgrep java -u elasticsearch"
