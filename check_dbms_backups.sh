@@ -21,27 +21,27 @@ check_dbms_backup () {
     fi
 }
 
-if pgrep -f /usr/bin/mongod > /dev/null; then
+if pgrep -f /usr/bin/mongod > /dev/null 2>&1; then
     check_dbms_backup mongodb
 fi
 
-if pgrep postgres -u postgres > /dev/null; then
+if pgrep postgres -u postgres > /dev/null 2>&1; then
     check_dbms_backup postgres
 fi
 
-if pgrep mysql -u mysql > /dev/null; then
+if pgrep mysql -u mysql > /dev/null 2>&1; then
     check_dbms_backup mysql
 fi
 
-if pgrep slapd > /dev/null; then
+if pgrep slapd > /dev/null 2>&1; then
     check_dbms_backup slapd
 fi
 
-if pgrep beam -u couchbase > /dev/null; then
+if pgrep beam -u couchbase > /dev/null 2>&1; then
     check_dbms_backup couchbase
 fi
 
-if pgrep java -u elasticsearch > /dev/null; then
+if pgrep java -u elasticsearch > /dev/null 2>&1; then
     check_dbms_backup elasticsearch
 fi
 
