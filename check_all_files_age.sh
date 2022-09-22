@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DIR="$1"
+FINDOPTS="$2"
 
 if [ -z "$DIR" ]; then
     echo "Usage: $0 DIRECTORY"
@@ -12,15 +13,11 @@ if [ ! -d "$DIR" ]; then
     exit 2
 fi
 
-if [ "$2" == "--maxdepth" ]; then
-    FINDOPT="-maxdepth $3"
-fi
+FIND="find $DIR $FINDOPTS -type f -not -name README.txt"
 
-FIND=(find "$DIR" "$FINDOPT" -type f -not -name "README.txt")
-
-warnings=$("${FIND[@]}" -mmin +1500 -mmin -3000)
-errors=$("${FIND[@]}" -mmin +3000)
-oks=$("${FIND[@]}" -mmin -1500)
+warnings=$($FIND -mmin +1500 -mmin -3000)
+errors=$($FIND  -mmin +3000)
+oks=$($FIND -mmin -1500)
 
 nb_ok="$(echo "$oks" | wc -w)"
 

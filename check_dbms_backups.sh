@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# This plugins search for running databases and check that a backup is configured in backupninja
+# for each database management system.
+# WARNING : This plugin does not replace check_mysql_backup, check_elasticsearch_backup, etc.
 
 declare -A dbs=(
     ['mongodb']="pgrep -f /usr/bin/mongod"
@@ -22,7 +26,7 @@ for dbms in "${!dbs[@]}"; do
                 exit 2
             fi
             backupdir=$(grep "^### backupninja $dbms" "/etc/backup.d/21_$dbms"* | cut -d ' ' -f 4)
-            if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir" --maxdepth 2; then
+            if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir" "-maxdepth 2"; then
                 exit 2
             fi
             databases="$databases $dbms"
