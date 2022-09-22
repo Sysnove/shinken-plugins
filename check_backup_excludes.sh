@@ -57,7 +57,7 @@ done
 # Check database directories that should be in backup excludes
 #
 
-db_datadirs="/var/lib/postgresql /var/lib/mysql /var/lib/mongodb /var/lib/elasticsearch /opt/couchbase/var/lib/couchbase /var/lib/sldapd"
+db_datadirs="/var/lib/postgresql /var/lib/mysql /var/lib/mongodb /var/lib/elasticsearch /opt/couchbase/var/lib/couchbase"
 for d in $db_datadirs; do
     if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$d/?$"; then
         if [ -n "$(find "$d" -mindepth 1 -type d 2>/dev/null)" ]; then
