@@ -8,10 +8,6 @@ FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/(www|vmail|backups|lib/docker))/?$'
 
 backup_excludes=$(grep '^exclude =' /etc/backup.d/91_all.borg | awk '{print $3}')
 backup_includes=$(grep '^include =' /etc/backup.d/91_all.borg | awk '{print $3}')
-bind_mounts=$(grep bind /etc/fstab | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
-nfs_mounts=$(grep ' nfs ' /etc/fstab  | grep -v '^#' | awk '{print $2}')
-sshfs_mounts=$(grep '^sshfs#' /etc/fstab | grep -v '^#'| awk '{print $2}')
-
 
 if echo "$backup_excludes" | grep -E -q "$FORBIDDEN_EXCLUDES"; then
     echo "CRITICAL - You should not exclude /srv, /var, /var/www, /var/vmail, /var/backups or /var/lib/docker"
@@ -58,11 +54,26 @@ for d in $(find / -maxdepth 1 -mindepth 1 | grep -Ev "^/($root_includes|$root_ex
 done
 
 #
+# Check database directories that should be in backup excludes
+#
+
+db_datadirs="/var/lib/postgresql /var/lib/mysql /var/lib/mongodb /var/lib/elasticsearch /opt/couchbase/var/lib/couchbase /var/lib/sldapd"
+for d in $db_datadirs; do
+    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$d/?$"; then
+        if [ -n "$(find "$d" -mindepth 1 -type d 2>/dev/null)" ]; then
+            echo "WARNING - You should exclude $d from backups"
+            exit 1
+        fi
+    fi
+done
+
+#
 # Check bind mounts that should be in backup excludes
 #
 
 missing=""
 
+bind_mounts=$(grep bind /etc/fstab | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
 for source in $bind_mounts; do
     if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
         if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$source/?$"; then
@@ -71,6 +82,7 @@ for source in $bind_mounts; do
     fi
 done
 
+nfs_mounts=$(grep ' nfs ' /etc/fstab  | grep -v '^#' | awk '{print $2}')
 for source in $nfs_mounts; do
     if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
         if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$source/?$"; then
@@ -79,6 +91,7 @@ for source in $nfs_mounts; do
     fi
 done
 
+sshfs_mounts=$(grep '^sshfs#' /etc/fstab | grep -v '^#'| awk '{print $2}')
 for source in $sshfs_mounts; do
     if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
         if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$source/?$"; then
