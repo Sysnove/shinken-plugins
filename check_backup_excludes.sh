@@ -6,8 +6,8 @@
 
 FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/(www|vmail|backups|lib/docker))/?$'
 
-backup_excludes=$(grep '^exclude =' /etc/backup.d/90.borg | awk '{print $3}')
-backup_includes=$(grep '^include =' /etc/backup.d/90.borg | awk '{print $3}')
+backup_excludes=$(grep '^exclude =' /etc/backup.d/91_all.borg | awk '{print $3}')
+backup_includes=$(grep '^include =' /etc/backup.d/91_all.borg | awk '{print $3}')
 bind_mounts=$(grep bind /etc/fstab | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
 nfs_mounts=$(grep ' nfs ' /etc/fstab  | grep -v '^#' | awk '{print $2}')
 sshfs_mounts=$(grep '^sshfs#' /etc/fstab | grep -v '^#'| awk '{print $2}')
@@ -22,10 +22,10 @@ fi
 # Check if files in / that are not included nor explicitely excluded
 #
 
-root_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-zA-Z0-9._-]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
-root_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-zA-Z0-9._-]+$' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
-nonroot_includes=$(sudo cat /etc/backup.d/90.borg | grep -E '^include = /[a-z0-9]+/.+' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/')
-nonroot_excludes=$(sudo cat /etc/backup.d/90.borg | grep -E '^exclude = (sh:)?/[a-z0-9]+/.+' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/')
+root_includes=$(sudo cat /etc/backup.d/91_all.borg | grep -E '^include = /[a-zA-Z0-9._-]+$' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
+root_excludes=$(sudo cat /etc/backup.d/91_all.borg | grep -E '^exclude = (sh:)?/[a-zA-Z0-9._-]+$' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/' | sed 's+/++g')
+nonroot_includes=$(sudo cat /etc/backup.d/91_all.borg | grep -E '^include = /[a-z0-9]+/.+' | cut -d ' ' -f 3 | tr '\n' '|' | sed 's/|$/\n/')
+nonroot_excludes=$(sudo cat /etc/backup.d/91_all.borg | grep -E '^exclude = (sh:)?/[a-z0-9]+/.+' | cut -d ' ' -f 3 | sed 's/sh://' | tr '\n' '|' | sed 's/|$/\n/')
 if [ -n "$nonroot_includes" ] && [ -n "$nonroot_excludes" ]; then
     nonroot_regex="($nonroot_excludes|$nonroot_includes)"
 elif [ -n "$nonroot_includes" ]; then
