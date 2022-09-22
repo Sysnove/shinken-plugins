@@ -30,7 +30,7 @@ for dbms in "${!dbms_checks[@]}"; do
     datadir=false
     if eval "${dbms_checks[$dbms]}" > /dev/null 2>&1; then
         running=true
-    elif [ -d "${dbms_datadirs[$dbms]}" ]; then
+    elif [ -n "$(find "${dbms_datadirs[$dbms]}" -mindepth 1 -type d 2>/dev/null)" ]; then
         datadir=true
     fi
 
