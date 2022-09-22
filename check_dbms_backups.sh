@@ -18,7 +18,7 @@ declare -A dbms_datadirs=(
     ['pgsql']="/var/lib/postgresql"
     ['mysql']="/var/lib/mysql"
     ['ldap']="/var/lib/slapd"
-    ['couchbase']="/var/lib/couchbase"
+    ['couchbase']="/opt/couchbase/var/lib/couchbase"
     ['elasticsearch']="/var/lib/elasticsearch"
 )
 
