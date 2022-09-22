@@ -12,7 +12,11 @@ if [ ! -d "$DIR" ]; then
     exit 2
 fi
 
-FIND=(find "${DIR}" -type f -not -name "README.txt")
+if [ "$2" == "--maxdepth" ]; then
+    FINDOPT="--maxdepth $3"
+fi
+
+FIND=(find "$DIR" "$FINDOPT" -type f -not -name "README.txt")
 
 warnings=$("${FIND[@]}" -mmin +1500 -mmin -3000)
 errors=$("${FIND[@]}" -mmin +3000)
