@@ -4,7 +4,7 @@
 # for each database management system.
 # WARNING : This plugin does not replace check_mysql_backup, check_elasticsearch_backup, etc.
 
-declare -A dbs=(
+declare -A dbms_checks=(
     ['mongodb']="pgrep -f /usr/bin/mongod"
     ['pgsql']="pgrep postgres -u postgres"
     ['mysql']="pgrep mysql -u mysql || pgrep mariadb -u mysql"
@@ -13,11 +13,11 @@ declare -A dbs=(
     ['elasticsearch']="pgrep java -u elasticsearch"
 )
 
-databases=""
+ok=""
 ignored=""
 
-for dbms in "${!dbs[@]}"; do
-    if eval "${dbs[$dbms]}" > /dev/null 2>&1; then
+for dbms in "${!dbms_checks[@]}"; do
+    if eval "${dbms_checks[$dbms]}" > /dev/null 2>&1; then
         if grep -q "# ignore $dbms" /etc/backupninja.conf; then
             ignored="$ignored $dbms"
         else
@@ -26,17 +26,23 @@ for dbms in "${!dbs[@]}"; do
                 exit 2
             fi
             backupdir=$(grep "^### backupninja $dbms" "/etc/backup.d/21_$dbms"* | cut -d ' ' -f 4)
-            if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir" "-maxdepth 2"; then
-                exit 2
+            if [ "$dbms" == "elasticsearch" ]; then
+                if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir" "-maxdepth 2"; then
+                    exit 2
+                fi
+            else
+                if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir"; then
+                    exit 2
+                fi
             fi
-            databases="$databases $dbms"
+            ok="$ok $dbms"
         fi
     fi
 done
 
-if [ -z "$databases" ] ; then
+if [ -z "$ok" ] ; then
     echo "OK : no database to backup on this server."
 else
-    echo "OK : $databases backups are configured in backupninja."
+    echo "OK : $ok backups are configured in backupninja."
 fi
 exit 0
