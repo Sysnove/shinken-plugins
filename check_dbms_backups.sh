@@ -27,11 +27,13 @@ for dbms in "${!dbms_checks[@]}"; do
             fi
             backupdir=$(grep "^### backupninja $dbms" "/etc/backup.d/21_$dbms"* | cut -d ' ' -f 4)
             if [ "$dbms" == "elasticsearch" ]; then
-                if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir" "-maxdepth 2 -not -name incompatible-snapshots"; then
+                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "$backupdir" "-maxdepth 2 -not -name incompatible-snapshots"); then
+                    echo "$dbms: $out"
                     exit 2
                 fi
             else
-                if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir"; then
+                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "$backupdir"); then
+                    echo "$dbms: $out"
                     exit 2
                 fi
             fi
