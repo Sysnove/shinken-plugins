@@ -13,7 +13,7 @@ if [ ! -d "$DIR" ]; then
 fi
 
 if [ "$2" == "--maxdepth" ]; then
-    FINDOPT="--maxdepth $3"
+    FINDOPT="-maxdepth $3"
 fi
 
 FIND=(find "$DIR" "$FINDOPT" -type f -not -name "README.txt")

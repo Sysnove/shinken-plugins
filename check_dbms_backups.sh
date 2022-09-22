@@ -22,7 +22,7 @@ for dbms in "${!dbs[@]}"; do
                 exit 2
             fi
             backupdir=$(grep "^### backupninja $dbms" "/etc/backup.d/21_$dbms"* | cut -d ' ' -f 4)
-            if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir"; then
+            if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir" --maxdepth 2; then
                 exit 2
             fi
             databases="$databases $dbms"
