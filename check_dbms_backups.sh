@@ -2,9 +2,9 @@
 
 declare -A dbs=(
     ['mongodb']="pgrep -f /usr/bin/mongod"
-    ['postgres']="pgrep postgres -u postgres"
+    ['pgsql']="pgrep postgres -u postgres"
     ['mysql']="pgrep mysql -u mysql || pgrep mariadb -u mysql"
-    ['slapd']="pgrep slapd"
+    ['ldap']="pgrep slapd"
     ['couchbase']="pgrep beam -u couchbase"
     ['elasticsearch']="pgrep java -u elasticsearch"
 )
@@ -21,7 +21,7 @@ for dbms in "${!dbs[@]}"; do
                 echo "CRITICAL : Missing $dbms backupninja handler"
                 exit 2
             fi
-            backupdir=$(grep -R "^### backupninja $dbms" /etc/backup.d | cut -d ' ' -f 4)
+            backupdir=$(grep "^### backupninja $dbms" "/etc/backup.d/21_$dbms"* | cut -d ' ' -f 4)
             if ! /usr/local/nagios/plugins/check_all_files_age.sh "$backupdir"; then
                 exit 2
             fi
