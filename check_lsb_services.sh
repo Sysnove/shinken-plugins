@@ -40,6 +40,14 @@ if [ -f /etc/init.d/postgresql ] ; then
     [ $s -ne 0 ] && [ $s -ne 4 ] && down="$down postgresql"
 fi
 
+# Special case, pureftp can be running but failed.
+# We could make a dedicaded shinken service for this, but we prefer to avoid.
+if [ -f /etc/init.d/pure-ftpd ] || [ -f /etc/init.d/pure-ftpd-mysql ]; then
+    if ! /usr/lib/nagios/plugins/check_ftp -H localhost > /dev/null; then
+        down="$down pure-ftpd"
+    fi
+fi
+
 if [ "$down" != "" ] ; then
     echo "WARNING - Services down:$down"
     exit $STATE_WARNING
@@ -47,4 +55,3 @@ else
     echo "OK - All services are running."
     exit $STATE_OK
 fi
-
