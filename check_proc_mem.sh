@@ -14,11 +14,14 @@
 ### - check_proc_mem.sh -w 1024 -c 2048 --cmdpattern "tomcat7.*java.*Dcom"
 ### - check_proc_mem.sh -w 1024 -c 2048 --pidfile /var/run/tomcat7.pid
 ### - check_proc_mem.sh -w 1024 -c 2048 --pid 11325
+### - check_proc_mem.sh -W 50 -C 80 --pid 11325 # warn and crit in pct.
 ### 
 
 usage() {
     sed -rn 's/^### ?//;T;p' "$0"
 }
+
+TOTAL_MEM=$(LANG=C free -m|awk '/^Mem:/{print $2}')
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -27,6 +30,14 @@ while [ $# -gt 0 ]; do
             ;;
         -c|--crit) shift
             CRIT=$1
+            ;;
+        -W) shift
+            WARN_PCT=$1
+            WARN=$(((TOTAL_MEM*WARN_PCT)/100))
+            ;;
+        -C) shift
+            CRIT_PCT=$1
+            WARN=$(((TOTAL_MEM*CRIT_PCT)/100))$1
             ;;
         --cmdpattern) shift
             CMDPATTERN=$1
