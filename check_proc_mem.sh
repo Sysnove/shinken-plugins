@@ -37,7 +37,7 @@ while [ $# -gt 0 ]; do
             ;;
         -C) shift
             CRIT_PCT=$1
-            WARN=$(((TOTAL_MEM*CRIT_PCT)/100))$1
+            CRIT=$(((TOTAL_MEM*CRIT_PCT)/100))$1
             ;;
         --cmdpattern) shift
             CMDPATTERN=$1
