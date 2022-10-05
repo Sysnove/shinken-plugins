@@ -60,7 +60,11 @@ while [ $# -gt 0 ]; do
             PID=$1
             ;;
         --service) shift
-            PID=$(systemctl show --property MainPID --value "$1")
+            PID=$(systemctl show --property MainPID "$1" | cut -d '=' -f 2) # --value does not work on old systemd
+            if [ "$PID" == "0" ]; then 
+                echo "Service $1 not found or not running."
+                exit 3
+            fi
             ;;
         -h|--help) usage
             exit 0
@@ -85,7 +89,7 @@ if [ "$WARN" -gt "$CRIT" ]; then
 fi
 
 if [ -z "$PID" ]; then
-    echo "You need to use --pid, --pidfile or --cmdpattern."
+    echo "You need to use --pid, --pidfile, --cmdpattern or --service."
     usage
     exit 3
 fi
