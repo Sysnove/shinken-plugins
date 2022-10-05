@@ -14,6 +14,7 @@
 ### - check_proc_mem.sh -w 1024 -c 2048 --cmdpattern "tomcat7.*java.*Dcom"
 ### - check_proc_mem.sh -w 1024 -c 2048 --pidfile /var/run/tomcat7.pid
 ### - check_proc_mem.sh -w 1024 -c 2048 --pid 11325
+### - check_proc_mem.sh -w 1024 -c 2048 --service mysql
 ### - check_proc_mem.sh -W 50 -C 80 --pid 11325 # warn and crit in pct.
 ### 
 
@@ -57,6 +58,9 @@ while [ $# -gt 0 ]; do
             ;;
         --pid) shift
             PID=$1
+            ;;
+        --service) shift
+            PID=$(systemctl show --property MainPID --value "$1")
             ;;
         -h|--help) usage
             exit 0
