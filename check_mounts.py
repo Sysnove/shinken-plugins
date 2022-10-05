@@ -49,12 +49,23 @@ def main():
     # Compare fstab entries to mount output
     for fstab_line in fstab_lines:
         # Try to find mount point in mount output
-        fstab_mount_point = fstab_line.split(' ')[1]
+        fstab_entry = fstab_line.split()
+
+        # Check mount options
+        fstab_options = fstab_entry[3].split(',')
+
+        if "noauto" in fstab_options:
+            # Ignore noauto mount points
+            continue
+
+        fstab_mount_point = fstab_entry[1]
+
         mount_line = [
             l
             for l in mounts
             if fstab_mount_point in l.split(" ")
         ]
+
         if not mount_line:
             print("%s is not mounted" % fstab_mount_point)
             return STATUS_ERROR
