@@ -101,13 +101,17 @@ memVmSize=$((memVmSize/1024))
 memVmRSS=$(grep 'VmRSS:' "/proc/$PID/status" | awk -F' ' '{print $2}')
 memVmRSS=$((memVmRSS/1024))
 
+pct=$((memVmRSS*100/TOTAL_MEM))
+
+output="RES: $memVmRSS MB used ($pct% total), VIRT: $memVmSize MB|RES=${memVmRSS}MB;$WARN;$CRIT;0;$TOTAL_MEM"
+
 if [ "$memVmRSS" -ge "$CRIT" ]; then
-    echo "Memory: CRITICAL VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$WARN;$CRIT;0;"
+    echo "Memory: CRITICAL $output"
     exit 2
 elif [ "$memVmRSS" -ge "$WARN" ]; then
-    echo "Memory: WARNING VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$WARN;$CRIT;0;"
+    echo "Memory: WARNING $output"
     exit 1
 else
-    echo "Memory: OK VIRT: $memVmSize MB - RES: $memVmRSS MB used!|RES=${memVmRSS}MB;$WARN;$CRIT;0;"
+    echo "Memory: OK $output"
     exit 0
 fi
