@@ -10,10 +10,12 @@
 
 
 MAX_BACKUPS=1
+CHECK_USER="root"
 
 case $1 in
     --postgresql)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/postgres"
+        CHECK_USER="postgres"
         CLUSTER_HOSTS=$(sudo -u postgres repmgr cluster show 2>&1 | grep -o 'host=[^ ]*' | cut -d '=' -f 2)
         ;;
     --mysql)
@@ -41,8 +43,7 @@ fi
 oks=()
 noks=()
 for host in $CLUSTER_HOSTS; do
-    # shellcheck disable=SC2029
-    output=$(ssh -oStrictHostKeyChecking=no "$host" "$CHECK_COMMAND" 2>&1)
+    output=$(sudo -u $CHECK_USER ssh -oStrictHostKeyChecking=no "$host" "$CHECK_COMMAND" 2>&1)
     ret=$?
     if [ $ret -eq 0 ]; then
         last_ok_output=$output
