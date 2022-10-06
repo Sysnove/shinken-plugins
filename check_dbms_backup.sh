@@ -42,10 +42,16 @@ oks=()
 noks=()
 for host in $CLUSTER_HOSTS; do
     # shellcheck disable=SC2029
-    if output=$(ssh "$host" "$CHECK_COMMAND"); then
+    output=$(ssh -oStrictHostKeyChecking=no "$host" "$CHECK_COMMAND" 2>&1)
+    ret=$?
+    if [ $ret -eq 0 ]; then
         last_ok_output=$output
         oks+=("$host")
     else
+        if [ $ret -eq 255 ]; then
+            echo "UNKNOWN : Could not SSH to $output"
+            exit 3
+        fi
         noks+=("$host")
     fi
 done
