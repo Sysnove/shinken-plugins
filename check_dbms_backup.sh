@@ -21,10 +21,36 @@ case $1 in
     --mysql)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/mysql/sqldump"
         CLUSTER_HOSTS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
+        CLUSTER_HOSTS="$CLUSTER_HOSTS 127.0.0.1"
         ;;
     --couchbase)
+        # TODO couchbase-cli in PATH
+        #/opt/couchbase/bin/couchbase-cli server-list -c localhost -u Administrator -p adminpass
+        cb_user=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh | cut -d '"' -f 2)
+        cb_pass=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh | cut -d '"' -f 4)
+        if [ -z "$cb_user" ] || [ -z "$cb_pass" ]; then
+            echo "UNKNOWN : Could not find couchbase admin and password"
+        fi
+        CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/couchbase/"
+        CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | cut -d ' ' -f 2 | cut -d ':' -f 1)
         ;;
     --mongodb)
+        CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/mongodb/"
+        CLUSTER_HOSTS=$(sudo mongo --quiet --eval "JSON.stringify(rs.status())" | jq -r '.members[] | .name' | cut -d ':' -f 1)
+        ;;
+    --ldap)
+        CHECK_COMMAND='/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/ldap'
+        CLUSTER_HOSTS=''
+        ;;
+    --elasticsearch)
+        elastic_user="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh | cut -d ':' -f 1 | cut -d '"' -f 2)"
+        elastic_pass="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh | cut -d ':' -f 2 | cut -d '"' -f 1)"
+        if [ -n "$elastic_user" ]; then
+            CHECK_COMMAND="/usr/local/nagios/plugins/check_elasticsearch_backup.sh $elastic_user $elastic_pass"
+        else
+            CHECK_COMMAND="/usr/local/nagios/plugins/check_elasticsearch_backup.sh"
+        fi
+        CLUSTER_HOSTS=''
         ;;
     #--lsync)
         #CHECK_COMMAND="grep 'backup_excludes: /srv/***$' /etc/backup.d/91.borg"
@@ -43,7 +69,11 @@ fi
 oks=()
 noks=()
 for host in $CLUSTER_HOSTS; do
-    output=$(sudo -u $CHECK_USER ssh -oStrictHostKeyChecking=no "$host" "$CHECK_COMMAND" 2>&1)
+    if [ "$host" != "127.0.0.1" ]; then
+        output=$(sudo -u $CHECK_USER ssh -oStrictHostKeyChecking=no "$host" "$CHECK_COMMAND" 2>&1)
+    else
+        output=$($CHECK_COMMAND 2>&1)
+    fi
     ret=$?
     if [ $ret -eq 0 ]; then
         last_ok_output=$output
