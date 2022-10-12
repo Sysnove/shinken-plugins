@@ -96,7 +96,7 @@ if [ "$nb_oks" -eq 0 ]; then
     $CHECK_COMMAND
     exit $?
 elif [ "$nb_oks" -le "$MAX_BACKUPS" ]; then
-    echo "OK : $last_ok_output on" "${oks[@]}"
+    echo "$last_ok_output on" "${oks[@]}"
     exit 0
 else
     echo "WARNING : Found backups on more than $MAX_BACKUPS host -" "${oks[@]}"
