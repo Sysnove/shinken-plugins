@@ -5,25 +5,50 @@
 ### On replicated clusters, it will check every server and count the number of backups.
 ### By default we want one backup. Not less, but not much.
 ###
-### Usage: check_dbms_backup.sh --type (postgresql|mysql|couchbase|mongodb|…) [--max 1]
+### Usage: check_dbms_backup.sh [--min 1] [--max 1] (postgresql|mysql|couchbase|mongodb|…)
 ###
 
 
+usage() {
+    sed -rn 's/^### ?//;T;p' "$0"
+}
+
+MIN_BACKUPS=1
 MAX_BACKUPS=1
 CHECK_USER="root"
 
+while [ $# -gt 1 ]; do
+    case "$1" in
+        --min) shift
+            MIN_BACKUPS="$2"
+            ;;
+        --max) shift
+            MAX_BACKUPS="$2"
+            ;;
+        -h|--help) usage
+            exit 0
+            ;;
+        *) echo "UNKNOWN argument : $1"
+            usage
+            exit 3
+            ;;
+    esac
+    shift
+done
+
+
 case $1 in
-    --postgresql)
+    postgresql)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/postgres"
         CHECK_USER="postgres"
         CLUSTER_HOSTS=$(sudo -u postgres repmgr cluster show 2>&1 | grep -o 'host=[^ ]*' | cut -d '=' -f 2)
         ;;
-    --mysql)
+    mysql)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/mysql/sqldump"
         CLUSTER_HOSTS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
         CLUSTER_HOSTS="$CLUSTER_HOSTS 127.0.0.1"
         ;;
-    --couchbase)
+    couchbase)
         # TODO couchbase-cli in PATH
         #/opt/couchbase/bin/couchbase-cli server-list -c localhost -u Administrator -p adminpass
         cb_user=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh | cut -d '"' -f 2)
@@ -34,15 +59,15 @@ case $1 in
         CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/couchbase/"
         CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | cut -d ' ' -f 2 | cut -d ':' -f 1)
         ;;
-    --mongodb)
+    mongodb)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/mongodb/"
         CLUSTER_HOSTS=$(sudo mongo --quiet --eval "JSON.stringify(rs.status())" | jq -r '.members[] | .name' | cut -d ':' -f 1)
         ;;
-    --ldap)
+    ldap)
         CHECK_COMMAND='/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/ldap'
         CLUSTER_HOSTS=''
         ;;
-    --elasticsearch)
+    elasticsearch)
         elastic_user="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh | cut -d ':' -f 1 | cut -d '"' -f 2)"
         elastic_pass="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh | cut -d ':' -f 2 | cut -d '"' -f 1)"
         if [ -n "$elastic_user" ]; then
@@ -52,7 +77,7 @@ case $1 in
         fi
         CLUSTER_HOSTS=''
         ;;
-    #--lsync)
+    #lsync)
         #CHECK_COMMAND="grep 'backup_excludes: /srv/***$' /etc/backup.d/91.borg"
         #HOSTS=""
         #;;
@@ -61,10 +86,6 @@ case $1 in
         exit 3
         ;;
 esac
-
-if [ "$2" == '--max' ]; then
-    MAX_BACKUPS="$3"
-fi
 
 oks=()
 noks=()
@@ -94,8 +115,13 @@ if [ "$nb_oks" -eq 0 ]; then
     #exit 2
     # return result of local check
     $CHECK_COMMAND
-    exit $?
-elif [ "$nb_oks" -le "$MAX_BACKUPS" ]; then
+    ret=$?
+    if [ $ret -ne 0 ] && [ "$MIN_BACKUPS" -eq 0 ]; then
+        exit 0
+    else
+        exit $?
+    fi
+elif [ "$nb_oks" -le "$MAX_BACKUPS" ] && [ "$nb_oks" -ge "$MIN_BACKUPS" ]; then
     echo "$last_ok_output on" "${oks[@]}"
     exit 0
 else

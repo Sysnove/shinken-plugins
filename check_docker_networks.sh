@@ -1,4 +1,5 @@
 #!/bin/bash
+# Based upon https://github.com/docker-archive/ip-util-check
 
 export DOCKER_CERT_PATH
 export DOCKER_HOST
