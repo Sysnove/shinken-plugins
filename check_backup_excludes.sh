@@ -4,13 +4,14 @@
 # Check directories that should not be excluded from backups but could be by mistake
 #
 
-FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/(www|vmail|backups|lib/docker))/?$'
+FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/(www|vmail|lib/docker|backups.*))/?$'
 
 backup_excludes=$(grep '^exclude =' /etc/backup.d/91_all.borg | awk '{print $3}')
 backup_includes=$(grep '^include =' /etc/backup.d/91_all.borg | awk '{print $3}')
 
-if echo "$backup_excludes" | grep -E -q "$FORBIDDEN_EXCLUDES"; then
-    echo "CRITICAL - You should not exclude /srv, /var, /var/www, /var/vmail, /var/backups or /var/lib/docker"
+found_forbidden_excludes=$(echo "$backup_excludes" | grep -E "$FORBIDDEN_EXCLUDES" | tr '\n' ' ')
+if [ -n "$found_forbidden_excludes" ]; then
+    echo "CRITICAL - You should not exclude $found_forbidden_excludes (/srv, /var, /var/www, /var/vmail, /var/lib/docker or /var/backups/*)"
     exit 2
 fi
 
