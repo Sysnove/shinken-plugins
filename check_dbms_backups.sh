@@ -71,11 +71,9 @@ for dbms in "${!dbms_checks[@]}"; do
         fi
     else
         # Check for old backups that can be removed
-        if [ -d "${dbms_datadirs[$dbms]}" ]; then
-            if ! /usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}" > /dev/null; then
-                echo "CRITICAL : Old backup found in ${dbms_datadirs[$dbms]}"
-                exit 2
-            fi
+        if [ -d "${dbms_datadirs[$dbms]}" ] && /usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}" > /dev/null; then
+            echo "CRITICAL : Old backup found in ${dbms_datadirs[$dbms]}"
+            exit 2
         fi
     fi
 done
