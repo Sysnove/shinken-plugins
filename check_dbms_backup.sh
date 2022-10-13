@@ -20,10 +20,10 @@ CHECK_USER="root"
 while [ $# -gt 1 ]; do
     case "$1" in
         --min) shift
-            MIN_BACKUPS="$2"
+            MIN_BACKUPS="$1"
             ;;
         --max) shift
-            MAX_BACKUPS="$2"
+            MAX_BACKUPS="$1"
             ;;
         -h|--help) usage
             exit 0
@@ -53,8 +53,8 @@ case $1 in
     couchbase)
         # TODO couchbase-cli in PATH
         #/opt/couchbase/bin/couchbase-cli server-list -c localhost -u Administrator -p adminpass
-        cb_user=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh | cut -d '"' -f 2)
-        cb_pass=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh | cut -d '"' -f 4)
+        cb_user=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
+        cb_pass=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 4)
         if [ -z "$cb_user" ] || [ -z "$cb_pass" ]; then
             echo "UNKNOWN : Could not find couchbase admin and password"
         fi
@@ -70,8 +70,8 @@ case $1 in
         CLUSTER_HOSTS=''
         ;;
     elasticsearch)
-        elastic_user="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh | cut -d ':' -f 1 | cut -d '"' -f 2)"
-        elastic_pass="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh | cut -d ':' -f 2 | cut -d '"' -f 1)"
+        elastic_user="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh 2>/dev/null | cut -d ':' -f 1 | cut -d '"' -f 2)"
+        elastic_pass="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh 2>/dev/null | cut -d ':' -f 2 | cut -d '"' -f 1)"
         if [ -n "$elastic_user" ]; then
             CHECK_COMMAND="/usr/local/nagios/plugins/check_elasticsearch_backup.sh $elastic_user $elastic_pass"
         else
@@ -93,11 +93,11 @@ if [ -z "$CLUSTER_HOSTS" ]; then
     output=$($CHECK_COMMAND)
     ret=$?
     if [ $ret -ne 0 ] && [ "$MIN_BACKUPS" -eq 0 ]; then
-        echo "$output but MIN_BACKUPS is 0 so it is OK anyway."
+        echo "OK : $output but MIN_BACKUPS is 0 so it is OK anyway."
         exit 0
     else
         echo "$output"
-        exit $?
+        exit $ret
     fi
 fi
 
