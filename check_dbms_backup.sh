@@ -8,7 +8,6 @@
 ### Usage: check_dbms_backup.sh [--min 1] [--max 1] (postgresql|mysql|couchbase|mongodb|…)
 ###
 
-
 usage() {
     sed -rn 's/^### ?//;T;p' "$0"
 }
@@ -16,6 +15,7 @@ usage() {
 MIN_BACKUPS=1
 MAX_BACKUPS=1
 CHECK_USER="root"
+LOCAL_ONLY=false
 
 while [ $# -gt 1 ]; do
     case "$1" in
@@ -24,6 +24,9 @@ while [ $# -gt 1 ]; do
             ;;
         --max) shift
             MAX_BACKUPS="$1"
+            ;;
+        --local)
+            LOCAL_ONLY=true
             ;;
         -h|--help) usage
             exit 0
@@ -41,13 +44,17 @@ case $1 in
     postgresql)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/postgres"
         CHECK_USER="postgres"
-        CLUSTER_HOSTS=$(sudo -u postgres repmgr cluster show 2>&1 | grep -o 'host=[^ ]*' | cut -d '=' -f 2)
+        if ! $LOCAL_ONLY; then
+            CLUSTER_HOSTS=$(sudo -u postgres repmgr cluster show 2>&1 | grep -o 'host=[^ ]*' | cut -d '=' -f 2)
+        fi
         ;;
     mysql)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/mysql/sqldump"
-        CLUSTER_HOSTS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
-        if [ -n "$CLUSTER_HOSTS" ]; then
-            CLUSTER_HOSTS="$CLUSTER_HOSTS 127.0.0.1"
+        if ! $LOCAL_ONLY; then
+            CLUSTER_HOSTS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
+            if [ -n "$CLUSTER_HOSTS" ]; then
+                CLUSTER_HOSTS="$CLUSTER_HOSTS 127.0.0.1"
+            fi
         fi
         ;;
     couchbase)
@@ -59,15 +66,22 @@ case $1 in
             echo "UNKNOWN : Could not find couchbase admin and password"
         fi
         CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/couchbase/"
-        CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | cut -d ' ' -f 2 | cut -d ':' -f 1)
+        if ! $LOCAL_ONLY; then
+            CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | cut -d ' ' -f 2 | cut -d ':' -f 1)
+        fi
         ;;
     mongodb)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/mongodb/"
-        CLUSTER_HOSTS=$(sudo mongo --quiet --eval "JSON.stringify(rs.status())" | jq -r '.members[] | .name' | cut -d ':' -f 1)
+        if ! $LOCAL_ONLY; then
+            CLUSTER_HOSTS=$(sudo mongo --quiet --eval "JSON.stringify(rs.status())" | jq -r '.members[] | .name' | cut -d ':' -f 1)
+            if [ "$(echo "$CLUSTER_HOSTS" | wc -w)" -eq 1 ]; then
+                CLUSTER_HOSTS=""
+            fi
+        fi
         ;;
     ldap)
         CHECK_COMMAND='/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/ldap'
-        CLUSTER_HOSTS=''
+        #CLUSTER_HOSTS='' # Not managed
         ;;
     elasticsearch)
         elastic_user="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh 2>/dev/null | cut -d ':' -f 1 | cut -d '"' -f 2)"
@@ -77,7 +91,7 @@ case $1 in
         else
             CHECK_COMMAND="/usr/local/nagios/plugins/check_elasticsearch_backup.sh"
         fi
-        CLUSTER_HOSTS=''
+        #CLUSTER_HOSTS='' # Not managed
         ;;
     #lsync)
         #CHECK_COMMAND="grep 'backup_excludes: /srv/***$' /etc/backup.d/91.borg"
