@@ -46,7 +46,9 @@ case $1 in
     mysql)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/mysql/sqldump"
         CLUSTER_HOSTS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
-        CLUSTER_HOSTS="$CLUSTER_HOSTS 127.0.0.1"
+        if [ -n "$CLUSTER_HOSTS" ]; then
+            CLUSTER_HOSTS="$CLUSTER_HOSTS 127.0.0.1"
+        fi
         ;;
     couchbase)
         # TODO couchbase-cli in PATH
@@ -87,6 +89,18 @@ case $1 in
         ;;
 esac
 
+if [ -z "$CLUSTER_HOSTS" ]; then
+    output=$($CHECK_COMMAND)
+    ret=$?
+    if [ $ret -ne 0 ] && [ "$MIN_BACKUPS" -eq 0 ]; then
+        echo "$output but MIN_BACKUPS is 0 so it is OK anyway."
+        exit 0
+    else
+        echo "$output"
+        exit $?
+    fi
+fi
+
 oks=()
 noks=()
 for host in $CLUSTER_HOSTS; do
@@ -110,21 +124,13 @@ done
 
 nb_oks=${#oks[@]}
 
-if [ "$nb_oks" -eq 0 ]; then
-    #echo "CRITICAL : No backup found on" "${noks[@]}"
-    #exit 2
-    # return result of local check
-    $CHECK_COMMAND
-    ret=$?
-    if [ $ret -ne 0 ] && [ "$MIN_BACKUPS" -eq 0 ]; then
-        exit 0
-    else
-        exit $?
-    fi
-elif [ "$nb_oks" -le "$MAX_BACKUPS" ] && [ "$nb_oks" -ge "$MIN_BACKUPS" ]; then
-    echo "$last_ok_output on" "${oks[@]}"
-    exit 0
-else
+if [ "$nb_oks" -lt "$MIN_BACKUPS" ]; then
+    echo "CRITICAL : Found $nb_oks OK backups on $CLUSTER_HOSTS. We need at least $MIN_BACKUPS."
+    exit 2
+elif [ "$nb_oks" -gt "$MAX_BACKUPS" ]; then
     echo "WARNING : Found backups on more than $MAX_BACKUPS host -" "${oks[@]}"
     exit 1
+else
+    echo "$last_ok_output on" "${oks[@]}"
+    exit 0
 fi
