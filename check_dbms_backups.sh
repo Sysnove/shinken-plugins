@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This plugins search for running databases and check that a backup is configured in backupninja
+# This plugins search for running databases and checks that a backup is configured in backupninja
 # for each database management system.
 # WARNING : This plugin does not replace check_mysql_backup, check_elasticsearch_backup, etc.
 
@@ -22,12 +22,22 @@ declare -A dbms_datadirs=(
     ['elasticsearch']="/var/lib/elasticsearch"
 )
 
+declare -A dbms_backupdirs=(
+    ['mongodb']="/var/backups/mongodb"
+    ['pgsql']="/var/backups/postgres"
+    ['mysql']="/var/backups/mysql"
+    ['ldap']="/var/backups/ldap"
+    ['couchbase']="/var/backups/couchbase"
+    ['elasticsearch']="/var/backups/elasticsearch"
+)
+
 ok=""
 ignored=""
 
 for dbms in "${!dbms_checks[@]}"; do
     running=false
     datadir=false
+    # Does not cost anything to double the check, either process is running or standard datadir exists
     if eval "${dbms_checks[$dbms]}" > /dev/null 2>&1; then
         running=true
     elif [ -n "$(find "${dbms_datadirs[$dbms]}" -mindepth 1 -type d 2>/dev/null)" ]; then
@@ -35,7 +45,7 @@ for dbms in "${!dbms_checks[@]}"; do
     fi
 
     if $running || $datadir; then
-        if grep -q "# ignore $dbms" /etc/backupninja.conf; then
+        if [ -f "${dbms_backupdirs[$dbms]}/README" ]; then
             ignored="$ignored $dbms"
         else
             if ! grep -qR "^### backupninja $dbms" /etc/backup.d; then
@@ -46,19 +56,26 @@ for dbms in "${!dbms_checks[@]}"; do
                 fi
                 exit 2
             fi
-            backupdir=$(grep "^### backupninja $dbms" "/etc/backup.d/21_$dbms"* | cut -d ' ' -f 4)
             if [ "$dbms" == "elasticsearch" ]; then
-                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "$backupdir" "-maxdepth 2 -not -name incompatible-snapshots"); then
+                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}" "-maxdepth 2 -not -name incompatible-snapshots"); then
                     echo "$dbms: $out"
                     exit 2
                 fi
             else
-                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "$backupdir"); then
+                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}"); then
                     echo "$dbms: $out"
                     exit 2
                 fi
             fi
             ok="$ok $dbms"
+        fi
+    else
+        # Check for old backups that can be removed
+        if [ -d "${dbms_datadirs[$dbms]}" ]; then
+            if ! /usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}" > /dev/null; then
+                echo "CRITICAL : Old backup found in ${dbms_datadirs[$dbms]}"
+                exit 2
+            fi
         fi
     fi
 done
