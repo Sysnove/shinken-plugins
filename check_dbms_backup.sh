@@ -150,10 +150,10 @@ done
 nb_oks=${#oks[@]}
 
 if [ "$nb_oks" -lt "$MIN_BACKUPS" ]; then
-    echo "CRITICAL : Found $nb_oks OK backups on $CLUSTER_HOSTS. We need at least $MIN_BACKUPS."
+    echo "CRITICAL : Found $nb_oks OK $1 backups on $CLUSTER_HOSTS. We need at least $MIN_BACKUPS."
     exit 2
 elif [ "$nb_oks" -gt "$MAX_BACKUPS" ]; then
-    echo "WARNING : Found backups on more than $MAX_BACKUPS host -" "${oks[@]}"
+    echo "WARNING : Found $1 backups on more than $MAX_BACKUPS host -" "${oks[@]}"
     exit 1
 else
     echo "$last_ok_output on" "${oks[@]}"
