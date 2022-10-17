@@ -52,6 +52,15 @@ if [ "$down" != "" ] ; then
     echo "WARNING - Services down:$down"
     exit $STATE_WARNING
 else
+
+    # Nginx special case : check if nginx -t is OK
+    if [ -f "/lib/systemd/system/nginx.service" ]; then
+        if ! /usr/sbin/nginx -t > /dev/null 2>&1; then
+            echo "WARNING - Nginx configuration error, please check nginx -t"
+            exit $STATE_WARNING
+        fi
+    fi
+
     echo "OK - All services are running."
     exit $STATE_OK
 fi
