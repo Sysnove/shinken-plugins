@@ -44,12 +44,14 @@ case $1 in
     postgresql)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/postgres"
         CHECK_USER="postgres"
+        BACKUP_DIR="/var/backups/postgres"
         if ! $LOCAL_ONLY; then
             CLUSTER_HOSTS=$(sudo -u postgres repmgr cluster show 2>&1 | grep -o 'host=[^ ]*' | cut -d '=' -f 2)
         fi
         ;;
     mysql)
-        CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/mysql/sqldump"
+        CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/mysql"
+        BACKUP_DIR="/var/backups/mysql"
         if ! $LOCAL_ONLY; then
             CLUSTER_HOSTS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
             if [ -n "$CLUSTER_HOSTS" ]; then
@@ -66,12 +68,14 @@ case $1 in
             echo "UNKNOWN : Could not find couchbase admin and password"
         fi
         CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/couchbase/"
+        BACKUP_DIR="/var/backups/couchbase"
         if ! $LOCAL_ONLY; then
             CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | cut -d ' ' -f 2 | cut -d ':' -f 1)
         fi
         ;;
     mongodb)
         CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/mongodb/"
+        BACKUP_DIR="/var/backups/mongodb"
         if ! $LOCAL_ONLY; then
             CLUSTER_HOSTS=$(sudo mongo --quiet --eval "JSON.stringify(rs.status())" | jq -r '.members[] | .name' | cut -d ':' -f 1)
             if [ "$(echo "$CLUSTER_HOSTS" | wc -w)" -eq 1 ]; then
@@ -81,9 +85,11 @@ case $1 in
         ;;
     ldap)
         CHECK_COMMAND='/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/ldap'
+        BACKUP_DIR="/var/backups/ldap"
         #CLUSTER_HOSTS='' # Not managed
         ;;
     elasticsearch)
+        BACKUP_DIR="/var/backups/elasticsearch"
         elastic_user="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh 2>/dev/null | cut -d ':' -f 1 | cut -d '"' -f 2)"
         elastic_pass="$(grep '\-\-user' /etc/backup.d/21_elasticsearch.sh 2>/dev/null | cut -d ':' -f 2 | cut -d '"' -f 1)"
         if [ -n "$elastic_user" ]; then
@@ -107,8 +113,13 @@ if [ -z "$CLUSTER_HOSTS" ]; then
     output=$($CHECK_COMMAND)
     ret=$?
     if [ $ret -ne 0 ] && [ "$MIN_BACKUPS" -eq 0 ]; then
-        echo "OK : $output but MIN_BACKUPS is 0 so it is OK anyway."
-        exit 0
+        if [ -f "${BACKUP_DIR}/README" ]; then
+            cat "${BACKUP_DIR}/README"
+            exit 0
+        else
+            echo "WARNING : Please document why backup_$1 is False in ${BACKUP_DIR}/README"
+            exit 1
+        fi
     else
         echo "$output"
         exit $ret
