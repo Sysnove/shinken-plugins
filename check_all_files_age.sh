@@ -13,7 +13,7 @@ if [ ! -d "$DIR" ]; then
     exit 2
 fi
 
-FIND="find $DIR $FINDOPTS -type f -not -name README.txt"
+FIND="find $DIR $FINDOPTS -type f -not -name README.txt -not -name README"
 
 warnings=$($FIND -mmin +1500 -mmin -3000)
 errors=$($FIND  -mmin +3000)
