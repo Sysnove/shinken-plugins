@@ -42,8 +42,8 @@ done
 [ -z "$DIRECTORY" ] && usage
 
 # head makes find quit after first file found and speed up script
-if [ -z "$(find "$DIRECTORY" -mmin -$((WARN_THRESHOLD * 60)) -type f | head -n 1)" ]; then
-    if [ -z "$(find "$DIRECTORY" -mmin -$((CRIT_THRESHOLD * 60)) -type f | head -n 1)" ]; then
+if [ -z "$(find "$DIRECTORY" -mmin -$((WARN_THRESHOLD * 60)) -type f | grep -v README | head -n 1)" ]; then
+    if [ -z "$(find "$DIRECTORY" -mmin -$((CRIT_THRESHOLD * 60)) -type f | grep -v README | head -n 1)" ]; then
         echo "CRITICAL - No file younger than $CRIT_THRESHOLD hours in $DIRECTORY."
         exit $CRIT
     fi
