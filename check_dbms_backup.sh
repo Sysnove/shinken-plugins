@@ -53,9 +53,10 @@ case $1 in
         CHECK_COMMAND="/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/mysql"
         BACKUP_DIR="/var/backups/mysql"
         if ! $LOCAL_ONLY; then
-            CLUSTER_HOSTS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
-            if [ -n "$CLUSTER_HOSTS" ]; then
-                CLUSTER_HOSTS="$CLUSTER_HOSTS 127.0.0.1"
+            REPLICAS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
+            MASTER=$(sudo mysql -e "show slave status\G;" | grep "Master_Host" | awk '{print $2}')
+            if [ -n "$REPLICAS" ] || [ -n "$MASTER" ]; then
+                CLUSTER_HOSTS="$REPLICAS $MASTER 127.0.0.1"
             fi
         fi
         ;;
