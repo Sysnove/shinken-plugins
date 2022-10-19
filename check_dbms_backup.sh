@@ -54,7 +54,7 @@ case $1 in
         BACKUP_DIR="/var/backups/mysql"
         if ! $LOCAL_ONLY; then
             REPLICAS=$(sudo mysql --skip-column-names -sr -e "show slave hosts;" | awk '{print $2}')
-            MASTER=$(sudo mysql -e "show slave status\G;" | grep "Master_Host" | awk '{print $2}')
+            MASTER=$(sudo mysql -e "show slave status\G;" | grep -E '(Slave_SQL_Running|Master_Host):' | grep 'Slave_SQL_Running: Yes' -B 1 | grep "Master_Host" | awk '{print $2}')
             if [ -n "$REPLICAS" ] || [ -n "$MASTER" ]; then
                 CLUSTER_HOSTS="$REPLICAS $MASTER 127.0.0.1"
             fi
