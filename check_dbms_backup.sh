@@ -71,7 +71,7 @@ case $1 in
         CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/couchbase/"
         BACKUP_DIR="/var/backups/couchbase"
         if ! $LOCAL_ONLY; then
-            CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | cut -d ' ' -f 2 | cut -d ':' -f 1)
+            CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | grep -v 'ERROR:' | cut -d ' ' -f 2 | cut -d ':' -f 1)
         fi
         ;;
     mongodb)
