@@ -78,4 +78,16 @@ for net in $NETS ; do
 	fi
 done
 
+
+# Check if a docker network conflicts with local networks
+for subnet in $(docker network inspect $(docker network ls -q) | jq -r '.[] | select(.IPAM.Config != null) | .IPAM.Config[].Subnet'); do
+    ip="$(echo "$subnet" | cut -d '/' -f 1)"
+    if ip route get "$ip" | grep "$ip" | grep -v docker | grep -v 'br-' | grep -q broadcast; then
+        iface=$(ip route get $ip | grep $ip | grep broadcast | cut -d ' ' -f 4)
+        name=$(docker network inspect $(docker network ls -q) | jq -r '.[] | select(.IPAM.Config != null) | .Name, .IPAM.Config[].Subnet' | grep "$subnet" -B 1 | head -n 1)
+        echo "WARNING : Docker network $name uses same subnet than iface $iface ($subnet)"
+        exit 1
+    fi
+done
+
 echo "OK : All docker networks are fine."
