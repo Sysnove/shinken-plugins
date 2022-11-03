@@ -137,6 +137,11 @@ for dir in ${ROOT_PATH//:/ }; do
     fi
 done
 
+dangerous_files="$(locate --regex '^.*/(web_system.php|db_pdo.php)$' 2>&1)"
+if [ -n "$dangerous_files" ]; then
+    critical "$(echo "$dangerous_files" | wc -l) dangerous file(s) has been found : $dangerous_files"
+fi
+
 if [ $RET -eq 0 ]; then
     echo "Everything seems OK"
 fi
