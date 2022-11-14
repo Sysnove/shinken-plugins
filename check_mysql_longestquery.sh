@@ -1,6 +1,7 @@
 #!/bin/bash
 
-### Usage: check_mysql_longestquery --username foo --password bar --warning 600 --critical 3600
+### Usage: check_mysql_longestquery --warning 600 --critical 3600
+### Needs to be run as root to see requests made by all users
 
 usage () {
     sed -rn 's/^### ?//;T;p' "$0"
@@ -12,8 +13,6 @@ CRITICAL=3600
 
 while [ -n "$1" ]; do
     case $1 in
-        --username) shift; USERNAME=$1 ;;
-        --password) shift; PASSWORD=$1 ;;
         --warning) shift; WARNING=$1 ;;
         --critical) shift; CRITICAL=$1 ;;
         -h) usage; exit 0;;
@@ -21,10 +20,6 @@ while [ -n "$1" ]; do
     esac
     shift
 done
-
-if [ -n "$USERNAME" ]; then
-    CONNECTION="--user=$USERNAME --password=$PASSWORD"
-fi
 
 # shellcheck disable=SC2086
 running_count=$(($(mysql $CONNECTION -sN -e "SELECT count(*) FROM INFORMATION_SCHEMA.PROCESSLIST;") - 1))
