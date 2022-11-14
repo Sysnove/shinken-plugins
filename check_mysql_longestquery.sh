@@ -22,13 +22,13 @@ while [ -n "$1" ]; do
 done
 
 # shellcheck disable=SC2086
-running_count=$(($(mysql $CONNECTION -sN -e "SELECT count(*) FROM INFORMATION_SCHEMA.PROCESSLIST;") - 1))
+running_count=$(($(mysql -sN -e "SELECT count(*) FROM INFORMATION_SCHEMA.PROCESSLIST;") - 1))
 # shellcheck disable=SC2086
-warning_count=$(mysql $CONNECTION -sN -e "SELECT count(*) FROM INFORMATION_SCHEMA.PROCESSLIST where time > $WARNING;")
+warning_count=$(mysql -sN -e "SELECT count(*) FROM INFORMATION_SCHEMA.PROCESSLIST where time > $WARNING;")
 # shellcheck disable=SC2086
-critical_count=$(mysql $CONNECTION -sN -e "SELECT count(*) FROM INFORMATION_SCHEMA.PROCESSLIST where time > $CRITICAL;")
+critical_count=$(mysql -sN -e "SELECT count(*) FROM INFORMATION_SCHEMA.PROCESSLIST where time > $CRITICAL;")
 # shellcheck disable=SC2086
-longest_running_query=$(mysql $CONNECTION -sN -e "SELECT MAX(time) FROM INFORMATION_SCHEMA.PROCESSLIST")
+longest_running_query=$(mysql -sN -e "SELECT MAX(time) FROM INFORMATION_SCHEMA.PROCESSLIST")
 
 # shellcheck disable=SC2181
 if [ $? != 0 ]; then
