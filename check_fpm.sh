@@ -51,7 +51,7 @@ for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '='
 
     # ISPConfig
     if ! [[ $out_pool_name == 'web'* ]] ; then
-        perfdata="$perfdata php${php_version//./}_${pool_name}_listen_queue=${pool_listen_queue:-0} php${php_version//./}_${pool_name}_idle_procs=${pool_idle_processes:-0} php${php_version//./}_${pool_name}_active_procs=${pool_active_processes:-0}"
+        perfdata="$perfdata php${php_version//./}_${pool_name}_listen_queue=${out_pool_listen_queue:-0} php${php_version//./}_${pool_name}_idle_procs=${out_pool_idle_processes:-0} php${php_version//./}_${pool_name}_active_procs=${out_pool_active_processes:-0}"
     fi
 done
 
