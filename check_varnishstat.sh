@@ -25,7 +25,7 @@ if varnishstat=$(varnishstat -j 2>&1); then
     now=$(date +%H:%M:%S)
 
     varnishstat_version=$(echo "$varnishstat" | jq ".version")
-    if [ -z "$varnishstat_version" ]; then
+    if [ "$varnishstat_version" == "null" ]; then # V0
         cache_hit=$(echo "$varnishstat" | jq '."MAIN.cache_hit".value')
         cache_hitpass=$(echo "$varnishstat" | jq '."MAIN.cache_hitpass".value')
         cache_miss=$(echo "$varnishstat" | jq '."MAIN.cache_miss".value')
@@ -35,6 +35,7 @@ if varnishstat=$(varnishstat -j 2>&1); then
         cache_miss=$(echo "$varnishstat" | jq '.counters."MAIN.cache_miss".value')
     else
         echo "UNNOWN - Varnishstat version $varnishstat_version is not managed."
+        exit 3
     fi
 
     old_cache_hit=-1
