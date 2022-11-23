@@ -38,6 +38,11 @@ if varnishstat=$(varnishstat -j 2>&1); then
         exit 3
     fi
 
+    if [ "$cache_hit" == "null" ]; then
+        echo "UNKNOWN - Could not find cache hit in varnishstat"
+        exit 3
+    fi
+
     old_cache_hit=-1
     old_cache_hitpass=-1
     old_cache_miss=-1
@@ -51,7 +56,7 @@ old_cache_miss=$cache_miss
 last_check=$now
 " > "$LAST_RUN_FILE"
 
-    if [ -z "$last_check" ] || [ "$old_cache_hit" -eq -1 ]; then
+    if [ -z "$last_check" ] || [ "$old_cache_hit" -eq -1 ] || [ "$old_cache_hit" == "null" ]; then
         echo "UNKOWN - Variables missing in database, please run the check again."
         exit 3
     fi
