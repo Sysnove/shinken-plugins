@@ -69,40 +69,51 @@ for d in $db_datadirs; do
 done
 
 #
-# Check bind mounts that should be in backup excludes
+# Check bind and network mounts that should be in backup excludes
 #
 
-missing=""
+bind_missing=""
 
 bind_mounts=$(grep bind /etc/fstab | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
 for source in $bind_mounts; do
     if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
         if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$source/?$"; then
-            missing="$missing$source "
+            bind_missing="$bind_missing$source "
         fi
     fi
 done
 
+if [ -n "$bind_missing" ]; then
+    echo "WARNING - You should exclude bind mounts from backups: $bind_missing"
+    exit 1
+fi
+
+network_missing=""
+
 nfs_mounts=$(grep ' nfs ' /etc/fstab  | grep -v '^#' | awk '{print $2}')
-for source in $nfs_mounts; do
-    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
-        if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$source/?$"; then
-            missing="$missing$source "
+for mount in $nfs_mounts; do
+    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$mount/?$"; then
+        if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$mount/?$"; then
+            if ! grep -q "^#include_network_mount = $mount" /etc/backup.d/91_all.borg; then
+                network_missing="$network_missing$mount "
+            fi
         fi
     fi
 done
 
 sshfs_mounts=$(grep '^sshfs#' /etc/fstab | grep -v '^#'| awk '{print $2}')
-for source in $sshfs_mounts; do
-    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
-        if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$source/?$"; then
-            missing="$missing$source "
+for mount in $sshfs_mounts; do
+    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$mount/?$"; then
+        if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$mount/?$"; then
+            if ! grep -q "^#include_network_mount = $mount" /etc/backup.d/91_all.borg; then
+                network_missing="$network_missing$mount "
+            fi
         fi
     fi
 done
 
-if [ -n "$missing" ]; then 
-    echo "WARNING - You should exclude following path from backups: $missing"
+if [ -n "$network_missing" ]; then
+    echo "WARNING - You should exclude or explicitely include network mounts from backups: $network_missing"
     exit 1
 fi
 
