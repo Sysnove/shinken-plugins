@@ -74,19 +74,19 @@ done
 
 bind_missing=""
 
-bind_mounts=$(grep bind /etc/fstab | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
-for source in $bind_mounts; do
-    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$source/?$"; then
-        if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$source/?$"; then
-            if ! grep -q "^#include_bind_mount = $mount" /etc/backup.d/91_all.borg; then
-                bind_missing="$bind_missing$source "
+bind_mount_sources=$(grep bind /etc/fstab | grep -v '^/var/log' | awk '{print $1}' | grep -v '^#')
+for mount_source in $bind_mount_sources; do
+    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$mount_source/?$"; then
+        if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$mount_source/?$"; then
+            if ! grep -q "^#include_bind_mount_source = $mount" /etc/backup.d/91_all.borg; then
+                bind_missing="$bind_missing$mount_source "
             fi
         fi
     fi
 done
 
 if [ -n "$bind_missing" ]; then
-    echo "WARNING - You should exclude or explicitely include bind mounts from backups: $bind_missing"
+    echo "WARNING - You should exclude or explicitely include bind mount sources from backups: $bind_missing"
     exit 1
 fi
 
