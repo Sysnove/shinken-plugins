@@ -26,6 +26,8 @@ containers=$(echo "$containers" | grep -E -v "^(base_mongo_proxy|registry_portus
 if [ -n "$ignored_names" ]; then
     count_ignored=$(echo "$containers" | grep -E -c "^$ignored_names(\..*)?$")
     containers=$(echo "$containers" | grep -E -v "^$ignored_names(\..*)?$")
+else
+    count_ignored=0
 fi
 
 
