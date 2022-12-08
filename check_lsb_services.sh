@@ -32,6 +32,11 @@ for service in $services ; do
     fi
 done
 
+# Multi-instance postfix, check postfix@-
+if [ -f /lib/systemd/system/postfix@.service ]; then
+    service "postfix@-" status > /dev/null || down="$down postfix@-" 
+fi
+
 # Postgres special case : 4 means that postgresql-common is installed but not
 # postgresql-server, so it's OK if postgres is not running
 if [ -f /etc/init.d/postgresql ] ; then
