@@ -15,6 +15,7 @@ while IFS="" read -r line; do
         target=""
     fi
     if [ -n "$src" ] && [ -n "$target" ]; then
+        mkdir -p "$src/.test"
         date > "$src/.test/date"
         datenow=$(date -r "$src/.test/date" +%s)
         target_host=$(echo "$target" | cut -d ':' -f 1)
