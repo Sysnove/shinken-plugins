@@ -21,12 +21,15 @@ while IFS="" read -r line; do
         target_dir=$(echo "$target" | cut -d ':' -f 2)
         # shellcheck disable=SC2034
         for i in {1..5}; do
-            datetarget=$(ssh -n "$target_host" "date -r $target_dir/.test/date +%s")
-            lag=$((datenow - datetarget))
-            if [ $lag -eq 0 ]; then
-                break
+            if datetarget=$(ssh -n "$target_host" "date -r $target_dir/.test/date +%s"); then
+                lag=$((datenow - datetarget))
+                if [ $lag -eq 0 ]; then
+                    break
+                fi
+                sleep 1
+            else
+                exit 3
             fi
-            sleep 1
         done
 
         retmsg="OK"
