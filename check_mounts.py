@@ -58,26 +58,31 @@ def main():
             # Ignore noauto mount points
             continue
 
+        fstab_source = fstab_entry[0]
         fstab_mount_point = fstab_entry[1]
 
-        mount_line = [
-            l
-            for l in mounts
-            if fstab_mount_point in l.split(" ")
-        ]
+        mount_entries = []
 
-        if not mount_line:
+        for mount in mounts:
+            mount_entry = mount.split()
+            mount_device = mount_entry[0]
+            mount_mount_point = mount_entry[1]
+
+            if os.path.samefile(fstab_mount_point, mount_mount_point):
+                mount_entries.append(mount_entry)
+
+        if not mount_entries:
             print("%s is not mounted" % fstab_mount_point)
             return STATUS_ERROR
 
-        if len(mount_line) > 1:
+        if len(mount_entries) > 1:
             print("%s found more than one time" % fstab_mount_point)
             return STATUS_ERROR
 
-        mount_line = mount_line[0]
+        mount_entry = mount_entries[0]
 
         # Check mount options
-        mount_options = mount_line.split(" ")[3].split(",")
+        mount_options = mount_entry[3].split(",")
 
         if "ro" in mount_options:
             print("%s is read only" % fstab_mount_point)
