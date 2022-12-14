@@ -5,6 +5,7 @@
 
 import sys
 import os
+from pathlib import Path
 import re
 
 
@@ -68,7 +69,7 @@ def main():
             mount_device = mount_entry[0]
             mount_mount_point = mount_entry[1]
 
-            if os.fspath(fstab_mount_point) == os.fspath(mount_mount_point):
+            if Path(fstab_mount_point) == Path(mount_mount_point):
                 mount_entries.append(mount_entry)
 
         if not mount_entries:
