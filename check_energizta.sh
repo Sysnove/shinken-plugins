@@ -12,12 +12,11 @@ if [ -z "$last_line" ]; then
     exit 3
 fi
 
-if ! echo "$last_line" | jq > /dev/null; then
+if ! timestamp=$(echo "$last_line" | jq '.timestamp'); then
     echo "UNKNOWN : failed to parse last line from /var/lib/energizta/energizta.log"
     exit 3
 fi
 
-timestamp=$(echo "$last_line" | jq '.timestamp')
 
 freshness=$(( $(date +%s) - timestamp ))
 
