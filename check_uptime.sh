@@ -14,6 +14,7 @@
 ### - check_uptime.sh
 ### - check_uptime.sh -w 300
 ### - check_uptime.sh -w 300 -c 500
+### - check_uptime.sh -d bullseye # expected distribution codename
 ###
 ### Warning and Critical thresholds are in days.
 ###
@@ -22,7 +23,7 @@ usage() {
     sed -rn 's/^### ?//;T;p' "$0"
 }
 
-while getopts "w:c:" option; do
+while getopts "w:c:d:" option; do
     case "${option}" in
         w)
             WARN=${OPTARG}
@@ -30,12 +31,20 @@ while getopts "w:c:" option; do
         c)
             CRIT=${OPTARG}
             ;;
+        d)
+            DISTRIB=${OPTARG}
+            ;;
         *)
             usage
             exit 3
             ;;
     esac
 done
+
+if [ -n "$DISTRIB" ] && [ "$DISTRIB" != "$(lsb_release -cs)" ]; then
+    echo "Host is running on $(lsb_release -cs) but $DISTRIB is expected, you should run post_upgrade.sh"
+    exit 2
+fi
 
 #uptime_in_seconds=$(($(date +%s) - $(date -d "$(uptime -s)" +%s)))
 uptime_in_seconds=$(cut -d '.' -f 1 /proc/uptime)
