@@ -31,9 +31,6 @@ while getopts "w:c:d:" option; do
         c)
             CRIT=${OPTARG}
             ;;
-        d)
-            DISTRIB=${OPTARG}
-            ;;
         *)
             usage
             exit 3
@@ -41,10 +38,17 @@ while getopts "w:c:d:" option; do
     esac
 done
 
-if [ -n "$DISTRIB" ] && [ "$DISTRIB" != "$(lsb_release -cs)" ]; then
-    echo "Host is running on $(lsb_release -cs) but $DISTRIB is expected, you should run post_upgrade.sh"
-    exit 2
+if lsb_release -d | grep -Eq '(Ubuntu|Debian)'; then
+    lsb_release_distrib="$(lsb_release -cs)"
+    lsb_release_text="$(lsb_release -is) $(lsb_release -rs) $(lsb_release -cs)"
+    motd_distrib="$(grep -o 'OS :.*' /etc/motd | grep -o '(.*)' | grep -o '[A-Za-z]*')"
+
+    if [ -n "$motd_distrib" ] && [ "$lsb_release_distrib" != "$motd_distrib" ]; then
+        echo "Host is running on $lsb_release_distrib but motd contains $motd_distrib, you should run post_upgrade.sh"
+        exit 2
+    fi
 fi
+
 
 #uptime_in_seconds=$(($(date +%s) - $(date -d "$(uptime -s)" +%s)))
 uptime_in_seconds=$(cut -d '.' -f 1 /proc/uptime)
@@ -76,5 +80,5 @@ if [ "$latestkernel" != "$currentkernel" ] ; then
     fi
 fi
 
-echo "$status_text - $kernel_text $uptime_text"
+echo "$status_text - $lsb_release_text $kernel_text $uptime_text"
 exit $ret_code
