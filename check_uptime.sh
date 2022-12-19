@@ -44,7 +44,7 @@ if lsb_release -d | grep -Eq '(Ubuntu|Debian)'; then
     motd_distrib="$(grep -o 'OS :.*' /etc/motd | grep -o '(.*)' | grep -o '[A-Za-z]*')"
 
     if [ -n "$motd_distrib" ] && [ "$lsb_release_distrib" != "$motd_distrib" ]; then
-        echo "Host is running on $lsb_release_distrib but motd contains $motd_distrib, you should run post_upgrade.sh"
+        echo "CRITICAL - Host is running on $lsb_release_distrib but /etc/motd contains $motd_distrib, you should run post_upgrade.sh"
         exit 2
     fi
 fi
