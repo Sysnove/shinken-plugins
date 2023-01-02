@@ -35,18 +35,19 @@ if [ -f /usr/local/ispconfig/server/lib/config.inc.php ]; then
     fi
 fi
 
-gitea_exe=$(pgrep -a gitea | cut -d ' ' -f 2)
-if [ -f "$gitea_exe" ]; then
-    apps="$apps gitea"
-
-    gitea_installed=$($gitea_exe -v | awk '{print $3}')
-    gitea_latest=$(curl -sL https://dl.gitea.io/gitea/version.json | jq -r '.latest.version')
-
-    if [[ "$gitea_latest" > "$gitea_installed" ]]; then
-        echo "WARNING : Gitea $gitea_installed is installed, but $gitea_latest is available."
-        exit 1
-    fi
-fi
+# :COMMENT:maethor:20230102: Désactivé pour 1 mois ou 2 le temps de savoir si on migre sur Forgejo
+#gitea_exe=$(pgrep -a gitea | cut -d ' ' -f 2)
+#if [ -f "$gitea_exe" ]; then
+#    apps="$apps gitea"
+#
+#    gitea_installed=$($gitea_exe -v | awk '{print $3}')
+#    gitea_latest=$(curl -sL https://dl.gitea.io/gitea/version.json | jq -r '.latest.version')
+#
+#    if [[ "$gitea_latest" > "$gitea_installed" ]]; then
+#        echo "WARNING : Gitea $gitea_installed is installed, but $gitea_latest is available."
+#        exit 1
+#    fi
+#fi
 
 gogs_exe=$(pgrep -a gogs | cut -d ' ' -f 2)
 if [ -f "$gogs_exe" ]; then
