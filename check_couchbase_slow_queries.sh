@@ -154,18 +154,18 @@ if [[ ${UPTIME} -lt ${LAST_UPTIME} ]]; then
     unkn "Couchbase has been restarted, resetting stats."
 fi
 
-DURATION=$(echo ${UPTIME} - ${LAST_UPTIME} | bc)
+DURATION=$(echo "${UPTIME}" - "${LAST_UPTIME}" | bc)
 COUNT=$(echo "(${TOTAL_COUNT} - ${LAST_TOTAL_COUNT}) / ${DURATION}" | bc)
 
 if [[ ${COUNT} -ge ${CRITICAL_THRESHOLD} ]]; then
-    crit "Found more than ${CRITICAL_THRESHOLD} slow queries in last 5 minutes: ${COUNT}"
+    crit "Found more than ${CRITICAL_THRESHOLD} slow queries in last ${DURATION} seconds: ${COUNT}"
 fi
 
 if [[ ${COUNT} -ge ${WARNING_THRESHOLD} ]]; then
-    warn "Found more than ${WARNING_THRESHOLD} slow queries in last 5 minutes: ${COUNT}"
+    warn "Found more than ${WARNING_THRESHOLD} slow queries in last ${DURATION} seconds: ${COUNT}"
 fi
 
 # All good.
-echo -ne "OK: Found less than ${WARNING_THRESHOLD} slow queries in last 5 minutes: ${COUNT}"
+echo -ne "OK: Found less than ${WARNING_THRESHOLD} slow queries in last ${DURATION} seconds: ${COUNT}"
 perfdata
 exit $OK
