@@ -24,14 +24,14 @@ perfdata() {
 }
 
 # Argument parsing
-CBHOST=localhost:8093
+CBHOST=localhost
 WARNING_THRESHOLD=2
 CRITICAL_THRESHOLD=7
 
 # Utility function
 usage() {
     cat <<EOF
-Usage: $0 [-h HOST[:PORT]] [-u USERNAME] [-p PASSWORD]
+Usage: $0 [-h HOST] [-u USERNAME] [-p PASSWORD]
 
 Options:
     -h  Host to connect to (default: ${CBHOST})
@@ -97,7 +97,7 @@ do
 done
 
 # shellcheck disable=SC2089
-CBQOPTS="-quiet -e ${CBHOST}"
+CBQOPTS="-quiet -e ${CBHOST}:8093"
 CURLOPTS="-s"
 
 if [[ -n "$CBUSER" ]] && [[ -n "${CBPASSWORD}" ]]; then
@@ -106,7 +106,7 @@ if [[ -n "$CBUSER" ]] && [[ -n "${CBPASSWORD}" ]]; then
 fi
 
 CURL="${CURL} ${CURLOPTS}"
-BASE_URL="http://${CBHOST}"
+BASE_URL="http://${CBHOST}:8093"
 CBQ="${CBQ} ${CBQOPTS}"
 
 UPTIME="$(${CURL} ${BASE_URL}/admin/vitals | ${JQ} -r .uptime)"
