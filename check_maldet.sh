@@ -15,14 +15,15 @@ if ! [ -e "$last" ] ; then
 fi
 
 hits=$(grep "TOTAL HITS:" "$last" | grep -o '[[:digit:]]\+' | paste -sd+ | bc)
+duration=$(grep "ELAPSED:" "$last" | awk '{print $2}')
 
 if [ "$hits" -eq 0 ] ; then
-    echo "OK: No malware found."
+    echo "OK: No malware found. Last check took $duration."
     exit 0
 fi
 
 if [ "$hits" -gt 0 ] ; then
-    echo "CRITICAL: $hits malwares found !"
+    echo "CRITICAL: $hits malwares found ! Last check took $duration."
     exit 2
 fi
 
