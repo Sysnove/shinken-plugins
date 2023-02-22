@@ -16,9 +16,10 @@ if ! [ -e "$last" ] ; then
     exit 3
 fi
 
+files=$(grep "TOTAL FILES:" "$last" | grep -o '[[:digit:]]\+' | paste -sd+ | bc)
 hits=$(grep "TOTAL HITS:" "$last" | grep -o '[[:digit:]]\+' | paste -sd+ | bc)
 duration=$(grep "ELAPSED:" "$last" | awk '{print $2}' | sed 's/s//')
-perfdata="duration=${duration}s;$DURATION_WARN;;0;"
+perfdata="duration=${duration}s;$DURATION_WARN;;0; files=${files}; hits=${hits};"
 
 if [ "$hits" -lt 0 ] ; then
     echo "UNKNOWN: total hits = $hits"
@@ -30,7 +31,7 @@ if [ "$hits" -gt 0 ] ; then
     exit 2
 fi
 
-if [ -n "$DURATION_WARN" ] && [ $duration -ge "$DURATION_WARN" ]; then
+if [ -n "$DURATION_WARN" ] && [ "$duration" -ge "$DURATION_WARN" ]; then
     echo "Warning: No malware found but last scan took ${duration} seconds. | $perfdata"
     exit 1
 fi
