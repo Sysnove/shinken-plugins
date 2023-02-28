@@ -16,6 +16,10 @@ if ! [ -e "$last" ] ; then
     exit 3
 fi
 
+last_ts="$(date -r "$last" +%s)"
+now_ts="$(date +%s)"
+last_date="$(date -r /usr/local/maldetect/sess/session.230228-0443.4070728 +%Y%m%d-%H%M)"
+
 files=$(grep "TOTAL FILES:" "$last" | grep -o '[[:digit:]]\+' | paste -sd+ | bc)
 hits=$(grep "TOTAL HITS:" "$last" | grep -o '[[:digit:]]\+' | paste -sd+ | bc)
 duration=$(grep "ELAPSED:" "$last" | awk '{print $2}' | sed 's/s//')
@@ -27,17 +31,22 @@ if [ "$hits" -lt 0 ] ; then
 fi
 
 if [ "$hits" -gt 0 ] ; then
-    echo "CRITICAL: $hits malwares found ! | $perfdata" 
+    echo "CRITICAL: $hits malwares found ! | $perfdata"
     exit 2
 fi
 
+if [ $((now_ts - last_ts)) -gt 604800 ] ; then
+    echo "WARNING: Last maldet scan is more than 1 week late : $last_date | $perfdata"
+    exit 1
+fi
+
 if [ -n "$DURATION_WARN" ] && [ "$duration" -ge "$DURATION_WARN" ]; then
-    echo "Warning: No malware found but last scan took ${duration} seconds. | $perfdata"
+    echo "WARNING: No malware found but last scan ($last_date) took ${duration} seconds. | $perfdata"
     exit 1
 fi
 
 if [ "$hits" -eq 0 ] ; then
-    echo "OK: No malware found, last scan took ${duration} seconds. | $perfdata"
+    echo "OK: No malware found, last scan ($last_date) took ${duration} seconds. | $perfdata"
     exit 0
 fi
 
