@@ -18,7 +18,7 @@ fi
 
 last_ts="$(date -r "$last" +%s)"
 now_ts="$(date +%s)"
-last_date="$(date -r /usr/local/maldetect/sess/session.230228-0443.4070728 +%Y%m%d-%H%M)"
+last_date="$(date -r "$last" '+%Y%m%d-%H%M')"
 
 files=$(grep "TOTAL FILES:" "$last" | grep -o '[[:digit:]]\+' | paste -sd+ | bc)
 hits=$(grep "TOTAL HITS:" "$last" | grep -o '[[:digit:]]\+' | paste -sd+ | bc)
