@@ -35,8 +35,8 @@ if [ "$hits" -gt 0 ] ; then
     exit 2
 fi
 
-if [ $((now_ts - last_ts)) -gt 604800 ] ; then
-    echo "WARNING: Last maldet scan is more than 1 week late : $last_date | $perfdata"
+if [ $((now_ts - last_ts)) -gt 2678400 ] ; then
+    echo "WARNING: Last maldet scan is more than 1 month late : $last_date | $perfdata"
     exit 1
 fi
 
