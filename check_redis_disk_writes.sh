@@ -5,6 +5,9 @@ E_WARNING=1
 #E_CRITICAL=2
 E_UNKNOWN=3
 
+THRESHOLD=$1
+[ -z "$THRESHOLD" ] && THRESHOLD=5000
+
 pids=$(pidof redis-server)
 if [ -z "$pids" ]; then
     echo "UNKNOWN - Redis is not running"
@@ -25,9 +28,10 @@ fi
 
 old_write_bytes=-1
 last_check=-1
+# shellcheck disable=SC1090
 source "$LAST_RUN_FILE"
 
-if [ $(date -r /var/lib/redis +%s) -lt $last_check ]; then
+if [ "$(date -r /var/lib/redis +%s)" -lt $last_check ]; then
     echo "UNKNOWN - Redis has not persist since last run. Please run the check later."
     exit $E_UNKNOWN
 fi
@@ -36,7 +40,7 @@ now=$(date +%s)
 
 write_bytes=0
 for pid in $pids; do
-    write_bytes=$((write_bytes + $(grep '^write_bytes' /proc/$pid/io | awk '{print $2}')))
+    write_bytes=$((write_bytes + $(grep '^write_bytes' "/proc/$pid/io" | awk '{print $2}')))
 done
 
 echo "
@@ -59,9 +63,9 @@ period=$((now - last_check))
 
 rate=$(bc <<< "scale=0; $delta / 1024 / $period")
 
-output="Redis was writing at ${rate} KBps on disks over the last ${period}s | redis_writes=${rate}Bps;10;;0;;"
+output="Redis was writing at ${rate} KBps on disks over the last ${period}s | redis_writes=${rate}Bps;$THRESHOLD;;0;;"
 
-if [ $rate -gt 5000 ]; then
+if [ "$rate" -gt "$THRESHOLD" ]; then
     echo "WARNING - $output"
     exit $E_WARNING
 else
