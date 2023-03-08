@@ -28,15 +28,15 @@ fi
 
 old_write_bytes=-1
 last_check=-1
+now=$(date +%s)
 # shellcheck disable=SC1090
 source "$LAST_RUN_FILE"
+period=$((now - last_check))
 
-if [ "$(date -r /var/lib/redis +%s)" -lt $last_check ]; then
-    echo "UNKNOWN - Redis has not persist since last run. Please run the check later."
+if [ "$(date -r /var/lib/redis +%s)" -lt $last_check ] && [ "$period" -lt 1800 ]; then
+    echo "UNKNOWN - Last check was less than 30 minutes ago and redis has not persist since. Please space your checks."
     exit $E_UNKNOWN
 fi
-
-now=$(date +%s)
 
 write_bytes=0
 for pid in $pids; do
@@ -59,7 +59,6 @@ if [ "$write_bytes" -lt $old_write_bytes ] ; then
 fi
 
 delta=$((write_bytes - old_write_bytes))
-period=$((now - last_check))
 
 rate=$(bc <<< "scale=0; $delta / 1024 / $period")
 
