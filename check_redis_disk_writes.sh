@@ -62,7 +62,7 @@ delta=$((write_bytes - old_write_bytes))
 
 rate=$(bc <<< "scale=0; $delta / 1024 / $period")
 
-output="Redis was writing at ${rate} KBps on disks over the last ${period}s | redis_writes=${rate}Bps;$THRESHOLD;;0;;"
+output="Redis was writing at ${rate} KBps on disks over the last ${period}s | redis_writes_KBps=${rate};$THRESHOLD;;0;;"
 
 if [ "$rate" -gt "$THRESHOLD" ]; then
     echo "WARNING - $output"
