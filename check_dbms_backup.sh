@@ -81,6 +81,9 @@ case $1 in
         if ! $LOCAL_ONLY; then
             # TODO couchbase-cli in PATH
             CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | grep -v 'ERROR:' | cut -d ' ' -f 2 | cut -d ':' -f 1)
+            if [ "$(echo "$CLUSTER_HOSTS" | wc -w)" -eq 1 ]; then
+                CLUSTER_HOSTS=""
+            fi
         fi
         ;;
     mongodb)
