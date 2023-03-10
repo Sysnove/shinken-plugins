@@ -1,10 +1,10 @@
 #!/bin/bash
 
 
-AGE_CRITICAL_THRESHOLD=3
-AGE_WARNING_THRESHOLD=1
+AGE_CRITICAL_THRESHOLD=$((3 * 24 * 3600))
+AGE_WARNING_THRESHOLD=$((24 * 3600))
 
-ARCHIVE_DIR="/var/backups/couchbasemgr"
+ARCHIVE_DIR="/var/backups/couchbase_cbbackupmgr"
 REPO_NAME="cluster"
 
 if ! [ -r "$ARCHIVE_DIR/$REPO_NAME" ]; then
@@ -23,16 +23,15 @@ fi
 
 last_complete_backup_ts=$(date -d "$(echo "$last_complete_backup" | sed 's/_/:/g' | sed 's/\..*//' | sed 's/T/ /g')" +%s)
 now=$(date +'%s')
-age_in_seconds=$((now - last_complete_backup_ts))
-age_in_days=$((age_in_seconds / (24*3600)))
+age=$((now - last_complete_backup_ts))
 
-if [ "$age_in_days" -gt $AGE_CRITICAL_THRESHOLD ]; then
-    echo "CRITICAL - Last cbbackupmgr backup is older than $AGE_CRITICAL_THRESHOLD days."
+if [ "$age" -gt $AGE_CRITICAL_THRESHOLD ]; then
+    echo "CRITICAL - Last cbbackupmgr backup is older than $((AGE_CRITICAL_THRESHOLD / (24 * 3600))) days."
     exit 2
 fi
 
-if [ "$age_in_days" -gt $AGE_WARNING_THRESHOLD ]; then
-    echo "WARNING - Last cbbackupmgr backup is older than $AGE_WARNING_THRESHOLD day."
+if [ "$age" -gt $AGE_WARNING_THRESHOLD ]; then
+    echo "WARNING - Last cbbackupmgr backup is older than $((AGE_WARNING_THRESHOLD / (24 * 3600))) day."
     exit 1
 fi
 

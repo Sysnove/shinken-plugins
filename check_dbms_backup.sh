@@ -61,16 +61,25 @@ case $1 in
         fi
         ;;
     couchbase)
-        # TODO couchbase-cli in PATH
-        #/opt/couchbase/bin/couchbase-cli server-list -c localhost -u Administrator -p adminpass
-        cb_user=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
-        cb_pass=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 4)
-        if [ -z "$cb_user" ] || [ -z "$cb_pass" ]; then
-            echo "UNKNOWN : Could not find couchbase admin and password"
+        if [ -e /etc/backup.d/21_cbbackupmgr.sh ]; then
+            cb_user=$(grep '^ADMIN=' /etc/backup.d/21_cbbackupmgr.sh 2>/dev/null | cut -d '"' -f 2)
+            cb_pass=$(grep '^PASSWORD=' /etc/backup.d/21_cbbackupmgr.sh 2>/dev/null | cut -d '"' -f 2)
+            if [ -z "$cb_user" ] || [ -z "$cb_pass" ]; then
+                echo "UNKNOWN : Could not find couchbase admin and password"
+            fi
+            CHECK_COMMAND="/usr/local/nagios/plugins/check_cbbackupmgr.sh"
+            BACKUP_DIR="/var/backups/couchbase_cbbackupmgr"
+        else
+            cb_user=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
+            cb_pass=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 4)
+            if [ -z "$cb_user" ] || [ -z "$cb_pass" ]; then
+                echo "UNKNOWN : Could not find couchbase admin and password"
+            fi
+            CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/couchbase/"
+            BACKUP_DIR="/var/backups/couchbase"
         fi
-        CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/couchbase/"
-        BACKUP_DIR="/var/backups/couchbase"
         if ! $LOCAL_ONLY; then
+            # TODO couchbase-cli in PATH
             CLUSTER_HOSTS=$(/opt/couchbase/bin/couchbase-cli server-list -c localhost -u "$cb_user" -p "$cb_pass" | grep -v 'ERROR:' | cut -d ' ' -f 2 | cut -d ':' -f 1)
         fi
         ;;
