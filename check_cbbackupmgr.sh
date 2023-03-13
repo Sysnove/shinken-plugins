@@ -36,4 +36,4 @@ if [ "$age" -gt $AGE_WARNING_THRESHOLD ]; then
 fi
 
 echo "OK - Last cbbackupmgr backup is $last_complete_backup"
-exit 1
+exit 0
