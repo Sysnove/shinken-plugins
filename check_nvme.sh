@@ -87,10 +87,18 @@ value_data_units_read=$(echo "$LOG" | awk '$1 == "data_units_read" {print $3}')
 
 PERFDATA="media_errors=${value_media_errors} errors=${value_num_err_log} temperature=${value_temperature} available_spare=${value_available_spare} data_units_written=${value_data_units_written}c data_units_read=${value_data_units_read}c"
 
+if [ ${#MESSAGES[@]} -gt 0 ]; then
+  MESSAGE="${MESSAGES[*]}"
+else
+  MESSAGE="${DEVICE}"
+fi
+
+MESSAGE="${MESSAGE}|${PERFDATA}"
+
 if $CRIT; then
-    echo "CRITICAL: ${MESSAGES[*]}|${PERFDATA}"
+  echo "CRITICAL: ${MESSAGE}"
   exit 2
 else
-  echo "OK ${DEVICE}|${PERFDATA}"
+  echo "OK: ${MESSAGE}"
   exit 0
 fi
