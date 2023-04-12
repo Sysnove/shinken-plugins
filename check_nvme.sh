@@ -12,6 +12,7 @@ Usage: check_nvme.sh [-s] [-e COUNT] [-m COUNT] -d <device>
 
 Arguments:
     -s         Use sudo
+    -i         Ignore critical warning.
     -e COUNT   Error log entry count critical threshold (default 0).
     -m COUNT   Media error count critical threshold (default 0)
 EOF
@@ -28,12 +29,14 @@ if [ ! -x "${NVME}" ]; then
     exit 2
 fi
 
+IGNORE_CRITICAL_WARNING=false
 ERROR_LOG_THRESHOLD=0
 MEDIA_ERROR_THRESHOLD=0
 
-while getopts ":se:m:d:" OPTS; do
+while getopts ":sie:m:d:" OPTS; do
   case $OPTS in
     s) SUDO="sudo";;
+    i) IGNORE_CRITICAL_WARNING=true;;
     e) ERROR_LOG_THRESHOLD="${OPTARG}";;
     m) MEDIA_ERROR_THRESHOLD="${OPTARG}";;
     d) DEVICE="${OPTARG}";;
@@ -57,7 +60,9 @@ CRIT=false
 # Check for critical warning
 value_critical_warning=$(echo "${LOG}" | awk '$1 == "critical_warning" {print $3}')
 if [ "${value_critical_warning}" != "0" ]; then
-  CRIT=true
+  if ! ${IGNORE_CRITICAL_WARNING}; then
+    CRIT=true
+  fi
   MESSAGES+=("$DEVICE has critical warning: ${value_critical_warning}")
 fi
 
