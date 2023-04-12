@@ -56,9 +56,9 @@ CRIT=false
 
 # Check for critical warning
 value_critical_warning=$(echo "${LOG}" | awk '$1 == "critical_warning" {print $3}')
-if [ "${value_critical_warning}" -gt 0 ]; then
+if [ "${value_critical_warning}" != "0" ]; then
   CRIT=true
-  MESSAGES+=("$DEVICE has critical warning")
+  MESSAGES+=("$DEVICE has critical warning: ${value_critical_warning}")
 fi
 
 # Check media errors
