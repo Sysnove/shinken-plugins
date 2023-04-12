@@ -15,13 +15,15 @@ Arguments:
     -e COUNT   Error log entry count critical threshold (default 0).
     -m COUNT   Media error count critical threshold (default 0)
 EOF
+
+exit 3
 }
 
 DEVICE=""
 SUDO=""
-if [ -x /usr/sbin/nvme ]; then
-    NVME=/usr/sbin/nvme
-else
+NVME=/usr/sbin/nvme
+
+if [ ! -x "${NVME}" ]; then
     echo "Please install nvme-cli."
     exit 2
 fi
@@ -32,13 +34,14 @@ MEDIA_ERROR_THRESHOLD=0
 while getopts ":se:m:d:" OPTS; do
   case $OPTS in
     s) SUDO="sudo";;
-    e) ERROR_LOG_THRESHOLD=$OPTARG;;
-    m) MEDIA_ERROR_THRESHOLD="$OPTARG";;
-    d) DEVICE="$OPTARG";;
-    *) echo "$USAGE"
-       exit 3;;
+    e) ERROR_LOG_THRESHOLD="${OPTARG}";;
+    m) MEDIA_ERROR_THRESHOLD="${OPTARG}";;
+    d) DEVICE="${OPTARG}";;
+    *) usage;;
   esac
 done
+
+shift $((OPTIND-1))
 
 if [ -z "${DEVICE}" ]
 then
