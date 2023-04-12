@@ -32,7 +32,7 @@ MEDIA_ERROR_THRESHOLD=0
 while getopts ":se:m:d:" OPTS; do
   case $OPTS in
     s) SUDO="sudo";;
-    e) ERROR_LOG_THRESHOLD=true;;
+    e) ERROR_LOG_THRESHOLD=$OPTARG;;
     m) MEDIA_ERROR_THRESHOLD="$OPTARG";;
     d) DEVICE="$OPTARG";;
     *) echo "$USAGE"
