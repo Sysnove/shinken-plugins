@@ -1,86 +1,79 @@
 #!/bin/bash
+
 set -e # exit on error
 set -u # error on unset variable
-export LC_ALL=C
+export LC_ALL=C # Force locale to avoid nvme message translations.
 
-#
-# Simple monitoring check for nvme devices
-# Requires: nvme-cli
-# Usage: check_nvme.sh -d <device>
-#
-# Author: Matthias Geerdsen <mg@geerdsen.net>
-# Copyright (C) 2017 Matthias Geerdsen
-#
-# This program is ifree software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
+usage() {
+    cat <<EOF
+Basic NVMe check using nvme-cli.
 
-USAGE="Usage: check_nvme.sh [-s] [-e] -d <device>
-  -s .. call nvme smart-log using sudo
-  -e .. ignore num_err_log_entries for state
-"
-DISK=""
+Usage: check_nvme.sh [-s] [-e COUNT] [-m COUNT] -d <device>
+
+Arguments:
+    -s         Use sudo
+    -e COUNT   Error log entry count critical threshold (default 0).
+    -m COUNT   Media error count critical threshold (default 0)
+EOF
+}
+
+DEVICE=""
 SUDO=""
 if [ -x /usr/sbin/nvme ]; then
     NVME=/usr/sbin/nvme
 else
-    NVME=nvme
+    echo "Please install nvme-cli."
+    exit 2
 fi
 
-while getopts ":sed:" OPTS; do
+ERROR_LOG_THRESHOLD=0
+MEDIA_ERROR_THRESHOLD=0
+
+while getopts ":se:m:d:" OPTS; do
   case $OPTS in
     s) SUDO="sudo";;
-    e) IGNORE_ERR_LOG_ENTRIES="1";;
-    d) DISK="$OPTARG";;
+    e) ERROR_LOG_THRESHOLD=true;;
+    m) MEDIA_ERROR_THRESHOLD="$OPTARG";;
+    d) DEVICE="$OPTARG";;
     *) echo "$USAGE"
        exit 3;;
   esac
 done
 
-if [ -z "$DISK" ]
+if [ -z "${DEVICE}" ]
 then
-  echo "$USAGE"
-  exit 3
+  usage
 fi
 
+# Read SMART information from nvme-cli
+LOG=$(${SUDO} "${NVME}" smart-log "${DEVICE}")
 
-# read smart information from nvme-cli
-LOG=$(${SUDO} ${NVME} smart-log ${DISK})
-
-MESSAGE=""
+MESSAGES=()
 CRIT=false
 
 # Check for critical warning
-value_critical_warning=$(echo "$LOG" | awk '$1 == "critical_warning" {print $3}')
-if [ $value_critical_warning != 0 ]; then
+value_critical_warning=$(echo "${LOG}" | awk '$1 == "critical_warning" {print $3}')
+if [ "${value_critical_warning}" -gt 0 ]; then
   CRIT=true
-  MESSAGE="$MESSAGE $DISK has critical warning "
+  MESSAGES+=("$DEVICE has critical warning")
 fi
 
 # Check media errors
 value_media_errors=$(echo "$LOG" | awk '$1 == "media_errors" {print $3}')
-if [ $value_media_errors != 0 ]; then
-  CRIT=true
-  MESSAGE="$MESSAGE $DISK has media errors ($value_media_errors) "
+if [ "${value_media_errors}" -gt 0 ]; then
+  if [ "${value_media_errors}" -ge "${MEDIA_ERROR_THRESHOLD}" ]; then
+    CRIT=true
+  fi
+  MESSAGES+=("$DEVICE has media $value_media_errors errors.")
 fi
 
 # Check number of errors logged
 value_num_err_log=$(echo "$LOG" | awk '$1 == "num_err_log_entries" {print $3}')
-if [ $value_num_err_log != 0 ]; then
-  if [ -z ${IGNORE_ERR_LOG_ENTRIES+USET} ]; then
+if [ "${value_num_err_log}" -gt 0 ]; then
+  if [ "${value_num_err_log}" -ge "${ERROR_LOG_THRESHOLD}" ]; then
     CRIT=true
   fi
-  MESSAGE="$MESSAGE $DISK has errors logged ($value_num_err_log) "
+  MESSAGES+=("$DEVICE has $value_num_err_log errors logged.")
 fi
 
 # Read more data to output as performance data later on
@@ -91,10 +84,10 @@ value_data_units_read=$(echo "$LOG" | awk '$1 == "data_units_read" {print $3}')
 
 PERFDATA="media_errors=${value_media_errors} errors=${value_num_err_log} temperature=${value_temperature} available_spare=${value_available_spare} data_units_written=${value_data_units_written}c data_units_read=${value_data_units_read}c"
 
-if [ $CRIT = "true" ]; then
-  echo "CRITICAL: ${MESSAGE}|${PERFDATA}"
+if $CRIT; then
+    echo "CRITICAL: ${MESSAGES[*]}|${PERFDATA}"
   exit 2
 else
-  echo "OK ${DISK}|${PERFDATA}"
+  echo "OK ${DEVICE}|${PERFDATA}"
   exit 0
 fi
