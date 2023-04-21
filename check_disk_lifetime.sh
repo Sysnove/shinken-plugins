@@ -51,7 +51,10 @@ last_output=""
 
 now=$(date +%s)
 
-smartctl=$(smartctl -a "$DISK")
+if ! smartctl=$(smartctl -a "$DISK"); then
+    echo "UNKNOWN - smartctl: $smartctl"
+    exit $E_UNKNOWN
+fi
 
 if $nvme; then
     used=$(echo "$smartctl" | grep "Percentage Used:" | awk '{print $3}' | sed 's/%$//g')
@@ -60,6 +63,11 @@ if $nvme; then
 else
     remain=$(echo "$smartctl" | grep Percent_Lifetime_Remain | awk '{print $4}' | sed 's/^0*//g')
     data_units_written=$(echo "$smartctl" | grep Total_LBAs_Written | awk '{print $10}' | sed 's/^0*//g')
+fi
+
+if [ -z "$remain" ] || [ -z "$data_units_written" ]; then
+    echo "UNKNOWN - could not find remain or data_units_written in smartctl $DISK"
+    exit $E_UNKNOWN
 fi
 
 # shellcheck disable=SC1090
