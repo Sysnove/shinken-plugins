@@ -51,7 +51,7 @@ last_output=""
 
 now=$(date +%s)
 
-if ! smartctl=$(smartctl -a "$DISK"); then
+if ! smartctl=$(sudo /usr/sbin/smartctl -a "$DISK"); then
     echo "UNKNOWN - smartctl: $smartctl"
     exit $E_UNKNOWN
 fi
