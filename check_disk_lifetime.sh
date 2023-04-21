@@ -32,7 +32,7 @@ if ! [[ "$(hostname)" =~ ^infra ]]; then
 fi
 
 
-LAST_RUN_FILE=/var/tmp/nagios/check_disk_lifetime_last_run
+LAST_RUN_FILE=/var/tmp/nagios/check_disk_lifetime_last_run_$(basename "$DISK")
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
 if ! [ -d "$(dirname "$LAST_RUN_FILE")" ]; then
@@ -71,7 +71,7 @@ if [ -z "$remain" ] || [ -z "$data_units_written" ]; then
 fi
 
 # shellcheck disable=SC1090
-source $LAST_RUN_FILE
+source "$LAST_RUN_FILE"
 
 perfdata="remain=$remain%; total_sector_written=$data_units_written;"
 
