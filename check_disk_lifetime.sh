@@ -92,7 +92,7 @@ if [ $last_change -eq -1 ] || [ $period -gt 604800 ] ; then
     output="OK - $DISK lifetime is ${remain}% remaining and has not change since $(date -d @"$now" +'%Y-%m-%d %H:%M:%S')"
 else # We have lost 1% in less than one week
     status=$E_WARNING
-    output="WARNING - $DISK has lost $((last_status - remain))% lifetime in ${period}s (${remain} remaining)"
+    output="WARNING - $DISK has lost $((last_value - remain))% lifetime in ${period}s (${remain} remaining)"
 fi
 
 echo "
