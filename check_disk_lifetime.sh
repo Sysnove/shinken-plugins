@@ -51,10 +51,12 @@ last_output=""
 
 now=$(date +%s)
 
-if ! smartctl=$(sudo /usr/sbin/smartctl -a "$DISK"); then
-    echo "UNKNOWN - smartctl: $smartctl"
-    exit $E_UNKNOWN
-fi
+# Smartctl sometimes returns != 0 
+#if ! smartctl=$(sudo /usr/sbin/smartctl -a "$DISK"); then
+    #echo "UNKNOWN - smartctl: $smartctl"
+    #exit $E_UNKNOWN
+#fi
+smartctl=$(sudo /usr/sbin/smartctl -a "$DISK")
 
 if $nvme; then
     used=$(echo "$smartctl" | grep "Percentage Used:" | awk '{print $3}' | sed 's/%$//g')
