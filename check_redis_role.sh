@@ -13,7 +13,7 @@ if [ -z "$REDIS_CONF" ]; then
     exit 3
 fi
 
-REDIS_PASS=$(grep '^requirepass' "$REDIS_CONF" | awk '{print $2}')
+REDIS_PASS=$(grep '^requirepass' "$REDIS_CONF" | awk '{print $2}' | sed 's/"//g')
 
 if [ -n "$REDIS_PASS" ]; then
     REDIS_COMMAND="redis-cli --no-auth-warning -a ${REDIS_PASS} -p ${REDIS_PORT}"
