@@ -62,6 +62,9 @@ if $nvme; then
     data_units_written=$(echo "$smartctl" | grep "Data Units Written:" | cut -d '[' -f 1 | grep -Eo '[0-9].*' | sed 's/[^0-9]//g')
 else
     remain=$(echo "$smartctl" | grep Percent_Lifetime_Remain | awk '{print $4}' | sed 's/^0*//g')
+    if [ -z "$remain" ]; then
+        remain=$(echo "$smartctl" | grep Wear_Leveling_Count | awk '{print $4}' | sed 's/^0*//g')
+    fi
     data_units_written=$(echo "$smartctl" | grep Total_LBAs_Written | awk '{print $10}' | sed 's/^0*//g')
 fi
 
