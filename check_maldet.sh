@@ -41,13 +41,18 @@ if [ $((now_ts - last_ts)) -gt 2678400 ] ; then
 fi
 
 if [ -n "$DURATION_WARN" ] && [ "$duration" -ge "$DURATION_WARN" ]; then
-    echo "WARNING: No malware found but last scan ($last_date) took ${duration} seconds. | $perfdata"
-    exit 1
+    # Try to find penultimate session to check if duration was above threshold for 2 scans in a row
+    penultimate=$maldetsessions/session.$(<$maldetsessions/session.penultimate)
+
+    if [ -f "$penultimate" ] ; then
+        penultimate_duration=$(grep "ELAPSED:" "$last" | awk '{print $2}' | sed 's/s//')
+    fi
+
+    if [ -z "$penultimate_duration" ] || [ "$penultimate_duration" -ge "$DURATION_WARN" ] ; then
+        echo "WARNING: No malware found but the last scan ($last_date) took ${duration} seconds. | $perfdata"
+        exit 1
+    fi
 fi
 
-if [ "$hits" -eq 0 ] ; then
-    echo "OK: No malware found, last scan ($last_date) took ${duration} seconds. | $perfdata"
-    exit 0
-fi
-
-
+echo "OK: No malware found, last scan ($last_date) took ${duration} seconds. | $perfdata"
+exit 0
