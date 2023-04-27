@@ -38,6 +38,11 @@ while getopts "w:c:d:" option; do
     esac
 done
 
+if ! [ -f /boot/grub/grub.cfg ] ; then
+    echo "CRITICAL - /boot/grub/grub.cfg does not exist, please run update-grub2 and grub-install"
+    exit 2
+fi
+
 if lsb_release -d | grep -Eq '(Ubuntu|Debian)'; then
     lsb_release_distrib="$(lsb_release -cs)"
     lsb_release_text="$(lsb_release -is) $(lsb_release -rs) $(lsb_release -cs)"
