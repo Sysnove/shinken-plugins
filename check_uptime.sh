@@ -38,9 +38,13 @@ while getopts "w:c:d:" option; do
     esac
 done
 
-if ! [ -f /boot/grub/grub.cfg ] ; then
-    echo "CRITICAL - /boot/grub/grub.cfg does not exist, please run update-grub2 and grub-install"
-    exit 2
+if [ -f /etc/debian_version ] ; then
+    if ! [ -f /boot/grub/grub.cfg ] ; then
+        if ! hostnamectl | grep -q 'Virtualization: lxc'; then
+            echo "CRITICAL - /boot/grub/grub.cfg does not exist, please run update-grub2 and grub-install"
+            exit 2
+        fi
+    fi
 fi
 
 if lsb_release -d | grep -Eq '(Ubuntu|Debian)'; then
