@@ -48,6 +48,7 @@ last_change=-1
 last_value=101
 last_status=
 last_output=""
+status=$E_UNKNOWN
 
 now=$(date +%s)
 
@@ -80,27 +81,31 @@ source "$LAST_RUN_FILE"
 
 perfdata="remain=$remain%; total_sector_written=$data_units_written;"
 
-# If no change, print the same output and exit the same way
-if [ "$remain" -eq "$last_value" ]; then
-    echo "$last_output | $perfdata"
-    exit "$last_status"
-fi
-
 period=$((now - last_change))
 
-# If the previous change was more than one week ago, it's OK
-if [ $last_change -eq -1 ] || [ $period -gt 604800 ] ; then
+if ! [ "$remain" -eq "$last_value" ]; then
+    last_change="$now"
+fi
+
+# If not change in more than 7 days, it's OK.
+if [ $period -gt 604800 ]; then
     status=$E_OK
-    output="OK - $DISK lifetime is ${remain}% remaining and has not change since $(date -d @"$now" +'%Y-%m-%d %H:%M:%S')"
-else # We have lost 1% in less than one week
-    status=$E_WARNING
-    period_days=$((period/60/60/24))
-    remain_days=$(((remain * period_days)/60/60/24))
-    output="WARNING - $DISK has lost $((last_value - remain))% lifetime in ${period_days} days (${remain}% remaining, ~${remain_days} days)"
+    output="OK - $DISK lifetime is ${remain}% remaining and has not change since $(date -d @"$last_change" +'%Y-%m-%d %H:%M:%S')"
+else
+    # If no change in the last week, return last output
+    if [ "$remain" -eq "$last_value" ]; then
+        status="$last_status"
+        output="$last_output"
+    else # We have lost 1% in less than one week.
+        status=$E_WARNING
+        period_days=$((period/60/60/24))
+        remain_days=$(((remain * period)/60/60/24))
+        output="WARNING - $DISK has lost $((last_value - remain))% lifetime in ${period_days} days (${remain}% remaining, ~${remain_days} days)"
+    fi
 fi
 
 echo "
-last_change=$now
+last_change=$last_change
 last_value=$remain
 last_status=$status
 last_output=\"$output\"
