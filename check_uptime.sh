@@ -40,7 +40,7 @@ done
 
 if [ -f /etc/debian_version ] ; then
     if ! [ -f /boot/grub/grub.cfg ] ; then
-        if ! hostnamectl | grep -q 'Virtualization: lxc'; then
+        if ! hostnamectl | grep -q 'Chassis: container'; then
             echo "CRITICAL - /boot/grub/grub.cfg does not exist, please run update-grub2 and grub-install"
             exit 2
         fi
