@@ -26,7 +26,7 @@ else
     exit $E_UNKNOWN
 fi
 
-if ! [[ "$(hostname)" =~ ^infra ]]; then
+if ! [[ "$(hostname)" =~ ^(infra|clibre) ]]; then
     echo "OK - For now this host is not managed by this check"
     exit $E_OK
 fi
