@@ -68,7 +68,13 @@ else
     if [ -z "$remain" ]; then
         remain=$(echo "$smartctl" | grep Wear_Leveling_Count | awk '{print $4}' | sed 's/^0*//g')
     fi
+    if [ -z "$remain" ]; then
+        remain=$(echo "$smartctl" | grep -E '^202 ' | awk '{print $4}' | sed 's/^0*//g')
+    fi
     data_units_written=$(echo "$smartctl" | grep Total_LBAs_Written | awk '{print $10}' | sed 's/^0*//g')
+    if [ -z "$data_units_written" ]; then
+        data_units_written=$(echo "$smartctl" | grep -E '^246' | awk '{print $10}' | sed 's/^0*//g')
+    fi
 fi
 
 if [ -z "$remain" ] || [ -z "$data_units_written" ]; then
