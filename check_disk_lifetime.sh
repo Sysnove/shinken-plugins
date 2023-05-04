@@ -7,6 +7,17 @@ E_WARNING=1
 #E_CRITICAL=2
 E_UNKNOWN=3
 
+if [[ "$DISK" =~ sd ]]; then
+    nvme=false
+elif [[ "$DISK" =~ nvme ]]; then
+    # /dev/nvme1n1 -> /dev/nvme1
+    DISK=$(echo "$DISK" | grep -o '^[a-z/]*[0-9]')
+    nvme=true
+else
+    echo "UNKOWN - $DISK is not sd nor nvme"
+    exit $E_UNKNOWN
+fi
+
 if ! [ -e "$DISK" ]; then
     echo "UNKNOWN - $DISK not found"
     exit $E_UNKNOWN
@@ -15,15 +26,6 @@ fi
 if grep -q 1 /sys/block/"$(basename "$DISK")"/queue/rotational; then
     echo "OK - $DISK is rotational"
     exit $E_OK
-fi
-
-if [[ "$DISK" =~ sd ]]; then
-    nvme=false
-elif [[ "$DISK" =~ nvme ]]; then
-    nvme=true
-else
-    echo "UNKOWN - $DISK is not sd nor nvme"
-    exit $E_UNKNOWN
 fi
 
 if ! [[ "$(hostname)" =~ ^(infra|clibre|mt|cz) ]]; then
