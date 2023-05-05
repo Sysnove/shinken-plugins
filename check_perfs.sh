@@ -22,7 +22,7 @@ test_command () {
     t=$2
 
     TIMEFORMAT=%R
-    TIME=$( { time $c > /dev/null; } 2>&1 )
+    TIME=$( { time $c > /dev/null; } 2>&1 | sed 's/,/./g' )
     #echo "$TIME"
 
     if (( $(echo "$TIME > $t" |bc -l) )); then
