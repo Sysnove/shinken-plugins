@@ -102,7 +102,10 @@ if ! [ "$remain" -eq "$last_value" ]; then
 fi
 
 # If not change in more than 7 days, it's OK.
-if [ $period -gt 604800 ]; then
+if [ $((now - $(stat -c "%Y" "$LAST_RUN_FILE"))) -lt 604800 ]; then
+    status=$E_OK
+    output="OK - $DISK lifetime is ${remain}% remaining and status file is too young to test"
+elif [ $period -gt 604800 ]; then
     status=$E_OK
     output="OK - $DISK lifetime is ${remain}% remaining and has not change since $(date -d @"$last_change" +'%Y-%m-%d %H:%M:%S')"
 else
