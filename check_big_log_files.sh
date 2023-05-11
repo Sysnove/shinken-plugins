@@ -68,6 +68,6 @@ elif [ "$num" -eq 1 ]; then
     echo "WARNING: $(cat $CACHEFILE) size is $(du -sh "$(cat $CACHEFILE)" | cut -f -1) (bigger than ${SIZE}iB)."
     exit 1
 else
-    echo "WARNING: $num log files are bigger than ${SIZE}iB."
+    echo "WARNING: $num log files are bigger than ${SIZE}iB. See /var/tmp/nagios/check_big_log_files"
     exit 1
 fi
