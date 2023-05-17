@@ -35,15 +35,19 @@ while IFS="" read -r line; do
 
         retmsg="OK"
 
-        if [ $lag -gt 3200 ]; then
+        if [ "$lag" -gt 3200 ]; then
             retmsg="CRITICAL"
             ret=2
-        elif [ $lag -gt 600 ] && [ $ret -lt 2 ]; then
+        elif [ "$lag" -gt 600 ] && [ $ret -lt 2 ]; then
             retmsg="WARNING"
             ret=1
         fi
 
         echo "$retmsg - Last sync to $target was $lag seconds ago."
+
+        if [ $ret -ne 0 ]; then
+            exit $ret
+        fi
 
         src=""
         target=""
