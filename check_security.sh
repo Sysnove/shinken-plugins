@@ -143,8 +143,26 @@ done
 #    critical "$(echo "$dangerous_files" | wc -l) dangerous file(s) has been found : $dangerous_files"
 #fi
 
+if [ -e /usr/bin/apt-mark ]; then
+    if ! apt_hold=$(/usr/local/nagios/plugins/check_apt_hold.sh); then
+        critical "$apt_hold"
+    fi
+fi
+
 if [ $RET -eq 0 ]; then
-    echo "Everything seems OK"
+    if [ -d "/usr/local/ispconfig" ]; then # ISPConfig are too big to check for website security
+        echo "Everything seems OK"
+    else
+        /usr/local/nagios/plugins/check_websites_security.sh
+        web_security_ret="$?"
+        if [ "$web_security_ret" -eq 3 ]; then
+            RET=3
+        elif [ "$web_security_ret" -eq 2 ]; then
+            RET=2
+        elif [ "$web_security_ret" -eq 1 ] && [ "$RET" -eq 0 ]; then
+            RET=1
+        fi
+    fi
 fi
 
 exit $RET
