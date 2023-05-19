@@ -15,7 +15,8 @@ if ! [[ "$(hostname)" =~ ^(infra|clibre|mt|cz) ]]; then
     exit $E_OK
 fi
 
-for DEVICE in $(ls /sys/block); do
+# shellcheck disable=SC2010
+for DEVICE in $(ls /sys/block | grep -v '/dev/sr'); do
     if [ -L "/sys/block/$DEVICE/device" ]; then
 
     if [[ "$DEVICE" =~ sd ]]; then
