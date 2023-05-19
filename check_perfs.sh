@@ -26,7 +26,7 @@ test_command () {
     #echo "$TIME"
 
     if (( $(echo "$TIME > $t" |bc -l) )); then
-        echo "WARNING : \`$c\` took more than ${t}s"
+        echo "WARNING : \`$c\` took ${TIME}s (should be <${t}s)"
         RET=1
     fi
 }
