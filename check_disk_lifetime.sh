@@ -28,12 +28,6 @@ if grep -q 1 /sys/block/"$(basename "$DISK")"/queue/rotational; then
     exit $E_OK
 fi
 
-if ! [[ "$(hostname)" =~ ^(infra|clibre|mt|cz) ]]; then
-    echo "OK - For now this host is not managed by this check"
-    exit $E_OK
-fi
-
-
 LAST_RUN_FILE=/var/tmp/nagios/check_disk_lifetime_last_run_$(basename "$DISK")
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
