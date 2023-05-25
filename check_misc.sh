@@ -3,17 +3,23 @@
 hostnamectl=$(hostnamectl status)
 server_type='baremetal'
 
-if echo "$hostnamectl" | grep 'Chassis: vm'; then
+if echo "$hostnamectl" | grep -q 'Chassis: vm'; then
     server_type='vm'
-elif echo "$hostnamectl" | grep 'Chassis: container'; then
+elif echo "$hostnamectl" | grep -q 'Chassis: container'; then
     server_type='container'
+fi
+
+if [ -d /usr/lib/nagios/plugins ]; then
+    NAGIOS_PLUGINS=/usr/lib/nagios/plugins
+else
+    NAGIOS_PLUGINS=/usr/lib64/nagios/plugins
 fi
 
 set -e
 
-/usr/lib/nagios/plugins/check_ntp_time -H 0.debian.pool.ntp.org
+$NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh
 
 if [ "$server_type" = "baremetal" ]; then
-    /usr/lib/nagios/plugins/check_sensors
+    $NAGIOS_PLUGINS/check_sensors
 fi
