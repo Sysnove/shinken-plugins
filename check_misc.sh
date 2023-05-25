@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 hostnamectl=$(hostnamectl status)
 server_type='baremetal'
@@ -16,7 +16,9 @@ else
 fi
 
 set -e
+set -o pipefail
 
+(
 $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh | cut -d '|' -f 1
 
@@ -25,3 +27,4 @@ if [ "$server_type" = "baremetal" ]; then
 fi
 
 echo "OK - Everything is Awesome"
+) | tac # Shinken considere the first line to be the main output, so we need to inverse the output
