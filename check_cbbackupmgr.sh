@@ -4,7 +4,7 @@
 AGE_CRITICAL_THRESHOLD=$((3 * 24 * 3600))
 AGE_WARNING_THRESHOLD=$((24 * 3600))
 
-ARCHIVE_DIR="/var/backups/couchbase_cbbackupmgr/backups"
+ARCHIVE_DIR="/var/backups/couchbase/backups"
 REPO_NAME="cluster"
 
 if ! [ -r "$ARCHIVE_DIR/$REPO_NAME" ]; then

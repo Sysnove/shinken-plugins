@@ -61,14 +61,14 @@ case $1 in
         fi
         ;;
     couchbase)
-        if [ -e /etc/backup.d/21_cbbackupmgr.sh ]; then
-            cb_user=$(grep '^ADMIN=' /etc/backup.d/21_cbbackupmgr.sh 2>/dev/null | cut -d '"' -f 2)
-            cb_pass=$(grep '^PASSWORD=' /etc/backup.d/21_cbbackupmgr.sh 2>/dev/null | cut -d '"' -f 2)
+        if grep -q cbbackupmgr /etc/backup.d/21_couchbase.sh; then
+            cb_user=$(grep '^ADMIN=' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
+            cb_pass=$(grep '^PASSWORD=' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
             if [ -z "$cb_user" ] || [ -z "$cb_pass" ]; then
                 echo "UNKNOWN : Could not find couchbase admin and password"
             fi
             CHECK_COMMAND="/usr/local/nagios/plugins/check_cbbackupmgr.sh"
-            BACKUP_DIR="/var/backups/couchbase_cbbackupmgr"
+            BACKUP_DIR="/var/backups/couchbase"
         else
             cb_user=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
             cb_pass=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 4)
