@@ -23,3 +23,5 @@ $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
 if [ "$server_type" = "baremetal" ]; then
     $NAGIOS_PLUGINS/check_sensors
 fi
+
+echo "OK - Everything is Awesome"
