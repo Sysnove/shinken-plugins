@@ -18,7 +18,7 @@ fi
 set -e
 
 $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
-/usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh
+/usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh | cut -d '|' -f 1
 
 if [ "$server_type" = "baremetal" ]; then
     $NAGIOS_PLUGINS/check_sensors
