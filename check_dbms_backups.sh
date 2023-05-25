@@ -57,13 +57,13 @@ for dbms in "${!dbms_checks[@]}"; do
                 exit 2
             fi
             if [ "$dbms" == "elasticsearch" ]; then
-                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}" "-maxdepth 2 -not -name incompatible-snapshots"); then
+                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}" "-maxdepth 2 -not -name incompatible-snapshots -type f"); then
                     echo "$dbms: $out"
                     exit 2
                 fi
             elif [ "$dbms" == "couchbase" ]; then
                 # On couchbase we have weekly compacting so files can be one week old
-                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}" "" 10140 20280); then
+                if ! out=$(/usr/local/nagios/plugins/check_all_files_age.sh "${dbms_backupdirs[$dbms]}"  "-mindepth 1 -type d -not -name logs -not -name stats" 10140 20280); then
                     echo "$dbms: $out"
                     exit 2
                 fi

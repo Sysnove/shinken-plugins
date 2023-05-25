@@ -3,9 +3,9 @@
 DIR="$1"
 FINDOPTS="$2"
 MMIN_WARN="$3"
-[ -z "$MMIN_WARN" ] || MMIN_WARN=1500
+[ -z "$MMIN_WARN" ] && MMIN_WARN=1500
 MMIN_CRIT="$4"
-[ -z "$MMIN_CRIT" ] || MMIN_CRIT=3000
+[ -z "$MMIN_CRIT" ] && MMIN_CRIT=3000
 
 if [ -z "$DIR" ]; then
     echo "Usage: $0 DIRECTORY"
@@ -18,14 +18,14 @@ if [ ! -d "$DIR" ]; then
 fi
 
 if [ -n "$FINDOPTS" ]; then
-    FIND="find $DIR $FINDOPTS -type f -not -name README.txt -not -name README"
+    FIND="find $DIR $FINDOPTS -not -name README.txt -not -name README"
 else
     FIND="find $DIR -type f -not -name README.txt -not -name README"
 fi
 
-warnings=$($FIND -mmin +$MMIN_WARN -mmin -$MMIN_CRIT)
-errors=$($FIND  -mmin +$MMIN_CRIT)
-oks=$($FIND -mmin -$MMIN_WARN)
+warnings=$($FIND -mmin "+$MMIN_WARN" -mmin "-$MMIN_CRIT")
+errors=$($FIND  -mmin "+$MMIN_CRIT")
+oks=$($FIND -mmin "-$MMIN_WARN")
 
 nb_ok="$(echo "$oks" | wc -w)"
 
