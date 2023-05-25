@@ -10,6 +10,7 @@ PERFDATA=""
 REMAINS=()
 RET=$E_OK
 
+(
 if ! [[ "$(hostname)" =~ ^(infra|clibre|mt|cz|okina|algo) ]]; then
     echo "OK - For now this host is not managed by this check"
     exit $E_OK
@@ -71,3 +72,4 @@ else
 fi
 
 exit $RET
+) | tac # Shinken uses the first line as the main output, so we need to inverse the output

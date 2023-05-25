@@ -27,4 +27,4 @@ if [ "$server_type" = "baremetal" ]; then
 fi
 
 echo "OK - Everything is Awesome"
-) | tac # Shinken considere the first line to be the main output, so we need to inverse the output
+) | tac # Shinken uses the first line as the main output, so we need to inverse the output
