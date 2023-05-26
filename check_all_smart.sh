@@ -4,6 +4,8 @@ OKS=()
 NOKS=()
 PERFDATA=""
 
+set -o pipefail
+
 (
 while read -r line; do
     device=$(echo "$line" | cut -d '_' -f 3 | cut -d ']' -f 1)
@@ -33,10 +35,10 @@ if [ ${#NOKS[@]} -eq 0 ]; then
     echo "OK: [${OKS[*]}] are all clean | $PERFDATA"
     exit 0
 elif [ ${#NOKS[@]} -eq 1 ]; then
-    echo "${NOKS[*]} is not OK | $PERFDATA"
+    echo "WARNING: ${NOKS[*]} is not OK | $PERFDATA"
     exit 1
 else
-    echo "[${NOKS[*]}] are not OK | $PERFDATA"
+    echo "CRITICAL: [${NOKS[*]}] are not OK | $PERFDATA"
     exit 2
 fi
 ) | tac # Shinken uses the first line as the main output, so we need to inverse the output
