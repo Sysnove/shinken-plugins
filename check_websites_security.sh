@@ -43,6 +43,11 @@ if [ -d "/etc/apache2/sites-enabled" ]; then
     server="Apache2"
 fi
 
+if [ "$(echo "$websites" | wc -w)" -gt 50 ]; then
+    echo "$(echo "$websites" | wc -w) websites detected. This script is disabled above 50."
+    exit 0
+fi
+
 for website in $websites; do
     check_website "$website" &
 done
