@@ -10,12 +10,13 @@ PERFDATA=""
 REMAINS=()
 RET=$E_OK
 
-(
 if ! [[ "$(hostname)" =~ ^(infra|clibre|mt|cz|okina|algo) ]]; then
     echo "OK - For now this host is not managed by this check"
     exit $E_OK
 fi
 
+set -o pipefail
+(
 # shellcheck disable=SC2010
 for DEVICE in $(ls /sys/block | grep -Ev '^(sr|vd|fd)'); do
     if [ -L "/sys/block/$DEVICE/device" ]; then
