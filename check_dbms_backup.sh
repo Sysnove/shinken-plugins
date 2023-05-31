@@ -90,7 +90,15 @@ case $1 in
         CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/mongodb/"
         BACKUP_DIR="/var/backups/mongodb"
         if ! $LOCAL_ONLY; then
-            CLUSTER_HOSTS=$(sudo mongo --quiet --eval "JSON.stringify(rs.status())" | jq -r '.members[] | .name' | cut -d ':' -f 1)
+            if [ -e /usr/bin/mongosh ]; then
+                MONGO_SHELL=/usr/bin/mongosh
+            elif [ -e /usr/bin/mongo ]; then
+                MONGO_SHELL=/usr/bin/mongo
+            else
+                echo "UNKNOWN : Could not find /usr/bin/mongosh or /usr/bin/mongo"
+                exit 3
+            fi
+            CLUSTER_HOSTS=$(sudo $MONGO_SHELL --quiet --eval "JSON.stringify(rs.status())" | jq -r '.members[] | .name' | cut -d ':' -f 1)
             if [ "$(echo "$CLUSTER_HOSTS" | wc -w)" -eq 1 ]; then
                 CLUSTER_HOSTS=""
             fi
