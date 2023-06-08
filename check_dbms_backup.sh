@@ -61,22 +61,29 @@ case $1 in
         fi
         ;;
     couchbase)
-        if grep -q cbbackupmgr /etc/backup.d/21_couchbase.sh; then
-            cb_user=$(grep '^ADMIN=' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
-            cb_pass=$(grep '^PASSWORD=' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
+        BACKUP_DIR="/var/backups/couchbase"
+        if [ -f "/etc/backup.d/21_couchbase.sh" ]; then
+            cb_conf_file=/etc/backup.d/21_couchbase.sh
+        elif [ -f "/var/backups/couchbase/admin" ]; then
+            cb_conf_file=/var/backups/couchbase/admin
+        else
+            echo "UNKNOWN : Could not find couchbase admin and password"
+            exit 3
+        fi
+        if grep -q cbbackupmgr $cb_conf_file; then
+            cb_user=$(grep '^ADMIN=' $cb_conf_file 2>/dev/null | cut -d '"' -f 2)
+            cb_pass=$(grep '^PASSWORD=' $cb_conf_file 2>/dev/null | cut -d '"' -f 2)
             if [ -z "$cb_user" ] || [ -z "$cb_pass" ]; then
                 echo "UNKNOWN : Could not find couchbase admin and password"
             fi
             CHECK_COMMAND="/usr/local/nagios/plugins/check_cbbackupmgr.sh"
-            BACKUP_DIR="/var/backups/couchbase"
         else
-            cb_user=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 2)
-            cb_pass=$(grep -Eo '\-u ".*" \-p ".*"' /etc/backup.d/21_couchbase.sh 2>/dev/null | cut -d '"' -f 4)
+            cb_user=$(grep -Eo '\-u ".*" \-p ".*"' $cb_conf_file 2>/dev/null | cut -d '"' -f 2)
+            cb_pass=$(grep -Eo '\-u ".*" \-p ".*"' $cb_conf_file 2>/dev/null | cut -d '"' -f 4)
             if [ -z "$cb_user" ] || [ -z "$cb_pass" ]; then
                 echo "UNKNOWN : Could not find couchbase admin and password"
             fi
             CHECK_COMMAND="/usr/local/nagios/plugins/check_younger_file_age.sh -w 24 -c 76 -d /var/backups/couchbase/"
-            BACKUP_DIR="/var/backups/couchbase"
         fi
         if ! $LOCAL_ONLY; then
             # TODO couchbase-cli in PATH
