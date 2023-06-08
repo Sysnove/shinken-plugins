@@ -105,7 +105,8 @@ EXITCODE=$E_OK
 echo "$NEWDISKSTAT" >$HISTFILE
 # now we have old and current stat;
 # let compare it for each device
-for DEVICE in /sys/block/*; do
+# shellcheck disable=SC2010
+for DEVICE in $(ls /sys/block | grep -Ev '^(sr|fd)'); do
     DEVICE="${DEVICE##*/}"
     if [ -L "/sys/block/$DEVICE/device" ]; then
         OLD_READ=$(echo "$OLDDISKSTAT" | grep " $DEVICE " | awk '{print $4}')
