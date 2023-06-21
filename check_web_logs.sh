@@ -97,12 +97,13 @@ new_count3=0
 new_count4=0
 new_count499=0
 new_count5=0
-new_countall=0
+# shellcheck disable=SC2086
+new_countall=$(wc -l $LOGS | tail -n 1 | awk '{print $1}')
 now=$(date +%H:%M:%S)
 
 IFS=$'\n'
 # shellcheck disable=SC2086
-for line in $(grep -o '" [2-5].. ' $LOGS | cut -d ' ' -f 2 | sort | uniq -c); do
+for line in $(grep -v 'check_websites_security' $LOGS | grep -o '" [2-5].. ' | cut -d ' ' -f 2 | sort | uniq -c); do
     code=$(echo $line | awk '{print $2}')
     count=$(echo $line | awk '{print $1}')
     if [[ "$code" == 2* ]]; then
@@ -117,7 +118,6 @@ for line in $(grep -o '" [2-5].. ' $LOGS | cut -d ' ' -f 2 | sort | uniq -c); do
     elif [[ "$code" == 5* ]]; then
         new_count5=$((new_count5 + count))
     fi
-    new_countall=$((new_countall + count))
 done
 
 echo "
@@ -130,7 +130,7 @@ old_countall=$new_countall
 last_check=$now
 " > "$LAST_RUN_FILE"
 
-if [ $new_countall -lt $old_countall ] ; then
+if [ "$new_countall" -lt $old_countall ] ; then
     echo "UNKNOWN - Logs seem to have shrink since last run, please run the check again."
     exit 3
 fi
