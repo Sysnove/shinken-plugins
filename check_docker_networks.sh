@@ -26,7 +26,7 @@ SVCIDS=$(docker service ls -q)
 
 #echo "Gathering overlay network information" | ts
 for net in $NETS ; do
-    networkInspect=$( docker network inspect "$net" )
+    networkInspect=$( docker network inspect -v "$net" )
     NET2NAME[$net]=$(echo "$networkInspect" | jq -r '.[].Name')
     set +e
     NET2SUB[$net]=$(echo "$networkInspect" | jq -r '.[].IPAM.Config[].Subnet' 2>/dev/null)
@@ -43,28 +43,10 @@ for net in $NETS ; do
         subcap=$(( (1 << (32 - pfxlen)) - 3 ))
         NET2CAP[$net]=$(( ${NET2CAP[$net]} + subcap ))
     done
+
+    NET2NVIP[$net]="$(echo "$networkInspect" | jq "[.[].Services[]?.VIP] | length")"
+    NET2NCIP[$net]="$(echo "$networkInspect" | jq "[.[].Services[]?.Tasks[]?.EndpointIP] | length")"
 done
-
-
-#echo "Counting container IP allocations per network" | ts
-for node in $NODEIDS ; do
-	for task in $(docker node ps -f 'desired-state = running' -q "$node") ; do
-		nets=$(docker inspect "$task" | jq -r '.[].Spec.Networks[].Target' 2>/dev/null | cut -c 1-12)
-		for net in $nets; do
-			NET2NCIP[$net]=$((${NET2NCIP[$net]} + 1))
-		done
-	done
-done
-
-
-#echo "Counting service VIP allocations per network" | ts
-for svc in $SVCIDS ; do
-	for viprec in $(docker service inspect "$svc" | jq -rc '.[].Endpoint.VirtualIPs[]' 2>/dev/null); do
-		net=$(echo "$viprec" | jq -r '.NetworkID' | cut -c 1-12)
-		NET2NVIP[$net]=$((${NET2NVIP[$net]} + 1))
-	done
-done
-
 
 #echo "Overlay IP Utilization Report" | ts
 for net in $NETS ; do
