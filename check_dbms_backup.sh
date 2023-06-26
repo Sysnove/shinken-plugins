@@ -131,6 +131,11 @@ case $1 in
         #CHECK_COMMAND="grep 'backup_excludes: /srv/***$' /etc/backup.d/91.borg"
         #HOSTS=""
         #;;
+    influxdb)
+        CHECK_COMMAND='/usr/local/nagios/plugins/check_all_files_age.sh /var/backups/influxdb'
+        BACKUP_DIR="/var/backups/influxdb"
+        #CLUSTER_HOSTS='' # Not managed
+        ;;
     *)
         echo "$1 is not managed"
         exit 3

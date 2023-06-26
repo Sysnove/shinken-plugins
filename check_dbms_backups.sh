@@ -11,6 +11,7 @@ declare -A dbms_checks=(
     ['ldap']="pgrep slapd"
     ['couchbase']="pgrep beam -u couchbase"
     ['elasticsearch']="pgrep java -u elasticsearch"
+    ['influxdb']="pgrep influxd"
 )
 
 declare -A dbms_datadirs=(
@@ -20,6 +21,7 @@ declare -A dbms_datadirs=(
     ['ldap']="/var/lib/slapd"
     ['couchbase']="/opt/couchbase/var/lib/couchbase"
     ['elasticsearch']="/var/lib/elasticsearch"
+    ['influxdb']="/var/lib/influxdb"
 )
 
 declare -A dbms_backupdirs=(
@@ -29,6 +31,7 @@ declare -A dbms_backupdirs=(
     ['ldap']="/var/backups/ldap"
     ['couchbase']="/var/backups/couchbase"
     ['elasticsearch']="/var/backups/elasticsearch"
+    ['influxdb']="/var/backups/influxdb"
 )
 
 ok=""
