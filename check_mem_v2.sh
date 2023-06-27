@@ -31,7 +31,6 @@ function printHelp {
   echo "-c - Sets critical value for Memory Usage. Default is 98%"
   echo -e "-h  - Displays this help message"\\n
   echo -e "Example: $SCRIPT -w 80 -c 90"\\n
-  exit 1
 }
 
 # regex to check is OPTARG an integer
@@ -55,6 +54,7 @@ while getopts :w:c:h FLAG; do
       ;;
     h)
       printHelp
+      exit 1
       ;;
     \?)
       echo -e \\n"Option - $OPTARG not allowed."
@@ -78,7 +78,7 @@ buffer_k=${array[2]}
 cache_k=${array[3]}
 shared_k=${array[5]}
 slab_reclaimable_k=${array[6]}
-#slab_unreclaimable_k=${array[7]}
+slab_unreclaim_k=${array[7]}
 # We consided reclaimable slab as cache. But we need to separate shared.
 cache_k=$((cache_k + slab_reclaimable_k - shared_k))
 #used_k=$((total_k - free_k - buffer_k - cache_k))
@@ -88,11 +88,14 @@ buffer_m=$((buffer_k / 1024))
 cache_m=$((cache_k / 1024))
 shared_m=$((shared_k / 1024))
 used_m=$((total_m - free_m - buffer_m - cache_m - shared_m))
+slab_unreclaim_m=$((slab_unreclaim_k / 1024))
 
 # Shared is count as "used" because it is not reclaimable like cache.
 # Shared + Used is what is causing OOM errors
 used_and_shared_m=$((used_m + shared_m))
 used_and_shared_pct=$(((100 * used_and_shared_m) / total_m))
+
+slab_unreclaim_pct=$(((100 * slab_unreclaim_m) / total_m))
 
 if [ $total_m -gt 1000 ]; then
     total_g=$(bc <<< "scale=1; $total_m/1024")
@@ -105,7 +108,11 @@ fi
 warn_m=$(((total_m * WARN)/100))
 crit_m=$(((total_m * CRIT)/100))
 
-message="$used_and_shared_pct% used ($ratio_txt) | memory=${used_m}MB;$warn_m;$crit_m;0;$total_m shared=${shared_m}MB;;;0;$total_m cache=${cache_m}MB;;;0;$total_m buffer=${buffer_m}MB;;;0;$total_m"
+if [ $slab_unreclaim_pct -ge "10" ]; then
+    sunreclaim_msg="(WARNING: SlabUnreclaim=${slab_unreclaim_m}MB)"
+fi
+
+message="$used_and_shared_pct% used ($ratio_txt) $sunreclaim_msg| memory=${used_m}MB;$warn_m;$crit_m;0;$total_m shared=${shared_m}MB;;;0;$total_m cache=${cache_m}MB;;;0;$total_m buffer=${buffer_m}MB;;;0;$total_m"
 
 if [ $used_and_shared_pct -ge "$CRIT" ]; then
   echo -e "Memory CRITICAL - $message"
