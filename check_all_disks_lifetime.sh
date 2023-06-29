@@ -10,7 +10,7 @@ PERFDATA=""
 REMAINS=()
 RET=$E_OK
 
-if ! [[ "$(hostname)" =~ ^(infra|clibre|mt|cz|okina|algo) ]]; then
+if ! [[ "$(cat /etc/hostname.sysnove)" =~ ^(infra|clibre|mt|cz|okina|algo) ]]; then
     echo "OK - For now this host is not managed by this check"
     exit $E_OK
 fi
