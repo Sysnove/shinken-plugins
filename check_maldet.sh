@@ -45,7 +45,7 @@ if [ -n "$DURATION_WARN" ] && [ "$duration" -ge "$DURATION_WARN" ]; then
     penultimate=$maldetsessions/session.$(<$maldetsessions/session.penultimate)
 
     if [ -f "$penultimate" ] ; then
-        penultimate_duration=$(grep "ELAPSED:" "$last" | awk '{print $2}' | sed 's/s//')
+        penultimate_duration=$(grep "ELAPSED:" "$penultimate" | awk '{print $2}' | sed 's/s//')
     fi
 
     if [ -z "$penultimate_duration" ] || [ "$penultimate_duration" -ge "$DURATION_WARN" ] ; then
