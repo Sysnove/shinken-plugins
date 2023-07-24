@@ -10,10 +10,10 @@ PERFDATA=""
 REMAINS=()
 RET=$E_OK
 
-if ! [[ "$(cat /etc/hostname.sysnove)" =~ ^(infra|clibre|mt|cz|okina|algo|fasst) ]]; then
-    echo "OK - For now this host is not managed by this check"
-    exit $E_OK
-fi
+#if ! [[ "$(cat /etc/hostname.sysnove)" =~ ^(infra|clibre|mt|cz|okina|algo|fasst) ]]; then
+    #echo "OK - For now this host is not managed by this check"
+    #exit $E_OK
+#fi
 
 set -o pipefail
 (
