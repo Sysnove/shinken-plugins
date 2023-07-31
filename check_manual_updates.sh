@@ -91,6 +91,17 @@ if repmgr_installed=$(sudo -u postgres repmgr --version 2>&1); then
     fi
 fi
 
+if [ -f "/srv/metabase/metabase.jar" ]; then
+    apps="$apps metabase"
+    metabase_installed=$(sudo -u metabase unzip -p /srv/metabase/metabase.jar version.properties | grep 'tag=' | cut -d '=' -f 2)
+    metabase_latest=$(curl https://api.github.com/repos/metabase/metabase/releases/latest -s | jq .tag_name -r)
+
+    if [[ "$metabase_latest" > "$metabase_installed" ]]; then
+        echo "WARNING : Metabase $metabase_installed is installed, but $metabase_latest is available."
+        exit 1
+    fi
+fi
+
 if [ -n "$apps" ]; then
     echo "OK : Everything is up to date ($apps)"
 else
