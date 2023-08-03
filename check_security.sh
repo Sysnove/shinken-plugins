@@ -1,5 +1,11 @@
 #!/bin/bash
 
+WEB=true
+
+if [ "$1" = '--no-web' ]; then
+    WEB=false
+fi
+
 RET=0 # OK
 
 critical () {
@@ -149,7 +155,7 @@ if [ -e /usr/bin/apt-mark ]; then
     fi
 fi
 
-if [ $RET -eq 0 ]; then
+if $WEB && [ $RET -eq 0 ]; then
     if [ -d "/usr/local/ispconfig" ]; then # ISPConfig are too big to check for website security
         echo "Everything seems OK"
     else
