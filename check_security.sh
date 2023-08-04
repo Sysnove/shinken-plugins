@@ -155,10 +155,8 @@ if [ -e /usr/bin/apt-mark ]; then
     fi
 fi
 
-if $WEB && [ $RET -eq 0 ]; then
-    if [ -d "/usr/local/ispconfig" ]; then # ISPConfig are too big to check for website security
-        echo "Everything seems OK"
-    else
+if [ $RET -eq 0 ]; then
+    if $WEB; then
         /usr/local/nagios/plugins/check_websites_security.sh
         web_security_ret="$?"
         if [ "$web_security_ret" -eq 3 ]; then
@@ -168,6 +166,8 @@ if $WEB && [ $RET -eq 0 ]; then
         elif [ "$web_security_ret" -eq 1 ] && [ "$RET" -eq 0 ]; then
             RET=1
         fi
+    else
+        echo "Everything seems OK"
     fi
 fi
 
