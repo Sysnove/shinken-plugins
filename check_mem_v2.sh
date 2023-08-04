@@ -70,15 +70,15 @@ shift $((OPTIND-1))
 
 
 # shellcheck disable=SC2207
-array=( $(grep -E 'MemTotal|MemFree|Buffers|Cached|Shmem|SReclaimable|SUnreclaim' /proc/meminfo |awk '{print $1 " " $2}' |tr '\n' ' ' |tr -d ':' |awk '{ printf("%i %i %i %i %i %i %i", $2, $4, $6, $8, $10, $12, $14) }') )
+array=( $(grep -E '^(MemTotal|MemFree|Buffers|Cached|Shmem|SReclaimable|SUnreclaim)' /proc/meminfo |awk '{print $1 " " $2}' |tr '\n' ' ' |tr -d ':' |awk '{ printf("%i %i %i %i %i %i %i", $2, $4, $6, $8, $10, $12, $14) }') )
 
 total_k=${array[0]}
 free_k=${array[1]}
 buffer_k=${array[2]}
 cache_k=${array[3]}
-shared_k=${array[5]}
-slab_reclaimable_k=${array[6]}
-slab_unreclaim_k=${array[7]}
+shared_k=${array[4]}
+slab_reclaimable_k=${array[5]}
+slab_unreclaim_k=${array[6]}
 # We consided reclaimable slab as cache. But we need to separate shared.
 cache_k=$((cache_k + slab_reclaimable_k - shared_k))
 #used_k=$((total_k - free_k - buffer_k - cache_k))
@@ -117,7 +117,7 @@ message="$used_and_shared_pct% used ($ratio_txt) $sunreclaim_msg| memory=${used_
 if [ $used_and_shared_pct -ge "$CRIT" ]; then
   echo -e "Memory CRITICAL - $message"
   exit 2
-elif [ $used_and_shared_pct -ge "$WARN" ]; then
+elif [ $used_and_shared_pct -ge "$WARN" ] || [ $slab_unreclaim_pct -ge "10" ]; then
   echo -e "Memory WARNING - $message"
   exit 1
 else
