@@ -16,7 +16,7 @@ WARN_NFILES=0
 WARN_DURATION=0
 PERFDATA=false
 
-while getopts "w:c:n:f:d:p" option
+while getopts "w:c:n:f:d:r:p" option
 do
     case $option in
         w)
@@ -33,6 +33,9 @@ do
             ;;
         d)
             WARN_DURATION=$OPTARG
+            ;;
+        r)
+            WARN_RATIO=$OPTARG
             ;;
         p)
             PERFDATA=true
@@ -63,6 +66,8 @@ count=$(jq -r '.archives | length' $BORG_LIST)
 last_date=$(date -d "$(jq -r '.archives[0].start' $BORG_INFO)" +%s)
 last_name=$(jq -r '.archives[0].name' $BORG_INFO)
 last_duration=$(jq -r '.archives[0].duration' $BORG_INFO | cut -d '.' -f 1)
+last_original_size=$(jq -r '.archives[0].stats.original_size' $BORG_INFO)
+last_original_size_gb=$(( last_original_size / 1024 / 1024 / 1024 ))
 nfiles=$(jq -r '.archives[0].stats.nfiles' $BORG_INFO)
 
 msg="Last backup is $last_name"
@@ -73,6 +78,9 @@ unique_size=$(jq -r '.cache.stats.unique_size' $BORG_INFO)
 total_size_gb=$(( total_size / 1024 / 1024 / 1024 ))
 unique_size_gb=$(( unique_size / 1024 / 1024 / 1024 ))
 unique_csize_gb=$(( unique_csize / 1024 / 1024 / 1024 ))
+
+size_ratio=$(((last_original_size * 100)/unique_size))
+
 
 if $PERFDATA; then
     stats_msg="| total_size=${total_size_gb}GB;;;0; unique_size=${unique_size_gb}GB;;;0;  unique_size_compressed=${unique_csize_gb}GB;;;0; nfiles=${nfiles};;;0; duration=${last_duration};;;0;"
@@ -107,6 +115,11 @@ fi
 
 if [ "$WARN_NFILES" -ne 0 ] && [ "$nfiles" -gt "$WARN_NFILES" ]; then
     echo "WARNING: $nfiles files in $last_name backup. Please check backup excludes. $stats_msg"
+    exit 1
+fi
+
+if [ -n "$WARN_RATIO" ] && [ $size_ratio -lt "$WARN_RATIO" ] && [ "$last_original_size_gb" -gt 5 ]; then
+    echo "WARNING: ${last_original_size_gb}GB backed up today, but ${unique_size} in repo. Please check server activity and backup excludes. $stats_msg"
     exit 1
 fi
 
