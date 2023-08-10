@@ -120,6 +120,10 @@ for line in $(tail -n+3 /proc/net/dev | grep -v "no statistics"); do
         continue
     fi
 
+    if [[ $name =~ ^br-[0-9a-f]{12} ]]; then # Docker bridge changes name frequently
+        continue
+    fi
+
     rbytes=$(echo "$line" | awk '{print $2}')
     tbytes=$(echo "$line" | awk '{print $10}')
 
