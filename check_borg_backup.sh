@@ -118,7 +118,7 @@ if [ "$WARN_NFILES" -ne 0 ] && [ "$nfiles" -gt "$WARN_NFILES" ]; then
     exit 1
 fi
 
-if [ -n "$WARN_RATIO" ] && [ $size_ratio -lt "$WARN_RATIO" ] && [ "$last_original_size_gb" -gt 5 ]; then
+if [ -n "$WARN_RATIO" ] && [ $size_ratio -lt "$WARN_RATIO" ] && [ "$last_original_size_gb" -gt 5 ] && [ "$unique_size_gb" -gt 100 ]; then
     echo "WARNING: ${last_original_size_gb}GB in last backup, but ${unique_size_gb}GB unique chunks in repo. Please check server activity and backup excludes. $stats_msg"
     exit 1
 fi
