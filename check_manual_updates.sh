@@ -57,9 +57,16 @@ fi
 if [ -f /srv/.nextcloud/version.php ]; then
     apps="$apps nextcloud"
 
-    nextcloud_installed=$(php -r "require_once '/srv/.nextcloud/version.php'; print(\$OC_VersionString);")
-    php_version=$(php -v | head -1 | awk '{print $2}' | sed 's/\./x/g')
-    nextcloud_call_updater=$(curl -s -A "Nextcloud Updater" https://updates.nextcloud.com/updater_server/?version="${nextcloud_installed//\./x}"x1xxxstablexx2022-04-21T15:41:38+00:00%203d4015ae4dc079d1a2be0d3a573edef20264d701x"$php_version")
+    if ! [ -e "/usr/bin/php8.2" ]; then
+        echo "WARNING : Nextcloud needs php8.2."
+        exit 1
+    fi
+
+    # :TODO:maethor:20230814: Check if nextcloud is running on php8.2
+
+    nextcloud_installed=$(php8.2 -r "require_once '/srv/.nextcloud/version.php'; print(\$OC_VersionString);")
+    php_full_version=$(php8.2 -v | head -1 | awk '{print $2}' | sed 's/\./x/g')
+    nextcloud_call_updater=$(curl -s -A "Nextcloud Updater" https://updates.nextcloud.com/updater_server/?version="${nextcloud_installed//\./x}"x1xxxstablexx2022-04-21T15:41:38+00:00%203d4015ae4dc079d1a2be0d3a573edef20264d701x"$php_full_version")
     nextcloud_latest=$(echo "$nextcloud_call_updater" | grep "<version>" | sed 's/..version.//g' | awk -F '.' '{print $1,".",$2,".",$3}' | sed 's/ //g')
 
     if [[ "$nextcloud_latest" > "$nextcloud_installed" ]]; then
