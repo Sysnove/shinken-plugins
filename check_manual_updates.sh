@@ -57,12 +57,33 @@ fi
 if [ -f /srv/.nextcloud/version.php ]; then
     apps="$apps nextcloud"
 
+    # :TODO:maethor:20230815: Do not hardcode php8.2
+
     if ! [ -e "/usr/bin/php8.2" ]; then
         echo "WARNING : Nextcloud needs php8.2."
         exit 1
     fi
 
-    # :TODO:maethor:20230814: Check if nextcloud is running on php8.2
+    if ! nextcloud_domain="$(grep url /srv/.nextcloud/config/config.php | cut -d "'" -f 4 | cut -d '/' -f 3)"; then
+        echo "WARNING : Could not find nextcloud domain in config.php."
+        exit 1
+    fi
+
+    # :COMMENT:maethor:20230815: We do not have nextcloud on apache
+    if ! nextcloud_vhost="$(grep -Rl "$nextcloud_domain" /etc/nginx/sites-enabled)"; then
+        echo "WARNING : Could not find nextcloud $nextcloud_domain vhost config."
+        exit 1
+    fi
+
+    if ! nextcloud_php="$(grep -Eo 'php[0-9]\.[0-9]-fpm' "$nextcloud_vhost")"; then
+        echo "WARNING : Could not find nextcloud PHP version in $nextcloud_vhost."
+        exit 1
+    fi
+
+    if [ "$nextcloud_php" != "php8.2-fpm" ]; then
+        echo "WARNING : Nextcloud running on $nextcloud_php instead of php8.2-fpm."
+        exit 1
+    fi
 
     nextcloud_installed=$(php8.2 -r "require_once '/srv/.nextcloud/version.php'; print(\$OC_VersionString);")
     php_full_version=$(php8.2 -v | head -1 | awk '{print $2}' | sed 's/\./x/g')
