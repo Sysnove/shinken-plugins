@@ -64,7 +64,9 @@ if [ -f /srv/.nextcloud/version.php ]; then
         exit 1
     fi
 
-    if ! nextcloud_domain="$(grep url /srv/.nextcloud/config/config.php | cut -d "'" -f 4 | cut -d '/' -f 3)"; then
+    #if ! nextcloud_domain="$(grep url /srv/.nextcloud/config/config.php | cut -d "'" -f 4 | cut -d '/' -f 3)"; then
+    nextcloud_domain=$(php8.2 -r "require_once '/srv/.nextcloud/config/config.php'; print(\$CONFIG['trusted_domains']['0']);")
+    if [ -z "$nextcloud_domain" ]; then 
         echo "WARNING : Could not find nextcloud domain in config.php."
         exit 1
     fi
