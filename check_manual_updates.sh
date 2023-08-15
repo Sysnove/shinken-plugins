@@ -72,7 +72,7 @@ if [ -f /srv/.nextcloud/version.php ]; then
     fi
 
     # :COMMENT:maethor:20230815: We do not have nextcloud on apache
-    if ! nextcloud_vhost="$(grep -Rl "$nextcloud_domain" /etc/nginx/sites-enabled)"; then
+    if ! nextcloud_vhost="$(grep -Rl "server_name .*$nextcloud_domain" /etc/nginx/sites-enabled)"; then
         echo "WARNING : Could not find nextcloud $nextcloud_domain vhost config."
         exit 1
     fi
