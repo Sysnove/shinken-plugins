@@ -28,6 +28,11 @@ if lsb_release -d | grep -Eq '(Ubuntu|Debian)'; then
     fi
 fi
 
+if ! $NAGIOS_PLUGINS/check_tcp -H imap.snmail.fr -p 587 -t 1; then
+    echo "CRITICAL - Could not connect to imap.snmail.fr:587"
+    exit 2
+fi
+
 (
 $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh | cut -d '|' -f 1
