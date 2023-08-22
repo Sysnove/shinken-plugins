@@ -29,10 +29,12 @@ if varnishstat=$(varnishstat -j 2>&1); then
         cache_hit=$(echo "$varnishstat" | jq '."MAIN.cache_hit".value')
         cache_hitpass=$(echo "$varnishstat" | jq '."MAIN.cache_hitpass".value')
         cache_miss=$(echo "$varnishstat" | jq '."MAIN.cache_miss".value')
+        n_object=$(echo "$varnishstat" | jq '."MAIN.n_object".value')
     elif [ "$varnishstat_version" -eq 1 ]; then
         cache_hit=$(echo "$varnishstat" | jq '.counters."MAIN.cache_hit".value')
         cache_hitpass=$(echo "$varnishstat" | jq '.counters."MAIN.cache_hitpass".value')
         cache_miss=$(echo "$varnishstat" | jq '.counters."MAIN.cache_miss".value')
+        n_object=$(echo "$varnishstat" | jq '.counters."MAIN.n_object".value')
     else
         echo "UNNOWN - Varnishstat version $varnishstat_version is not managed."
         exit 3
@@ -83,7 +85,7 @@ last_check=$now
         reqpersec=0
     fi
 
-    echo "Varnish OK : $period_hit requests in ${period_s} seconds (cache hitrate ${hitrate}%) | ReqPerSec=$reqpersec CacheHitrate=${hitrate}%"
+    echo "Varnish OK : $period_hit requests in ${period_s} seconds (cache hitrate ${hitrate}%, ${n_object} objects) | ReqPerSec=$reqpersec CacheHitrate=${hitrate}% Objects=${n_object}"
 else
     echo "UNKNOWN : varnishstat returned code $? : $varnishstat"
     exit 3
