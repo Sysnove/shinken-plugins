@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
-from datetime import datetime
-from urllib.error import URLError
-from urllib.request import urlopen
-import re
+import datetime
+import requests
 import sys
 
 OK = 0
 WARN = 1
 CRIT = 2
 UNKN = 3
-
-LAST_UPDATED_RE = re.compile(
-    r'(?sm:<div\s+id="last-updated".*>.*<br>\s*'
-    r'([0-9]{4}/[0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2} [A-Z]+)'
-    r'\s*</div>)'
-)
 
 
 # Override ArgumentParser to exit with code 3 (UNKNOWN).
@@ -84,7 +76,6 @@ def main():
 
     # Check content
     hostname = args['hostname']
-    uri = args['uri']
     force_https = args['https']
     warning = args['warning']
     critical = args['critical']
@@ -95,31 +86,36 @@ def main():
     else:
         scheme = "http"
 
-    url = f"{scheme}://{hostname}{uri}"
+    url = f"{scheme}://{hostname}/status.php"
 
     try:
-        with urlopen(url) as f:
-            if f.status != 200:
-                print(f"CRITICAL: Code {f.status} returned instead of 200.")
-                sys.exit(CRIT)
+        response = requests.get(url, params={'format': 'json'})
 
-            output = f.read().decode('UTF-8')
-    except URLError as e:
+        if response.status_code != 200:
+            print(f"CRITICAL: Code {response.status_code} returned instead of 200.")
+            sys.exit(CRIT)
+
+    except requests.exceptions.RequestException as e:
         print(
-            f"ERROR: impossible to connect to {url}:\n{e.reason}",
+            f"ERROR: impossible to connect to {url}:\n{e}",
             file=sys.stderr
         )
         sys.exit(UNKN)
 
     # Parse content to get last updated date
-    m = LAST_UPDATED_RE.search(output)
-    if not m:
+    status = response.json()
+
+    last_updated_str = status.get('data_updated', None)
+
+    if not last_updated_str:
         print("ERROR: Last updated date not found.")
         sys.exit(CRIT)
 
+    # Parse last updated datetime.
+    last_updated = datetime.datetime.fromisoformat(last_updated_str)
+
     # Compare with thresholds
-    now = datetime.now()
-    last_updated = datetime.strptime(m.group(1), '%Y/%m/%d %H:%M %Z')
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     age = now - last_updated
     if age.days > critical:
