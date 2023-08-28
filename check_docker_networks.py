@@ -46,7 +46,7 @@ def main():
                 iface_address = iface['address']
 
                 # Check network overlapping with local interaces.
-                if subnet.overlaps(iface_address.network):
+                if subnet.overlaps(iface_address.network) and name != 'dummy':
                     print(f"WARNING : Docker network {name} overlaps iface {iface_name} ({iface_address.network})")
                     sys.exit(1)
 
