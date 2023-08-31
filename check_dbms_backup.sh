@@ -105,6 +105,12 @@ case $1 in
                 echo "UNKNOWN : Could not find /usr/bin/mongosh or /usr/bin/mongo"
                 exit 3
             fi
+            # shellcheck disable=SC1091
+            source /root/.mongo.cnf
+            if [ -n "$MONGODB_ADMIN_USERNAME" ]; then
+                MONGO_SHELL="$MONGO_SHELL --username $MONGODB_ADMIN_USERNAME --password $MONGODB_ADMIN_PASSWORD"
+            fi
+            # shellcheck disable=SC2086
             CLUSTER_HOSTS=$(sudo $MONGO_SHELL --quiet --eval "JSON.stringify(rs.status())" | jq -r '.members[] | .name' | cut -d ':' -f 1)
             if [ "$(echo "$CLUSTER_HOSTS" | wc -w)" -eq 1 ]; then
                 CLUSTER_HOSTS=""
