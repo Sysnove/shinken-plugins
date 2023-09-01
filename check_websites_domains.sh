@@ -177,7 +177,7 @@ Email automatique envoyé par le script $(hostname):$SCRIPT
         "
 
         if [ -n "$EMAIL" ]; then
-            /usr/local/bin/send-msg-to-client-email --to "$EMAIL" --subject "Subject: [$(hostname)] Avertissement d'expiration de noms de domaine" --body "$body" --copy-to-from
+            /usr/local/bin/send-msg-to-client-email --to "$EMAIL" --subject "[$(hostname)] Avertissement d'expiration de noms de domaine" --body "$body" --copy-to-from
         else
             echo ""
             echo "The following email could be sent to the client if you use the '-e' option to specify an email address."
