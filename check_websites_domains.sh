@@ -177,7 +177,7 @@ Email automatique envoyé par le script $(hostname):$SCRIPT
         "
 
         if [ -n "$EMAIL" ]; then
-            echo "$body" | sudo /usr/local/bin/swaks -tls --to "$EMAIL",contact@sysnove.fr --from contact@sysnove.fr --add-header "Subject: [$(hostname)] Avertissement d'expiration de noms de domaine" --body - > /dev/null
+            echo "$body" | sudo /usr/local/bin/swaks --silent --to "$EMAIL",contact@sysnove.fr --from contact@sysnove.fr --header "Subject: [$(hostname)] Avertissement d'expiration de noms de domaine" --body -
         else
             echo ""
             echo "The following email could be sent to the client if you use the '-e' option to specify an email address."
