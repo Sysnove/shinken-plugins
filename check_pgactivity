@@ -2,7 +2,7 @@
 # This program is open source, licensed under the PostgreSQL License.
 # For license terms, see the LICENSE file.
 #
-# Copyright (C) 2012-2020: Open PostgreSQL Monitoring Development Group
+# Copyright (C) 2012-2022: Open PostgreSQL Monitoring Development Group
 
 =head1 NAME
 
@@ -44,7 +44,7 @@ use List::Util qw(max);
 use Pod::Usage;
 use Scalar::Util qw(looks_like_number);
 use Fcntl qw(:flock);
-use Storable qw(lock_store lock_retrieve);
+use Storable qw(retrieve store);
 
 use Config;
 use FindBin;
@@ -64,7 +64,7 @@ delete $ENV{'LANGUAGE'};
 
 $| = 1;
 
-$VERSION = '2.5';
+$VERSION = '2.6';
 $PROGRAM = 'check_pgactivity';
 
 my $PG_VERSION_MIN =  70400;
@@ -85,6 +85,7 @@ my $PG_VERSION_100 = 100000;
 my $PG_VERSION_110 = 110000;
 my $PG_VERSION_120 = 120000;
 my $PG_VERSION_130 = 130000;
+my $PG_VERSION_140 = 140000;
 
 # reference to the output sub
 my $output_fmt;
@@ -118,6 +119,10 @@ my %services = (
     'checksum_errors' => {
         'sub'  => \&check_checksum_errors,
         'desc' => 'Check data checksums errors.'
+    },
+    'session_stats' => {
+        'sub'  => \&check_session_stats,
+        'desc' => 'Miscellaneous session statistics, including session rate.'
     },
     'commit_ratio' => {
         'sub'  => \&check_commit_ratio,
@@ -378,9 +383,16 @@ It should be version 8.3 at least, but the server can be older.
 
 =item B<--status-file> PATH
 
-Path to the file where service status information is kept between
-successive calls. Default is to save check_pgactivity.data in the same
+Path to the file where service status information is kept between successive
+calls. Default is to save a file called C<check_pgactivity.data> in the same
 directory as the script.
+
+Note that this file is protected from concurrent writes using a lock file
+located in the same directory, having the same name than the status file, but
+with the extension C<.lock>.
+
+On some plateform, network filesystems may not be supported correctly by the
+locking mechanism. See C<perldoc -f flock> for more information.
 
 =item B<--dump-status-file>
 
@@ -500,20 +512,17 @@ sub list_services() {
 
 # Check wrapper around Storable::file_magic to fallback on
 # Storable::read_magic under perl 5.8 and below
+# WARNINGS:
+# * you must hold a lock on the lockfile **BEFORE** calling this sub
+# * the given arg must be an existing and readable file
 sub is_storable($) {
     my $storage = shift;
     my $head;
 
+    return defined Storable::file_magic( $storage )
+        if defined *Storable::file_magic{CODE};
+
     open my $fh, '<', $storage;
-    flock($fh, LOCK_SH) or die "can't get shared lock on $storage: $!";
-
-    if ( defined *Storable::file_magic{CODE}
-         and Storable::file_magic( $storage )
-    ) {
-        close $fh; # release the shared lock
-        return 1;
-    }
-
     read $fh, $head, 64;
     close $fh;
 
@@ -538,38 +547,54 @@ sub find_hostkey($) {
 #
 #  dirname(__FILE__) . '/check_pgactivity.data'
 #
-# Format of data in this file is:
+# The status file is a data structure saving for each host ($host) the status
+# of each service ($name). Format of data in this file is:
 #   {
 #     "${host}${port}" => {
-#       "$name" => ref
+#       "$name" => $ref
 #     }
 #   }
-# data can be retrieved later using the "load" sub.
+#
+# Each call of save($host, $name, $ref, $storage) only overwrite the data for
+# given $host for the given $name service. To avoid data loss, the sub first
+# require an exclusive lock on the lock file, then load the existing data,
+# write its values, then close the file and release the lock.
+#
+# Data can be retrieved later using the "load" sub.
 #
 # Parameters are :
-#  * the host structure ref that holds the "host" and "port" parameters
-#  * the name of the structure to save
-#  * the ref of the structure to save
-#  * the path to the file storage
+#  * the $host structure ref that holds the "host" and "port" parameters
+#  * the $name of the structure to save
+#  * the $ref of the structure to save
+#  * the $path to the file storage
 sub save($$$$) {
-    my $host    = shift;
-    my $name    = shift;
-    my $ref     = shift;
-    my $storage = shift;
-    my $all     = {};
-    my $hostkey = find_hostkey($host);
+    my $host     = shift;
+    my $name     = shift;
+    my $ref      = shift;
+    my $storage  = shift;
+    my $all      = {};
+    my $lockfile = "${storage}.lock";
+    my $hostkey  = find_hostkey($host);
 
+    open my $fh, '>', $lockfile or die "can't open «${lockfile}»: $!";
+    flock($fh, LOCK_EX) or die "can't get exclusive lock on «${lockfile}»: $!";
 
-    die "File «${storage}» not recognized as a check_pgactivity status file.\n\n"
-        ."Please, check its path or move away this wrong file"
-        if -r $storage and not is_storable $storage;
+    if ( -e $storage ) {
 
-    $all = lock_retrieve($storage) if -r $storage;
+        die "can not write to status file «${storage}»" unless -w ${storage};
+        exit 1 unless is_storable $storage;
+
+        eval { $all = retrieve($storage) };
+        die "could not retrieve data from «${storage}»:\n  $@" if $@;
+    }
 
     $all->{$hostkey}{$name} = $ref;
 
-    eval { lock_store( $all, $storage ) };
-    die "Can't store data in '$storage':\n  $@" if $@;
+    eval { store( $all, $storage ); };
+    die "could not update data in «${storage}»:\n  $@" if $@;
+
+    # closing the fh removes the lock
+    close $fh or die "could not release «${lockfile}»: $!";
 }
 
 # Load the given ref content for the given host from the file on disk.
@@ -580,22 +605,27 @@ sub save($$$$) {
 #  * the name of the structure to load
 #  * the path to the file storage
 sub load($$$) {
-    my $host    = shift;
-    my $name    = shift;
-    my $storage = shift;
-    my $hostkey = find_hostkey($host);
+    my $host     = shift;
+    my $name     = shift;
+    my $storage  = shift;
+    my $hostkey  = find_hostkey($host);
+    my $lockfile = "${storage}.lock";
     my $all;
 
     return undef unless -e $storage;
 
-    die "No permission to read status file «${storage}»" unless -r $storage;
+    die "can not read status file «${storage}»" unless -r $storage;
 
-    die "File «${storage}» not recognized as a check_pgactivity status file.\n\n"
-        ."Please, check its path or move away this wrong file"
-        unless is_storable $storage;
+    open my $fh, '<', $lockfile or die "can't open «${lockfile}»: $!";
+    flock($fh, LOCK_SH) or die "can't get shared lock on «${lockfile}»: $!";
 
-    eval { $all = lock_retrieve($storage) };
-    die "Could not read status file «${storage}»:\n  $@" if $@;
+    exit 1 unless is_storable $storage;
+
+    eval { $all = retrieve($storage) };
+    die "could not read status file «${storage}»:\n  $@" if $@;
+
+    # closing the fh removes the lock
+    close $fh or die "could not release «${lockfile}»: $!";
 
     return $all->{$hostkey}{$name};
 }
@@ -1614,7 +1644,8 @@ sub check_archive_folder {
         '100' => 53399, # 0xD097
         '110' => 53400, # 0xD098
         '120' => 53505, # 0xD101
-        '130' => 53510  # 0xD106
+        '130' => 53510, # 0xD106
+        '140' => 53517  # 0xD10D
     );
 
     # "path" argument must be given
@@ -1871,8 +1902,8 @@ sub check_archiver {
                 save $hosts[0], 'archiver', $rs[0][0], $args{'status-file'};
             }
             else {
-                push @msg => sprintf 'archiver stalling', substr($rs[0][0], 0, 24);
-                push @longmsg => sprintf '"%s" not archived since last check',
+                push @msg => sprintf 'archiver failing on %s', substr($rs[0][0], 0, 24);
+                push @longmsg => sprintf '%s not archived since last check',
                                     substr($rs[0][0], 0, -6);
             }
         }
@@ -1891,13 +1922,19 @@ sub check_archiver {
         #  1) fails while parsing an .history file
         #  2) pg_last_wal_receive_lsn always returns zero if the slave is fed
         #     with pure log shipping (streaming is ok)
+        # field 1: number of WAL segment to archive
+        # field 2: how long archiving is failing in second
+        # field 3: last segment archived
+        # field 4: last failing segment
+        # field 5: mod time of the next wal to archive
         my $query = q{
         SELECT coalesce(pg_wal_lsn_diff(
                     current_pos,
                     /* compute LSN from last archived offset */
-                    (to_hex(last_archived_off/4294967296)
-                    ||'/'||to_hex(last_archived_off%4294967296))::pg_lsn
+                    (to_hex(COALESCE(last_archived_off, last_failed_off)/4294967296)
+                    ||'/'||to_hex(COALESCE(last_archived_off, last_failed_off)%4294967296))::pg_lsn
                 )::bigint / walsegsize, 0),
+		failing,
                 CASE WHEN failing
                 THEN extract('epoch' from (current_timestamp - last_archived_time))
                 ELSE 0
@@ -1914,11 +1951,16 @@ sub check_archiver {
                 walsegsize,
                 /* compute last archive offset */
                 -- WAL offset
-                ('x'||substr(last_archived_wal, 9, 8))::bit(32)::bigint*4294967296
+                ('x'||substr(last_archived_wal_hex, 9, 8))::bit(32)::bigint*4294967296
                     -- offset to the begining of the segment
                     + ('x'||substr(last_archived_wal, 17, 8))::bit(32)::bigint * walsegsize
                     -- offset to the end of the segment
                     + walsegsize AS last_archived_off,
+                ('x'||substr(last_failed_wal_hex, 9, 8))::bit(32)::bigint*4294967296
+                    -- offset to the begining of the segment
+                    + ('x'||substr(last_failed_wal, 17, 8))::bit(32)::bigint * walsegsize
+                    -- offset to the end of the segment
+                    + walsegsize AS last_failed_off,
                 CASE WHEN pg_is_in_recovery()
                 THEN pg_last_wal_receive_lsn()
                 ELSE pg_current_wal_lsn()
@@ -1926,7 +1968,20 @@ sub check_archiver {
                 (last_failed_time >= last_archived_time)
                     OR (last_archived_time IS NULL AND last_failed_time IS NOT NULL)
                     AS failing
-              FROM pg_stat_archiver, (
+              FROM (SELECT last_archived_wal,
+	                   last_archived_time,
+			   CASE WHEN (last_archived_wal NOT LIKE '%.history' AND last_archived_wal NOT LIKE '%.backup')
+	                        THEN last_archived_wal
+				ELSE NULL -- return NULL if last successfully archived file is a .history or .backup file
+			    END AS last_archived_wal_hex,
+                           CASE WHEN (last_failed_wal NOT LIKE '%.history' AND last_archived_wal NOT LIKE '%.backup')
+			        THEN last_failed_wal
+				ELSE NULL -- return NULL if last failed archive is a .history or .backup file
+			    END AS last_failed_wal_hex,
+			   last_failed_wal,
+			   last_failed_time
+	      FROM pg_stat_archiver) AS a
+	      CROSS JOIN (
                 SELECT setting::bigint *
                     CASE unit
                     WHEN '8kB' THEN 8192
@@ -1946,15 +2001,23 @@ sub check_archiver {
 
         push @perfdata => [ 'ready_archive', $nb_files, undef, $args{'warning'}, $args{'critical'}, 0 ];
 
-        if ( $rs[0][1] > 0 ) {
-            push @msg => sprintf 'archiver failing on %s', $rs[0][3];
-            push @longmsg => sprintf '%s could not be archived since %ds',
-                                $rs[0][3], $rs[0][1];
+        if ( $rs[0][1] eq 't' ) {
+            push @msg => sprintf 'archiver failing on %s', $rs[0][4];
+            if ( $rs[0][2] ne '' ) {
+                push @longmsg => sprintf '%s not archived since %ds',
+                                $rs[0][4], $rs[0][2];
+            }
+        else {
+                push @longmsg => sprintf '%s not archived',
+                                $rs[0][4];
+            }
         }
 
         if ( $nb_files > 0 ) {
-            push @perfdata => [ 'oldest_ready_wal', int( $rs[0][4] ), 's',
+            if ( $rs[0][5] ne '' ) {
+                push @perfdata => [ 'oldest_ready_wal', int( $rs[0][5] ), 's',
                                 undef, undef, 0 ];
+            }
         }
         else {
             push @perfdata => [ 'oldest_ready_wal', 0, 's', undef, undef, 0 ];
@@ -2090,7 +2153,9 @@ sub check_autovacuum {
 
     @perfdata = map { [ $_, $activity{$_}  ] } keys %activity;
     push @perfdata, [ 'oldest_autovacuum', $oldest, 's' ];
-    push @perfdata, [ 'max_workers', $max_workers ];
+    push @perfdata, [ 'max_workers', $max_workers ]
+        if $hosts[0]->{'version_num'} >= $PG_VERSION_83;
+
     push @msg, "Number of autovacuum: $numautovac";
     push @msg, "Oldest autovacuum: " . to_interval($oldest) if $oldest ne "NaN";
 
@@ -2457,7 +2522,7 @@ sub check_backends_status {
 
 
     if ( defined $args{'warning'} ) {
-        my $threshods_re
+        my $thresholds_re
             = qr/(idle|idle_xact|aborted_xact|fastpath|active|waiting)\s*=\s*(\d+\s*[smhd]?)/i;
 
         # Warning and critical must be raw
@@ -2465,15 +2530,15 @@ sub check_backends_status {
             -message => "FATAL: critical and warning thresholds only accept a list of 'label=value' separated by comma.\n"
                 . "See documentation for more information.",
             -exitval => 127
-        ) unless $args{'warning'} =~ m/^$threshods_re(\s*,\s*$threshods_re)*$/
-            and $args{'critical'} =~ m/^$threshods_re(\s*,\s*$threshods_re)*$/ ;
+        ) unless $args{'warning'} =~ m/^$thresholds_re(\s*,\s*$thresholds_re)*$/
+            and $args{'critical'} =~ m/^$thresholds_re(\s*,\s*$thresholds_re)*$/ ;
 
-        while ( $args{'warning'} =~ /$threshods_re/g ) {
+        while ( $args{'warning'} =~ /$thresholds_re/g ) {
             my ($threshold, $value) = ($1, $2);
             $warn{$translate{$threshold}} = $value if $1 and defined $2;
         }
 
-        while ( $args{'critical'} =~ /$threshods_re/g ) {
+        while ( $args{'critical'} =~ /$thresholds_re/g ) {
             my ($threshold, $value) = ($1, $2);
             $crit{$translate{$threshold}} = $value if $1 and defined $2;
         }
@@ -3317,6 +3382,100 @@ sub check_btree_bloat {
 }
 
 
+=item B<session_stats> (14+)
+
+Gather miscellaneous session statistics.
+
+This service uses the status file (see --status-file parameter).
+
+Perfdata contains the session / active / idle-in-transaction times
+for each database since last call, as well as the number of sessions per second,
+and the number of sessions killed / abandoned / terminated by fatal errors.
+
+Required privileges: unprivileged role.
+
+=cut
+
+sub check_session_stats {
+    my @rs;
+    my @perfdata;
+    my @hosts;
+    my %sstats;
+    my %new_sstats;
+    my $instance_session_rate;
+    my %args  = %{ $_[0] };
+    my $me    = 'POSTGRES_SESSION_STATS';
+    my $sql   = q{
+        SELECT extract(EPOCH from now()), s.datname, s.sessions,
+            s.session_time, s.active_time, s.idle_in_transaction_time,
+	    s.sessions_killed, s.sessions_abandoned, s.sessions_fatal
+        FROM pg_stat_database s
+          JOIN pg_database d ON s.datid = d.oid
+        WHERE d.datallowconn
+    };
+
+    @hosts = @{ parse_hosts %args };
+
+    pod2usage(
+        -message => 'FATAL: you must give only one host with service "session_stats".',
+        -exitval => 127
+    ) if @hosts != 1;
+
+    is_compat $hosts[0], 'session_stats', $PG_VERSION_140 or exit 1;
+
+    %sstats = %{ load( $hosts[0], 'session_stats', $args{'status-file'} ) || {} };
+
+    @rs = @{ query( $hosts[0], $sql ) };
+
+    $new_sstats{$_->[1]} = {
+        'ts'                => $_->[0],
+        'sessions'          => $_->[2],
+        'session_time'      => $_->[3],
+        'active_time'       => $_->[4],
+        'idle_in_xact_time' => $_->[5],
+        'killd'             => $_->[6],
+        'aband'             => $_->[7],
+        'fatal'             => $_->[8]
+    } foreach @rs;
+
+    save $hosts[0], 'session_stats', \%new_sstats, $args{'status-file'};
+
+    return status_ok( $me, ['First call'] ) unless keys %sstats;
+
+    foreach my $db ( keys %new_sstats ) {
+
+        my $sessions = $new_sstats{$db}{'sessions'} - $sstats{$db}{'sessions'};
+        my $session_time = $new_sstats{$db}{'session_time'} - $sstats{$db}{'session_time'};
+        my $active_time  = $new_sstats{$db}{'active_time'}  - $sstats{$db}{'active_time'};
+        my $idle_in_xact_time  = $new_sstats{$db}{'idle_in_xact_time'}  - $sstats{$db}{'idle_in_xact_time'};
+
+        my $sessions_killd  = $new_sstats{$db}{'killd'}  - $sstats{$db}{'killd'};
+        my $sessions_aband  = $new_sstats{$db}{'aband'}  - $sstats{$db}{'aband'};
+        my $sessions_fatal  = $new_sstats{$db}{'fatal'}  - $sstats{$db}{'fatal'};
+
+        my $session_rate = $sessions / ( $new_sstats{$db}{'ts'} - $sstats{$db}{'ts'} );
+        $instance_session_rate += $session_rate;
+
+        push @perfdata => (
+            [ "${db}_session_rate", $session_rate, ' sessions/s' ],
+
+            [ "${db}_session_time", $session_time, 'ms' ],
+            [ "${db}_active_time",  $active_time,  'ms' ],
+            [ "${db}_idle_in_transaction_time", $idle_in_xact_time, 'ms' ],
+
+            [ "${db}_sessions_killed",    $sessions_killd ],
+            [ "${db}_sessions_abandoned", $sessions_aband ],
+            [ "${db}_sessions_fatal",     $sessions_fatal ]
+        );
+    }
+
+    return status_ok(
+	$me,
+	["Number of sessions per second for all databases: " . sprintf( "%.2f", $instance_session_rate )],
+	\@perfdata );
+}
+
+
 =item B<commit_ratio> (all)
 
 Check the commit and rollback rate per second since last call.
@@ -3806,7 +3965,7 @@ sub check_database_size {
     is_compat $hosts[0], 'database_size', $PG_VERSION_81 or exit 1;
 
     if ( defined $args{'warning'} ) {
-        my $threshods_re = qr/(size|delta)\s*=\s*([^,]+)/i;
+        my $thresholds_re = qr/(size|delta)\s*=\s*([^,]+)/i;
 
         # backward compatibility
         $args{'warning'} = "delta=$args{'warning'}"
@@ -3819,15 +3978,15 @@ sub check_database_size {
             -message => "FATAL: wrong format for critical and/or warning thresholds.\n"
                 . "See documentation for more information.",
             -exitval => 127
-        ) unless $args{'warning'} =~ m/^$threshods_re(\s*,\s*$threshods_re)*$/
-            and $args{'critical'} =~ m/^$threshods_re(\s*,\s*$threshods_re)*$/ ;
+        ) unless $args{'warning'} =~ m/^$thresholds_re(\s*,\s*$thresholds_re)*$/
+            and $args{'critical'} =~ m/^$thresholds_re(\s*,\s*$thresholds_re)*$/ ;
 
-        while ( $args{'warning'} =~ /$threshods_re/g ) {
+        while ( $args{'warning'} =~ /$thresholds_re/g ) {
             my ($threshold, $value) = ($1, $2);
             $warn{$threshold} = $value if $1 and defined $2;
         }
 
-        while ( $args{'critical'} =~ /$threshods_re/g ) {
+        while ( $args{'critical'} =~ /$thresholds_re/g ) {
             my ($threshold, $value) = ($1, $2);
             $crit{$threshold} = $value if $1 and defined $2;
         }
@@ -4684,10 +4843,12 @@ sub check_last_maintenance {
         # 8.2 does not have per-database activity stats. We must aggregate
         # from pg_stat_user_tables
         $PG_VERSION_82 => qq{
-            SELECT coalesce(min(
-                extract(epoch FROM current_timestamp -
-                    greatest(last_${type}, last_auto${type})
-                )), 'NaN'::float),
+            SELECT coalesce(max(
+                       coalesce(extract(epoch FROM
+                         current_timestamp -
+                                 greatest(last_${type}, last_auto${type})),
+                         'infinity'::float)),
+                    'NaN'::float),
                 NULL, NULL,
                 sum(hashtext(n_tup_ins::text
                     ||n_tup_upd::text
@@ -4698,10 +4859,12 @@ sub check_last_maintenance {
         # Starting with 8.3, we can check database activity from
         # pg_stat_database
         $PG_VERSION_83 => qq{
-            SELECT coalesce(min(
-                extract(epoch FROM current_timestamp -
-                    greatest(last_${type}, last_auto${type})
-                )), 'NaN'::float),
+            SELECT coalesce(max(
+                       coalesce(extract(epoch FROM
+                         current_timestamp -
+                                 greatest(last_${type}, last_auto${type})),
+                         'infinity'::float)),
+                    'NaN'::float),
                 NULL, NULL,
                 (
                   SELECT md5(tup_inserted::text||tup_updated::text||tup_deleted::text)
@@ -4712,12 +4875,13 @@ sub check_last_maintenance {
             WHERE schemaname NOT LIKE 'pg_temp_%'
               AND schemaname NOT LIKE 'pg_toast_temp_%'
         },
+        # Starting with 9.1, we can add the analyze/vacuum counts
         $PG_VERSION_91 => qq{
-            SELECT coalesce(min(
+            SELECT coalesce(max(
                        coalesce(extract(epoch FROM
                          current_timestamp -
                                  greatest(last_${type}, last_auto${type})),
-                        '-infinity'::float)),
+                        'infinity'::float)),
                    'NaN'::float),
                 coalesce(sum(${type}_count), 0) AS ${type}_count,
                 coalesce(sum(auto${type}_count), 0) AS auto${type}_count,
@@ -4804,7 +4968,7 @@ LOOP_DB: foreach my $db (@all_db) {
             }
         }
 
-        if ( $rs->[0] =~ /^-inf/i or $rs->[0] >= $c_limit ) {
+        if ( $rs->[0] >= $c_limit ) {
             push @msg_crit => "$db: " . to_interval($rs->[0]);
             next LOOP_DB;
         }
@@ -5688,6 +5852,12 @@ This service supports both C<--dbexclude> and C<--dbinclude> parameters.
 Above 9.2, it supports C<--exclude> to filter out connections. Eg., to
 filter out pg_dump and pg_dumpall, set this to 'pg_dump,pg_dumpall'.
 
+Before 9.2, this services checks for idle transaction with their start time.
+Thus, the service can mistakenly take account of transaction transiently in
+idle state.
+From 9.2 and up, the service checks for transaction that really had no activity
+since the given thresholds.
+
 Required privileges: an unprivileged role checks only its own queries;
 a pg_monitor (10+) or superuser (<10) role is required to check all queries.
 
@@ -5716,7 +5886,7 @@ sub check_oldest_idlexact {
             LEFT JOIN pg_stat_activity AS a ON (a.datid = d.oid AND current_query = '<IDLE> in transaction')},
         $PG_VERSION_92 => q{SELECT d.datname,
             coalesce(extract('epoch' FROM
-                    date_trunc('second', current_timestamp-xact_start)
+                    date_trunc('second', current_timestamp-state_change)
                 ), -1)
             FROM pg_database AS d
             LEFT JOIN pg_stat_activity AS a ON (a.datid = d.oid AND state='idle in transaction')
@@ -6387,7 +6557,7 @@ sub check_pga_version {
     my @hosts;
     my %args = %{ $_[0] };
     my $me   = 'PGACTIVITY_VERSION';
-    my $msg  = "check_pgactivity $VERSION %s, Perl %vd";
+    my $msg  = "check_pgactivity $VERSION%s, Perl %vd";
 
     pod2usage(
         -message => 'FATAL: you must provide a warning or a critical threshold for service pga_version!',
@@ -6402,11 +6572,11 @@ sub check_pga_version {
         or (defined $args{'warning'} and $args{'warning'} !~ m/^\d\.\d+(?:_?(?:dev|beta|rc)\d*)?$/ );
 
     return status_critical( $me,
-        [ sprintf($msg, "(should be $args{'critical'}!)", $^V) ]
+        [ sprintf($msg, " (should be $args{'critical'}!)", $^V) ]
     ) if defined $args{'critical'} and $VERSION ne $args{'critical'};
 
     return status_warning( $me,
-        [ sprintf($msg, "(should be $args{'warning'}!)", $^V) ]
+        [ sprintf($msg, " (should be $args{'warning'}!)", $^V) ]
     ) if defined $args{'warning'} and $VERSION ne $args{'warning'};
 
     return status_ok( $me, [ sprintf($msg, "", $^V) ] );
@@ -6791,12 +6961,12 @@ sub check_replication_slots {
 
     # build warn/crit thresholds
     if ( defined $args{'warning'} ) {
-        my $threshods_re = qr/(wal|spilled|remaining)\s*=\s*(?:([^,]+))/i;
+        my $thresholds_re = qr/(wal|spilled|remaining)\s*=\s*(?:([^,]+))/i;
 
-        if ($args{'warning'} =~ m/^$threshods_re(\s*,\s*$threshods_re)*$/
-            and $args{'critical'} =~ m/^$threshods_re(\s*,\s*$threshods_re)*$/
+        if ($args{'warning'} =~ m/^$thresholds_re(\s*,\s*$thresholds_re)*$/
+            and $args{'critical'} =~ m/^$thresholds_re(\s*,\s*$thresholds_re)*$/
         ) {
-            while ( $args{'warning'} =~ /$threshods_re/g ) {
+            while ( $args{'warning'} =~ /$thresholds_re/g ) {
                 my ($threshold, $value) = ($1, $2);
 
                 if ($threshold eq 'remaining') {
@@ -6812,7 +6982,7 @@ sub check_replication_slots {
                 }
             }
 
-            while ( $args{'critical'} =~ /$threshods_re/g ) {
+            while ( $args{'critical'} =~ /$thresholds_re/g ) {
                 my ($threshold, $value) = ($1, $2);
 
                 if ($threshold eq 'remaining') {
@@ -7051,9 +7221,10 @@ PARAM_LOOP: foreach my $row (@rs) {
 
 =item B<sequences_exhausted> (7.4+)
 
-Check all sequences assigned to a column (the smallserial, serial and bigserial
-types), and raise an alarm if the column or sequences gets too close to the
-maximum value.
+Check all sequences and raise an alarm if the column or sequences gets too
+close to the maximum value. The maximum value is calculated from the maxvalue
+of the sequence or from the column type when the sequence is owned by a
+column (the smallserial, serial and bigserial types).
 
 Perfdata returns the sequences that trigger the alert.
 
@@ -7124,21 +7295,21 @@ sub check_sequences_exhausted {
             # Search path is emptied so that ::regclass gives us full paths
             my $query  = q{
 SET search_path TO 'pg_catalog';
-SELECT t.typname,
+SELECT d.typname,
        seq.oid::regclass as name,
-       pg_catalog.quote_ident(n.nspname) || '.' || pg_catalog.quote_ident(c.relname) || '.' || pg_catalog.quote_ident(a.attname)
+       pg_catalog.quote_ident(d.nspname) || '.' || pg_catalog.quote_ident(d.relname) || '.' || pg_catalog.quote_ident(d.attname)
 FROM pg_class seq
-INNER JOIN pg_catalog.pg_depend d ON d.objid=seq.oid
-INNER JOIN pg_catalog.pg_class c  ON c.oid=d.refobjid
-INNER JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
-INNER JOIN pg_catalog.pg_attribute a ON (
-         a.attrelid=c.oid AND
-         a.attnum=d.refobjsubid)
-INNER JOIN pg_catalog.pg_type t ON a.atttypid=t.oid
-WHERE seq.relkind='S'
- AND d.classid='pg_catalog.pg_class'::pg_catalog.regclass
- AND d.refclassid='pg_catalog.pg_class'::pg_catalog.regclass
- AND d.deptype='a'};
+LEFT JOIN (SELECT d.objid, t.typname, n.nspname, c.relname, a.attname
+             FROM pg_catalog.pg_depend d
+            INNER JOIN pg_catalog.pg_class c  ON c.oid=d.refobjid
+            INNER JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+            INNER JOIN pg_catalog.pg_attribute a ON (a.attrelid=c.oid
+	                                     AND a.attnum=d.refobjsubid)
+            INNER JOIN pg_catalog.pg_type t ON a.atttypid=t.oid
+            WHERE d.classid='pg_catalog.pg_class'::pg_catalog.regclass
+              AND d.refclassid='pg_catalog.pg_class'::pg_catalog.regclass
+              AND d.deptype='a') d ON d.objid=seq.oid
+WHERE seq.relkind='S'};
             # We got an array: for each record, type (int2, int4, int8), sequence name, and the column name
             @rs = @{ query ( $hosts[0], $query, $db ) };
             dprint ("DB  $db : found ".(scalar @rs )." sequences \n" );
@@ -7161,26 +7332,26 @@ WHERE seq.relkind='S'
 
             # To make things easier, we store all of this in a hash table with all sequences, merging these two queries
             foreach my $record(@rs) {
-                $sequences{$record->[1]}->{TYPE}=$record->[0];
-                $sequences{$record->[1]}->{COLNAME}=$record->[2];
+                $sequences{$record->[1]}->{TYPE}    = $record->[0];
+                $sequences{$record->[1]}->{COLNAME} = $record->[2];
             }
             foreach my $record(@rs2) {
-                $sequences{$record->[0]}->{LASTVALSEQ}=$record->[1];
-                $sequences{$record->[0]}->{MINVALSEQ}=$record->[2];
-                $sequences{$record->[0]}->{MAXVALSEQ}=$record->[3];
-                $sequences{$record->[0]}->{INCREMENTBY}=$record->[4];
+                $sequences{$record->[0]}->{LASTVALSEQ}  = $record->[1];
+                $sequences{$record->[0]}->{MINVALSEQ}   = $record->[2];
+                $sequences{$record->[0]}->{MAXVALSEQ}   = $record->[3];
+                $sequences{$record->[0]}->{INCREMENTBY} = $record->[4];
             }
         }
         else
         {
-            # Version 10.0 and bigger: we now have pg_sequence and functions to
+            # Version 10.0 and higher we now have pg_sequence and functions to
             # get the info directly
             my $query = q{
 SET search_path TO 'pg_catalog';
 SELECT
-    t.typname,
+    typname,
     seq.seqrelid::regclass AS sequencename,
-    pg_catalog.quote_ident(n.nspname) || '.' || pg_catalog.quote_ident(c.relname) || '.' || pg_catalog.quote_ident(a.attname),
+    pg_catalog.quote_ident(nspname) || '.' || pg_catalog.quote_ident(relname) || '.' || pg_catalog.quote_ident(attname),
     CASE
         WHEN has_sequence_privilege(seq.seqrelid, 'SELECT,USAGE'::text) THEN pg_sequence_last_value(seq.seqrelid::regclass)
         ELSE NULL::bigint
@@ -7189,28 +7360,31 @@ SELECT
     seq.seqmax AS max_value,
     seq.seqincrement AS increment_by
    FROM pg_sequence seq
-   INNER JOIN pg_catalog.pg_depend d ON d.objid=seq.seqrelid
-   INNER JOIN pg_catalog.pg_class c  ON c.oid=d.refobjid
-   INNER JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
-   INNER JOIN pg_catalog.pg_attribute a ON ( a.attrelid=c.oid
+   LEFT JOIN (SELECT d.objid, nspname, relname, attname, typname
+                FROM pg_catalog.pg_depend d
+               INNER JOIN pg_catalog.pg_class c  ON c.oid=d.refobjid
+               INNER JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+               INNER JOIN pg_catalog.pg_attribute a ON ( a.attrelid=c.oid
                                              AND a.attnum=d.refobjsubid)
-   INNER JOIN pg_catalog.pg_type t ON a.atttypid=t.oid
-   WHERE d.classid='pg_catalog.pg_class'::pg_catalog.regclass
-     AND d.refclassid='pg_catalog.pg_class'::pg_catalog.regclass
-     AND d.deptype='a'};
+               INNER JOIN pg_catalog.pg_type t ON a.atttypid=t.oid
+               WHERE d.classid='pg_catalog.pg_class'::pg_catalog.regclass
+                 AND d.refclassid='pg_catalog.pg_class'::pg_catalog.regclass
+                 AND d.deptype='a') class
+     ON class.objid=seq.seqrelid;};
             # We get an array: for each record, type (int2, int4, int8),
             # sequence name, column name, last, min, max, increment
             @rs = @{ query ( $hosts[0], $query, $db ) };
             foreach my $record (@rs)
             {
-                $sequences{$record->[1]}->{TYPE}=$record->[0];
-                $sequences{$record->[1]}->{COLNAME}=$record->[2];
-                $sequences{$record->[1]}->{LASTVALSEQ}=$record->[3];
-                $sequences{$record->[1]}->{MINVALSEQ}=$record->[4];
-                $sequences{$record->[1]}->{MAXVALSEQ}=$record->[5];
-                $sequences{$record->[1]}->{INCREMENTBY}=$record->[6];
+                $sequences{$record->[1]}->{TYPE}        = $record->[0];
+                $sequences{$record->[1]}->{COLNAME}     = $record->[2];
+                $sequences{$record->[1]}->{LASTVALSEQ}  = $record->[3];
+                $sequences{$record->[1]}->{MINVALSEQ}   = $record->[4];
+                $sequences{$record->[1]}->{MAXVALSEQ}   = $record->[5];
+                $sequences{$record->[1]}->{INCREMENTBY} = $record->[6];
             }
         }
+
         # Calculate real max value:
         # We take into accound negative incrementby. If incrementby <0, use minvalseq
         foreach my $seq (keys %sequences)
@@ -7219,43 +7393,42 @@ SELECT
             # We don't make the difference between positive and negative limits
             # It's only 1 of difference, so there is no point…
             if ($sequences{$seq}->{TYPE} eq 'int2') {
-                $max_value=32767;
+                $max_value = 32767;
             }
             elsif ($sequences{$seq}->{TYPE} eq 'int4') {
-                $max_value=2147483647;
+                $max_value = 2147483647;
             }
             elsif ($sequences{$seq}->{TYPE} eq 'int8') {
-                $max_value=9223372036854775807;
+                $max_value = 9223372036854775807;
             }
-            else
-            {
-                # We're not going to try to guess. This is not a serial, trust
-                # the dba/developer
-                delete $sequences{$seq};
-                next;
-            }
+	    # When we can't link the sequence to a column, we trust the dba/developer
+	    # and we're not going to try to guess.
 
-        if ($sequences{$seq}->{LASTVALSEQ} eq '') {
+            if ($sequences{$seq}->{LASTVALSEQ} eq '') {
                 # Skip sequences having lastvalue not initialized
                 delete $sequences{$seq};
                 next;
             }
 
             my $max_val_seq;
-            if ($sequences{$seq}->{INCREMENTBY}>=0) {
+            if ($sequences{$seq}->{INCREMENTBY} >= 0) {
                 $max_val_seq=$sequences{$seq}->{MAXVALSEQ};
-                $sequences{$seq}->{ABSVALSEQ}=$sequences{$seq}->{LASTVALSEQ};
+                $sequences{$seq}->{ABSVALSEQ} = $sequences{$seq}->{LASTVALSEQ};
             } else {
-                $max_val_seq=-$sequences{$seq}->{MINVALSEQ};# Reverse the sign
-                $sequences{$seq}->{ABSVALSEQ}=-$sequences{$seq}->{LASTVALSEQ};
+                $max_val_seq =-$sequences{$seq}->{MINVALSEQ};# Reverse the sign
+                $sequences{$seq}->{ABSVALSEQ} =-$sequences{$seq}->{LASTVALSEQ};
             }
             # The real maximum value is the smallest of both
-            my $real_max_value=$max_val_seq<=$max_value?$max_val_seq:$max_value;
-            $sequences{$seq}->{REALMAXVALUE}=$real_max_value;
+	    my $real_max_value;
+	    if ( defined $max_value ) {
+                $real_max_value = ($max_val_seq <= $max_value) ? $max_val_seq : $max_value;
+            } else {
+                $real_max_value = $max_val_seq;
+            }
+            $sequences{$seq}->{REALMAXVALUE} = $real_max_value;
         }
         # We have inverted values for the reverse-order sequences. We don't
         # have to think about it anymore.
-
         foreach my $seq(keys %sequences) {
             # First, get all info
             my $real_max_value=$sequences{$seq}->{REALMAXVALUE};
@@ -7263,20 +7436,27 @@ SELECT
             my $lim_warning=$usable_amount-get_size($args{'warning'},$usable_amount);
             my $lim_critical=$usable_amount-get_size($args{'critical'},$usable_amount);
             my $how_much_left=$real_max_value-$sequences{$seq}->{ABSVALSEQ};
-            my $seq_desc="$db." . $sequences{$seq}->{COLNAME};
-            my $long_seq_desc="$db.$seq(owned by " . $sequences{$seq}->{COLNAME} . ')';
+	    my $seq_desc;
+	    my $long_seq_desc;
+	    if ( $sequences{$seq}->{COLNAME} ne '' ) {
+                $seq_desc="$db.$seq(" . $sequences{$seq}->{COLNAME} . ')';
+                $long_seq_desc="$db.$seq(owned by " . $sequences{$seq}->{COLNAME} . ')';
+            } else {
+                $seq_desc="$db.$seq";
+                $long_seq_desc="$db.$seq";
+            }
             my $seq_criticity=0;
             if ($how_much_left<=$lim_critical) {
-                $seq_criticity=2;
+                $seq_criticity = 2;
             }
             elsif ($how_much_left<=$lim_warning) {
-                $seq_criticity=1;
+                $seq_criticity = 1;
             }
             if ($seq_criticity>=1) {
                 push @perfdata => [ $seq_desc, $how_much_left, undef,
                                     $lim_warning, $lim_critical, 0, $sequences{$seq}->{REALMAXVALUE} ];
                 push @longmsg, "$long_seq_desc $how_much_left values left";
-                $criticity=$criticity>$seq_criticity?$criticity:$seq_criticity; # Take biggest of the criticities
+                $criticity = ($criticity>$seq_criticity) ? $criticity : $seq_criticity; # Take highest of the criticities
             }
         }
     }
@@ -7292,7 +7472,7 @@ This probe helps to detect a frozen stats collector process.
 
 Perfdata returns the statistics snapshot age.
 
-Critical and Warning thresholds accept a raw number of seconds.
+Critical and Warning thresholds only accept an interval (eg. 1h30m25s).
 
 Required privileges: unprivileged role.
 
@@ -7308,19 +7488,17 @@ sub check_stat_snapshot_age {
 
     my $query  = q{ SELECT extract(epoch from (now() - pg_stat_get_snapshot_timestamp())) AS age };
 
-    if ( defined $args{'warning'} ) {
-        # warning and critical are mandatory.
+    if ( defined $args{'warning'} or defined $args{'critical'} ) {
+        # if a threshold is specified, both must be set
         pod2usage(
             -message => "FATAL: you must specify critical and warning thresholds.",
             -exitval => 127
         ) unless defined $args{'warning'} and defined $args{'critical'} ;
 
-        # warning and critical must be raw or %.
         pod2usage(
-            -message => "FATAL: critical and warning thresholds only accept raw numbers.",
+            -message => "FATAL: critical and warning thresholds only acccepts interval.",
             -exitval => 127
-        ) unless $args{'warning'}  =~ m/^([0-9.]+)/
-            and  $args{'critical'} =~ m/^([0-9.]+)/;
+        ) unless is_time( $args{'warning'} ) and is_time( $args{'critical'} );
     }
 
     @hosts = @{ parse_hosts %args };
@@ -7340,8 +7518,8 @@ sub check_stat_snapshot_age {
     push @perfdata => [ "statistics_age", $stats_age, undef ];
 
     if ( defined $args{'warning'} ) {
-        my $w_limit = $args{'warning'};
-        my $c_limit = $args{'critical'};
+        my $w_limit = get_time $args{'warning'};
+        my $c_limit = get_time $args{'critical'};
 
         push @{ $perfdata[0] } => ( $w_limit, $c_limit );
 
@@ -7405,6 +7583,23 @@ sub check_streaming_delta {
     my $master_location = '';
     my $num_clusters    = 0;
     my %queries         = (
+        # ** WARNING WARNING WARNING **
+        #
+        # TAP tests relies heavily on column *ORDER* (not column name)! Columns
+        # 4, 5, 6 and 7 are read/changed from t/lib/Mocker/Streaming.pm during
+        # TAP tests. See comments in t/lib/Mocker/Streaming.pm for more info.
+        #
+        # If you need to change the column order or logic, you must change it
+        # in TAP tests and in Mocker::Streaming as well.
+        #
+        # 1st field: slot application_name
+        # 2nd field: client_addr
+        # 3rd field: pid
+        # 4th field: sent_lsn    <= changed during TAP tests by Mocker::Streaming
+        # 5th field: write_lsn   <= changed during TAP tests by Mocker::Streaming
+        # 6th field: flush_lsn   <= changed during TAP tests by Mocker::Streaming
+        # 7th field: replay_lsn
+        # 8th field: current lsn <= read during TAP tests by Mocker::Streaming
         $PG_VERSION_100 => q{SELECT application_name, client_addr, pid,
             sent_lsn, write_lsn, flush_lsn, replay_lsn,
             CASE pg_is_in_recovery() WHEN true THEN pg_last_wal_receive_lsn() ELSE pg_current_wal_lsn() END
@@ -7733,7 +7928,7 @@ sub check_table_bloat {
         $PG_VERSION_74 =>  q{
           SELECT current_database(), ns.nspname AS schemaname, tblname, bs*tblpages AS real_size,
             NULL, NULL, NULL, (tblpages-est_num_pages)*bs AS bloat_size,
-            CASE WHEN tblpages - est_num_pages > 0
+            CASE WHEN tblpages > 0 AND tblpages - est_num_pages > 0
               THEN 100 * (tblpages - est_num_pages)/tblpages::float
               ELSE 0
             END AS bloat_ratio, is_na
@@ -7784,11 +7979,11 @@ sub check_table_bloat {
         $PG_VERSION_82 =>  q{
           SELECT current_database(), ns.nspname AS schemaname, tblname, bs*tblpages AS real_size,
             (tblpages-est_tblpages)*bs AS extra_size,
-            CASE WHEN tblpages - est_tblpages > 0
+            CASE WHEN tblpages > 0 AND tblpages - est_tblpages > 0
               THEN 100 * (tblpages - est_tblpages)/tblpages::float
               ELSE 0
             END AS extra_ratio, fillfactor, (tblpages-est_tblpages_ff)*bs AS bloat_size,
-            CASE WHEN tblpages - est_tblpages_ff > 0
+            CASE WHEN tblpages > 0 AND tblpages - est_tblpages_ff > 0
               THEN 100 * (tblpages - est_tblpages_ff)/tblpages::float
               ELSE 0
             END AS bloat_ratio, is_na
@@ -7838,11 +8033,11 @@ sub check_table_bloat {
         $PG_VERSION_90 =>  q{
           SELECT current_database(), nspname AS schemaname, tblname, bs*tblpages AS real_size,
             (tblpages-est_tblpages)*bs AS extra_size,
-            CASE WHEN tblpages - est_tblpages > 0
+            CASE WHEN tblpages > 0 AND tblpages - est_tblpages > 0
               THEN 100 * (tblpages - est_tblpages)/tblpages::float
               ELSE 0
             END AS extra_ratio, fillfactor, (tblpages-est_tblpages_ff)*bs AS bloat_size,
-            CASE WHEN tblpages - est_tblpages_ff > 0
+            CASE WHEN tblpages > 0 AND tblpages - est_tblpages_ff > 0
               THEN 100 * (tblpages - est_tblpages_ff)/tblpages::float
               ELSE 0
             END AS bloat_ratio, is_na
@@ -7888,7 +8083,7 @@ sub check_table_bloat {
         $PG_VERSION_120 => q{
         SELECT current_database(), ns.nspname, tblname, bs*tblpages AS real_size,
           (tblpages-est_tblpages)*bs AS extra_size,
-          CASE WHEN tblpages - est_tblpages > 0
+          CASE WHEN tblpages > 0 AND tblpages - est_tblpages > 0
             THEN 100 * (tblpages - est_tblpages)/tblpages::float
             ELSE 0
           END AS extra_ratio, fillfactor,
@@ -7896,7 +8091,7 @@ sub check_table_bloat {
             THEN (tblpages-est_tblpages_ff)*bs
             ELSE 0
           END AS bloat_size,
-          CASE WHEN tblpages - est_tblpages_ff > 0
+          CASE WHEN tblpages > 0 AND tblpages - est_tblpages_ff > 0
             THEN 100 * (tblpages - est_tblpages_ff)/tblpages::float
             ELSE 0
           END AS bloat_ratio, is_na
@@ -8936,6 +9131,13 @@ pod2usage(
 ) unless exists $services{ $args{'service'} };
 
 
+# Make sure the path given as status file is a file, not a folder.
+pod2usage(
+    -message => "FATAL: --status-file must be a path to a file not a directory.\n"
+    -exitval => 127
+) if -d $args{'status-file'};
+
+
 # Check we have write permission to the tempdir
 pod2usage(
     -message => 'FATAL: temp directory given or found not writable.',
@@ -9063,7 +9265,7 @@ __END__
 
 =head1 VERSION
 
-check_pgactivity version 2.5, released on Tue Nov 24 2020
+check_pgactivity version 2.6, released on Fri Jul 08 2022.
 
 =head1 LICENSING
 
@@ -9073,6 +9275,6 @@ For license terms, see the LICENSE provided with the sources.
 =head1 AUTHORS
 
 S<Author: Open PostgreSQL Monitoring Development Group>
-S<Copyright: (C) 2012-2020 Open PostgreSQL Monitoring Development Group>
+S<Copyright: (C) 2012-2022 Open PostgreSQL Monitoring Development Group>
 
 =cut
