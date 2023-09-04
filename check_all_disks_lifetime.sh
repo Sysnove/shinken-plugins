@@ -1,5 +1,8 @@
 #!/bin/bash
 
+THRESHOLD=7
+[ -n "$1" ] && THRESHOLD="$1"
+
 E_OK=0
 E_UNKNOWN=3
 
@@ -27,7 +30,7 @@ for DEVICE in $(ls /sys/block | grep -Ev '^(sr|vd|fd)'); do
     fi
 
         DEVPATH=$(echo "/dev/$DEVICE" | sed 's#!#/#g')
-        out=$(/usr/local/nagios/plugins/check_disk_lifetime.sh "$DEVPATH")
+        out=$(/usr/local/nagios/plugins/check_disk_lifetime.sh "$DEVPATH" "$THRESHOLD")
         ret=$?
 
         if [ $ret -eq 3 ]; then
@@ -64,7 +67,7 @@ elif [ $RET -eq 0 ]; then
 elif [ ${#WARNINGS[@]} -eq 1 ]; then
     echo "$LAST_WARNING | $PERFDATA"
 else
-    echo "WARNING : ${WARNINGS[*]} have lost more than 1% lifetime in less than 7 days (${REMAINS[*]})$IGNORED_STR | $PERFDATA"
+    echo "WARNING : ${WARNINGS[*]} have lost more than 1% lifetime in less than $THRESHOLD days (${REMAINS[*]})$IGNORED_STR | $PERFDATA"
 fi
 
 exit $RET

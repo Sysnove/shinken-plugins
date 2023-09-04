@@ -2,6 +2,10 @@
 
 DISK=$1
 
+THRESHOLD=7
+[ -n "$2" ] && THRESHOLD="$2"
+THRESHOLD_S=$((THRESHOLD * 24 * 60 * 60))
+
 E_OK=0
 E_WARNING=1
 #E_CRITICAL=2
@@ -95,11 +99,11 @@ if ! [ "$remain" -eq "$last_value" ]; then
     last_change="$now"
 fi
 
-# If not change in more than 7 days, it's OK.
-if [ $((now - $(stat -c "%W" "$LAST_RUN_FILE"))) -lt 604800 ]; then
+# If not change in more than $THRESHOLD days, it's OK.
+if [ $((now - $(stat -c "%W" "$LAST_RUN_FILE"))) -lt $THRESHOLD_S ]; then
     status=$E_OK
     output="OK - $DISK lifetime is ${remain}% remaining and status file is too young to test"
-elif [ $period -gt 604800 ]; then
+elif [ $period -gt  $THRESHOLD_S ]; then
     status=$E_OK
     output="OK - $DISK lifetime is ${remain}% remaining and has not change since $(date -d @"$last_change" +'%Y-%m-%d %H:%M:%S')"
 else
