@@ -69,6 +69,14 @@ else
         fi
     fi
 
+    # Apache2 special case : check if apachectl configtest is OK
+    if [ -f "/lib/systemd/system/apache2.service" ]; then
+        if ! /usr/sbin/apachectl configtest >/dev/null 2>&1; then
+            echo "WARNING - Apache2 configuration error, please check apachectl configtest"
+            exit $STATE_WARNING
+        fi
+    fi
+
     echo "OK - All services are running."
     exit $STATE_OK
 fi
