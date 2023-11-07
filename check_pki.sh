@@ -48,8 +48,8 @@ openssl_verify() {
         return 0
     fi
 
-    _error_line="$(echo "${_output}" | grep -E '^error [0-9]+ at .$')"
-    _error_code=$(echo "${_error_line}" | sed -n -E 's/^error ([0-9]+) at .$/\1/p')
+    _error_line="$(echo "${_output}" | grep -E '^error [0-9]+ at .*$')"
+    _error_code=$(echo "${_error_line}" | sed -n -E 's/^error ([0-9]+) at .*$/\1/p')
 
     echo "${_error_line}"
 
