@@ -85,7 +85,6 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
         if ! output="$(openssl_verify \
             "${CA_CERTIFICATE}" \
             -attime "$(date +'%s' --date '+ 1 month')" \
-            -purpose sslserver \
             -auth_level 1)"
         then
             warning "Server certificate ${CERTIFICATE} will not be valid in ont month: ${output}."
@@ -108,7 +107,6 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     if ! output="$(openssl_verify \
         "${CA_CERTIFICATE}" \
         -attime "$(date +'%s' --date '+ 1 month')" \
-        -purpose sslclient \
         -auth_level 1)"
     then
         warning "Server certificate ${CERTIFICATE} will not be valid in ont month: ${output}."
