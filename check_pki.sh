@@ -59,7 +59,6 @@ openssl_verify() {
 if ! output="$(openssl_verify \
     "${CA_CERTIFICATE}" \
     -attime "$(date +'%s' --date '+ 1 week')" \
-    -purpose smimesign \
     -auth_level 1)"
 then
     critical "CA certificate will not be valid in one week: ${output}."
@@ -68,7 +67,6 @@ fi
 if ! output="$(openssl_verify \
     "${CA_CERTIFICATE}" \
     -attime "$(date +'%s' --date '+ 1 month')" \
-    -purpose smimesign \
     -auth_level 1)"
 then
     warning "CA certificate will not be valid in one month: ${output}."
