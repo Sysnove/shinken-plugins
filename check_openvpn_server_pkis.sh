@@ -1,4 +1,9 @@
-#!/bin/sh
+#!/bin/bash
+
+if [ -z "$(compgen -G "/etc/openvpn/*-keys")"  ]; then
+    echo "WARNING: no PKI to check, maybe manually installed."
+    exit 1
+fi
 
 for PKI in /etc/openvpn/*-keys; do
     OUTPUT="$("$(dirname "$0")"/check_pki.sh "${PKI}")"
