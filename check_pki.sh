@@ -58,16 +58,14 @@ openssl_verify() {
 
 if ! output="$(openssl_verify \
     "${CA_CERTIFICATE}" \
-    -attime "$(date +'%s' --date '+ 1 week')" \
-    -auth_level 1)"
+    -attime "$(date +'%s' --date '+ 1 week')")"
 then
     critical "CA certificate will not be valid in one week: ${output}."
 fi
 
 if ! output="$(openssl_verify \
     "${CA_CERTIFICATE}" \
-    -attime "$(date +'%s' --date '+ 1 month')" \
-    -auth_level 1)"
+    -attime "$(date +'%s' --date '+ 1 month')")"
 then
     warning "CA certificate will not be valid in one month: ${output}."
 fi
@@ -84,8 +82,7 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     if openssl x509 -noout -purpose -in "${CERTIFICATE}" | grep -q "SSL server : Yes"; then
         if ! output="$(openssl_verify \
             "${CA_CERTIFICATE}" \
-            -attime "$(date +'%s' --date '+ 1 month')" \
-            -auth_level 1)"
+            -attime "$(date +'%s' --date '+ 1 month')")"
         then
             warning "Server certificate ${CERTIFICATE} will not be valid in ont month: ${output}."
         fi
@@ -106,8 +103,7 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     # Check certificate
     if ! output="$(openssl_verify \
         "${CA_CERTIFICATE}" \
-        -attime "$(date +'%s' --date '+ 1 month')" \
-        -auth_level 1)"
+        -attime "$(date +'%s' --date '+ 1 month')")"
     then
         warning "Server certificate ${CERTIFICATE} will not be valid in ont month: ${output}."
     fi
