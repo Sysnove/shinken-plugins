@@ -2,22 +2,22 @@
 
 
 ok() {
-    echo "$@"
+    echo "OK: $*"
     exit 0
 }
 
 warning() {
-    echo "$@"
+    echo "WARNING: $*"
     exit 1
 }
 
 critical() {
-    echo "$@"
+    echo "CRITICAL: $*"
     exit 2
 }
 
 unknown() {
-    echo "$@"
+    echo "UNKNOWN: $*"
     exit 3
 }
 
