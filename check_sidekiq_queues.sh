@@ -50,14 +50,14 @@ total_size=0
 perfdata=""
 
 for queue in $queues; do
-    size=$($REDIS_COMMAND llen "queue:$queue" | cut -d " " -f 1)
+    size=$($REDIS_COMMAND -n "$REDIS_DB" llen "queue:$queue" | cut -d " " -f 1)
     total_size=$((total_size + size))
     perfdata="$perfdata $queue=$size"
 done
 
-msg="$size jobs waiting in sidekiq queue (redis://localhost:$REDIS_PORT/$REDIS_DB) | $perfdata"
+msg="$total_size jobs waiting in sidekiq queue (redis://localhost:$REDIS_PORT/$REDIS_DB) | $perfdata"
 
-if [ "$size" -gt 1000 ]; then
+if [ "$total_size" -gt 1000 ]; then
     echo "WARNING : $msg"
     exit 1
 else
