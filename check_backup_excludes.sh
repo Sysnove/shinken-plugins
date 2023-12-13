@@ -86,7 +86,7 @@ for mount_source in $bind_mount_sources; do
 done
 
 if [ -n "$bind_missing" ]; then
-    echo "WARNING - You should exclude or explicitely include bind mount sources from backups: $bind_missing"
+    echo "WARNING - You should run backups.yml or explicitely include bind mount sources from backups: $bind_missing"
     exit 1
 fi
 
