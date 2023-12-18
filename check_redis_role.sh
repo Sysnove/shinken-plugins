@@ -56,6 +56,11 @@ else
     if [ "$role" == "master" ]; then
         echo "OK: Redis $REDIS_PORT is master with $connected_slaves connected slave(s)"
     elif [ "$role" == "slave" ]; then
+        master_link_status=$(echo "$replication_info" | grep '^master_link_status:' | cut -d ':' -f 2 | grep -o '[a-z0-9\.]*')
+        if [ "$master_link_status" != 'up' ]; then
+            echo "WARNING: Redis $REDIS_PORT is slave and master_link_status is $master_link_status"
+            exit 1
+        fi
         lag=$($REDIS_COMMAND --latency --raw | awk '{print $3}')
         master_host=$(echo "$replication_info" | grep '^master_host:' | cut -d ':' -f 2 | grep -o '[a-z0-9\.]*')
         master_port=$(echo "$replication_info" | grep '^master_port:' | cut -d ':' -f 2 | grep -o '[a-z0-9\.]*')
