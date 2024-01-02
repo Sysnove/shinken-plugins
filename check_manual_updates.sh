@@ -115,7 +115,8 @@ if repmgr_installed=$(sudo -u postgres repmgr --version 2>&1); then
     if [ -n "$repmgr_running" ]; then
         repmgr_installed=$(echo "$repmgr_installed" | cut -d ' ' -f 2 | cut -d '.' -f 1-2)
         if [ "$repmgr_running" != "$repmgr_installed" ]; then
-            echo "WARNING : Repmgr $repmgr_running is running, but $repmgr_installed is installed."
+            echo "WARNING : Repmgr extension $repmgr_running is loaded, but $repmgr_installed is installed."
+            echo "Please run \`sudo -u postgres psql repmgr -c 'ALTER EXTENSION repmgr UPDATE'\`"
             exit 1
         fi
     fi
