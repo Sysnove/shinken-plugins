@@ -32,7 +32,7 @@ fi
 
 
 # Get images
-images=$(echo "$containers" | xargs -l docker container inspect --format "{{ .Config.Image }}")
+images=$(echo "$containers" | xargs docker container inspect --format "{{ .Config.Image }}")
 
 for image in $images; do
     image_name=$(basename "$image" | cut -d':' -f1)
