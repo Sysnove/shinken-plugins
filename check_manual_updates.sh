@@ -59,13 +59,17 @@ if [ -f /srv/.nextcloud/version.php ]; then
 
     # :TODO:maethor:20230815: Do not hardcode php8.2
 
-    if ! [ -e "/usr/bin/php8.2" ]; then
-        echo "WARNING : Nextcloud needs php8.2."
+    if [ -e "/usr/bin/php8.3" ] ; then
+        php="php8.3"
+    elif [ ! -e "/usr/bin/php8.2" ] ; then
+        php="php8.2"
+    else
+        echo "WARNING : Nextcloud needs at least php8.2."
         exit 1
     fi
 
     #if ! nextcloud_domain="$(grep url /srv/.nextcloud/config/config.php | cut -d "'" -f 4 | cut -d '/' -f 3)"; then
-    nextcloud_domain=$(php8.2 -r "require_once '/srv/.nextcloud/config/config.php'; print(\$CONFIG['trusted_domains']['0']);")
+    nextcloud_domain=$($php -r "require_once '/srv/.nextcloud/config/config.php'; print(\$CONFIG['trusted_domains']['0']);")
     if [ -z "$nextcloud_domain" ]; then 
         echo "WARNING : Could not find nextcloud domain in config.php."
         exit 1
@@ -82,13 +86,13 @@ if [ -f /srv/.nextcloud/version.php ]; then
         exit 1
     fi
 
-    if [ "$nextcloud_php" != "php8.2-fpm" ]; then
-        echo "WARNING : Nextcloud running on $nextcloud_php instead of php8.2-fpm."
+    if [ "$nextcloud_php" != "php8.2-fpm" ] && [ "$nextcloud_php" != "php8.3-fpm" ]; then
+        echo "WARNING : Nextcloud running on $nextcloud_php instead of php8.2-fpm or php8.3-fpm."
         exit 1
     fi
 
-    nextcloud_installed=$(php8.2 -r "require_once '/srv/.nextcloud/version.php'; print(\$OC_VersionString);")
-    php_full_version=$(php8.2 -v | head -1 | awk '{print $2}' | sed 's/\./x/g')
+    nextcloud_installed=$(/usr/bin/$php -r "require_once '/srv/.nextcloud/version.php'; print(\$OC_VersionString);")
+    php_full_version=$(/usr/bin/$php -v | head -1 | awk '{print $2}' | sed 's/\./x/g')
     nextcloud_call_updater=$(curl -s -A "Nextcloud Updater" https://updates.nextcloud.com/updater_server/?version="${nextcloud_installed//\./x}"x1xxxstablexx2022-04-21T15:41:38+00:00%203d4015ae4dc079d1a2be0d3a573edef20264d701x"$php_full_version")
     nextcloud_latest=$(echo "$nextcloud_call_updater" | grep "<version>" | sed 's/..version.//g' | awk -F '.' '{print $1,".",$2,".",$3}' | sed 's/ //g')
 
