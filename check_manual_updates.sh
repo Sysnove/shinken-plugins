@@ -61,7 +61,7 @@ if [ -f /srv/.nextcloud/version.php ]; then
 
     if [ -e "/usr/bin/php8.3" ] ; then
         php="php8.3"
-    elif [ ! -e "/usr/bin/php8.2" ] ; then
+    elif [ -e "/usr/bin/php8.2" ] ; then
         php="php8.2"
     else
         echo "WARNING : Nextcloud needs at least php8.2."
