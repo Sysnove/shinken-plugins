@@ -11,17 +11,17 @@ check_tmp_rw(){
 
 (
 check_tmp_rw
-/usr/lib/nagios/plugins/check_nrpe -H localhost -c check_disk_full
+/usr/lib/nagios/plugins/check_nrpe -4 -H localhost -c check_disk_full
 
 for dbms in mysql pg mongodb redis; do
     if grep -q "command\[check_${dbms}_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-        /usr/lib/nagios/plugins/check_nrpe -H localhost -c check_${dbms}_connection
+        /usr/lib/nagios/plugins/check_nrpe -4 -H localhost -c check_${dbms}_connection
     fi
 done
 
 for webserver in apache2 nginx; do
     if grep -q "command\[check_${webserver}_status\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-        /usr/lib/nagios/plugins/check_nrpe -H localhost -c check_${webserver}_status
+        /usr/lib/nagios/plugins/check_nrpe -4 -H localhost -c check_${webserver}_status
     fi
 done
 
