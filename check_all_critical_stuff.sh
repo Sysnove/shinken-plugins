@@ -25,9 +25,9 @@ for dbms in mysql pg mongodb redis; do
     fi
 done
 
-if [ -f /etc/apache2/apache2.conf ] || [ -f /etc/nginx/nginx.conf ] || [ -f /etc/haproxy/haproxy.cfg ]; then
-    /usr/lib/nagios/plugins/check_http -H localhost
-fi
+#if [ -f /etc/apache2/apache2.conf ] || [ -f /etc/nginx/nginx.conf ] || [ -f /etc/haproxy/haproxy.cfg ]; then
+#    /usr/lib/nagios/plugins/check_http -H localhost
+#fi
 
 # Do not work well
 #for webserver in apache2 nginx; do
