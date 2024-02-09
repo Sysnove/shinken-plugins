@@ -25,11 +25,16 @@ for dbms in mysql pg mongodb redis; do
     fi
 done
 
-for webserver in apache2 nginx; do
-    if grep -q "command\[check_${webserver}_status\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-        $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_${webserver}_status
-    fi
-done
+if [ -f /etc/apache2/apache2.conf ] || [ -f /etc/nginx/nginx.conf ] || [ -f /etc/haproxy/haproxy.cfg ]; then
+    /usr/lib/nagios/plugins/check_http -H localhost
+fi
+
+# Do not work well
+#for webserver in apache2 nginx; do
+#    if grep -q "command\[check_${webserver}_status\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
+#        $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_${webserver}_status
+#    fi
+#done
 
 echo "OK - Everything is Awesome"
 ) | tac # Shinken uses the first line as the main output, so we need to inverse the output
