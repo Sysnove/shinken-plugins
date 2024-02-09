@@ -25,9 +25,12 @@ for dbms in mysql pg mongodb redis; do
     fi
 done
 
-#if [ -f /etc/apache2/apache2.conf ] || [ -f /etc/nginx/nginx.conf ] || [ -f /etc/haproxy/haproxy.cfg ]; then
-#    /usr/lib/nagios/plugins/check_http -H localhost
-#fi
+if [ -f /etc/apache2/apache2.conf ] || [ -f /etc/nginx/nginx.conf ] || [ -f /etc/haproxy/haproxy.cfg ]; then
+    # Sometime we can disable 80 so we need to check both 80 & 443
+    /usr/lib/nagios/plugins/check_tcp -H localhost -p 80 || /usr/lib/nagios/plugins/check_tcp -H localhost -p 443
+    # check_http 
+    #/usr/lib/nagios/plugins/check_http -H localhost
+fi
 
 # Do not work well
 #for webserver in apache2 nginx; do
