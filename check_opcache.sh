@@ -1,5 +1,6 @@
 #!/bin/bash
 
+hitrates=()
 opcache_ok=()
 opcache_full=()
 interned_strings_full=()
@@ -16,6 +17,8 @@ for v in 5.6 7.0 7.2 7.3 7.4 8.0 8.1 8.2 8.3; do
         cache_misses=$(echo -r "$opcache" | grep "Cache misses" | grep -Eo '[0-9]*')
         #echo $v $memory_consumption $memory_used $memory_free $interned_strings_memory_used $interned_strings_memory_free $cache_hits $cache_misses
 
+        hitrates+=("php${v}_opcache_hitrate=$(echo "($cache_hits * 100) / ($cache_hits + $cache_misses)" | bc)%")
+
         if [ "$memory_free" -eq 0 ]; then
             opcache_full+=("PHP$v (${memory_used}MB)")
             continue
@@ -26,18 +29,18 @@ for v in 5.6 7.0 7.2 7.3 7.4 8.0 8.1 8.2 8.3; do
             continue
         fi
 
-        opcache_ok+=("PHP$v $(echo "(($cache_hits + $cache_misses) * 100) / $cache_hits)" | bc)%")
+        opcache_ok+=("PHP$v")
     fi
 done
 
 if [ ${#opcache_full[@]} -gt 0 ]; then
-    echo "CRITICAL - Some OPcache are full : ${opcache_full[*]}"
+    echo "CRITICAL - Some OPcache are full : ${opcache_full[*]} | ${hitrates[*]}"
     exit 0 # TODO exit 2
 elif [ ${#interned_strings_full[@]} -gt 0 ]; then
-    echo "WARNING - You should increase opcache.interned_strings_buffer for ${interned_strings_full[*]}"
+    echo "WARNING - You should increase opcache.interned_strings_buffer for ${interned_strings_full[*]} | ${hitrates[*]}"
     exit 0 # TODO exit 1
 elif [ ${#opcache_ok[@]} -gt 0 ]; then
-    echo "OK - PHP OPcache is working fine for ${opcache_ok[*]}" 
+    echo "OK - PHP OPcache is working fine for ${opcache_ok[*]} | ${hitrates[*]}" 
     exit 0
 else
     echo "UNKNOWN - Could not find any phpinfo"
