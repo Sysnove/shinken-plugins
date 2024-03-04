@@ -37,8 +37,37 @@ unkn(){
     exit $UNKN
 }
 
-HOST="$1"
-PORT="$2"
+usage() {
+    cat >&2 <<EOF
+Usage:
+    ${0} -h host [-p port] [-u credentials]
+
+Arguments:
+    -h host         hostname to check.
+    -p port         port to connect to (may be passed in host, but not both, no
+                    checks are done on this).
+    -u credentials  credentials to pass to curl to avoid 301 Authentication
+                    Required.
+EOF
+    exit $UNKN
+}
+
+while getopts ":h:p:u:" arg; do
+    case $arg in
+        h)
+            HOST="${OPTARG}"
+            ;;
+        p)
+            PORT="${OPTARG}"
+            ;;
+        u)
+            CREDENTIALS="${OPTARG}"
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
 
 if [ -z "${HOST}" ]; then
     crit "Please pass the host as parameter."
@@ -48,7 +77,19 @@ if [ -n "${PORT}" ]; then
     HOST="${HOST}:${PORT}"
 fi
 
-RESULT=$(curl -sS "http://${HOST}/db/_changes?limit=1&active_only=false&include_docs=true&filter=_doc_ids&channels=%21&doc_ids=test&feed=normal")
+CURL_OPTS=""
+
+if [ -n "${CREDENTIALS}" ]; then
+    CURL_OPTS="${CURL_OPTS} -u ${CREDENTIALS}"
+fi
+
+RESULT=$(curl ${CURL_OPTS} -sS "http://${HOST}/db/_changes?limit=1&active_only=false&include_docs=true&filter=_doc_ids&channels=%21&doc_ids=test&feed=normal")
+
+ERROR="$(echo "${RESULT}" | jq -r .error)"
+
+if [ "${ERROR}" != "null" ]; then
+    crit "Error while getting document information: ${ERROR}"
+fi
 
 RESULT_COUNT=$(echo "${RESULT}" | jq '.results | length')
 
