@@ -17,25 +17,25 @@ check_tmp_rw(){
 
 (
 check_tmp_rw
-$NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_disk_full
+$NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_disk_full | sed 's/|.*//g'
 
 for dbms in mysql pg mongodb redis; do
     if grep -q "command\[check_${dbms}_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-        $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_${dbms}_connection
+        $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_${dbms}_connection | sed 's/|.*//g'
     fi
 done
 
 if [ -f /etc/apache2/apache2.conf ] || [ -f /etc/nginx/nginx.conf ] || [ -f /etc/haproxy/haproxy.cfg ]; then
     # Sometime we can disable 80 so we need to check both 80 & 443
-    /usr/lib/nagios/plugins/check_tcp -H localhost -p 80 || /usr/lib/nagios/plugins/check_tcp -H localhost -p 443
+    /usr/lib/nagios/plugins/check_tcp -H localhost -p 80 || /usr/lib/nagios/plugins/check_tcp -H localhost -p 443 | sed 's/|.*//g'
     # check_http 
-    #/usr/lib/nagios/plugins/check_http -H localhost
+    #/usr/lib/nagios/plugins/check_http -H localhost | sed 's/|.*//g'
 fi
 
 # Do not work well
 #for webserver in apache2 nginx; do
 #    if grep -q "command\[check_${webserver}_status\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-#        $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_${webserver}_status
+#        $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_${webserver}_status | sed 's/|.*//g'
 #    fi
 #done
 
