@@ -41,7 +41,7 @@ def main():
     url = "%s://%s:%s/%s?auto" % (scheme, args.hostname, args.port, args.status_page)
 
     try:
-        r = requests.get(url)
+        r = requests.get(url, verify=False)
     except:
         print("UNKNOWN - Error requesting %s" % url)
         raise SystemExit(3)
