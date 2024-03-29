@@ -19,7 +19,7 @@ fi
 
 STACK="$1"
 
-if ! out=$(docker stack ps "$STACK" --format='{{.Name}} {{.CurrentState}}') ; then
+if ! out=$(docker stack ps "$STACK" --format='{{.Name}} {{.CurrentState}}' --filter='desired-state = Running') ; then
     echo "UNKNOWN: Failed to run docker stack ps $STACK"
     exit 3
 fi
