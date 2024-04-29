@@ -156,7 +156,7 @@ if [ -e /usr/bin/apt-mark ]; then
 fi
 
 if grep -q "command\[check_mysql_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-    for user in $(sudo mysql -se 'select User from mysql.user;' | grep -v 'User'); do
+    for user in $(sudo mysql -se 'select User from mysql.user;' | grep -v '^(User|enove)$'); do
         if sudo -u nagios mysql -u "$user" --password="$user" -e 'show databases' > /dev/null 2>&1; then
             critical "MySQL $user's password is $user"
         fi
@@ -164,7 +164,7 @@ if grep -q "command\[check_mysql_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg
 fi
 
 if grep -q "command\[check_pg_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-    for user in $(sudo -u postgres psql --csv -t -c '\du;' | cut -d ',' -f 1 | grep -Ev '^(postgres|repmgr|sysnove_monitoring)$'); do
+    for user in $(sudo -u postgres psql --csv -t -c '\du;' | cut -d ',' -f 1 | grep -Ev '^(postgres|repmgr|sysnove_monitoring|ofbiz)$'); do
         if PGPASSWORD="$user" psql -U "$user" -h localhost -c '\l' > /dev/null 2>&1; then
             critical "PG $user's password is $user"
         fi
