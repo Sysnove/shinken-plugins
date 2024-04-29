@@ -155,6 +155,28 @@ if [ -e /usr/bin/apt-mark ]; then
     fi
 fi
 
+for dbms in mysql pg mongodb redis; do
+    if grep -q "command\[check_${dbms}_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
+        $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_${dbms}_connection | sed 's/|.*//g'
+    fi
+done
+
+if grep -q "command\[check_mysql_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
+    for user in $(sudo mysql -se 'select User from mysql.user;' | grep -v 'User'); do
+        if mysql -u "$user" --password="$user" -e 'show databases' > /dev/null 2>&1; then
+            critical "MySQL $user's password is $user"
+        fi
+    done
+fi
+
+if grep -q "command\[check_pg_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
+    for user in $(sudo -u postgres psql --csv -t -c '\du;' | cut -d ',' -f 1 | grep -Ev '^(postgres|repmgr|sysnove_monitoring)$'); do
+        if PGPASSWORD="$user" psql -U "$user" -h localhost -c '\l' > /dev/null 2>&1; then
+            critical "PG $user's password is $user"
+        fi
+    done
+fi
+
 if [ $RET -eq 0 ]; then
     if $WEB; then
         /usr/local/nagios/plugins/check_websites_security.sh
