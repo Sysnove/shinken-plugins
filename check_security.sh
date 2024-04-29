@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -d /usr/lib/nagios/plugins ]; then
+    NAGIOS_PLUGINS=/usr/lib/nagios/plugins
+else
+    NAGIOS_PLUGINS=/usr/lib64/nagios/plugins
+fi
+
 WEB=true
 
 if [ "$1" = '--no-web' ]; then
