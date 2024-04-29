@@ -1,11 +1,5 @@
 #!/bin/bash
 
-if [ -d /usr/lib/nagios/plugins ]; then
-    NAGIOS_PLUGINS=/usr/lib/nagios/plugins
-else
-    NAGIOS_PLUGINS=/usr/lib64/nagios/plugins
-fi
-
 WEB=true
 
 if [ "$1" = '--no-web' ]; then
@@ -160,12 +154,6 @@ if [ -e /usr/bin/apt-mark ]; then
         critical "$apt_hold"
     fi
 fi
-
-for dbms in mysql pg mongodb redis; do
-    if grep -q "command\[check_${dbms}_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-        $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_${dbms}_connection | sed 's/|.*//g'
-    fi
-done
 
 if grep -q "command\[check_mysql_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
     for user in $(sudo mysql -se 'select User from mysql.user;' | grep -v 'User'); do
