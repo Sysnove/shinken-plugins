@@ -1,10 +1,15 @@
 #!/bin/bash
 
-WEB=true
+CHECK_WEB=true
+CHECK_DBS=true
 
-if [ "$1" = '--no-web' ]; then
-    WEB=false
-fi
+for arg in "$@"; do
+    if [ "$arg" == '--no-web' ]; then
+        CHECK_WEB=false
+    elif [ "$arg" == '--no-dbs' ]; then
+        CHECK_DBS=false
+    fi
+done
 
 RET=0 # OK
 
@@ -155,24 +160,26 @@ if [ -e /usr/bin/apt-mark ]; then
     fi
 fi
 
-if grep -q "command\[check_mysql_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-    for user in $(sudo mysql -se 'select User from mysql.user;' | grep -Ev '^(enove|mariadb\.sys|mysql)$'); do
-        if sudo -u nagios mysql -u "$user" --password="$user" -e 'show databases' > /dev/null 2>&1; then
-            critical "MySQL $user's password is $user"
-        fi
-    done
-fi
+if $CHECK_DBS; then
+    if grep -q "command\[check_mysql_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
+        for user in $(sudo mysql -se 'select User from mysql.user;' | grep -Ev '^(enove|mariadb\.sys|mysql)$'); do
+            if sudo -u nagios mysql -u "$user" --password="$user" -e 'show databases' > /dev/null 2>&1; then
+                critical "MySQL $user's password is $user"
+            fi
+        done
+    fi
 
-if grep -q "command\[check_pg_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
-    for user in $(sudo -u postgres psql --csv -t -c '\du;' | cut -d ',' -f 1 | grep -Ev '^(postgres|repmgr|sysnove_monitoring|ofbiz)$'); do
-        if PGPASSWORD="$user" psql -U "$user" -h localhost -c '\l' > /dev/null 2>&1; then
-            critical "PG $user's password is $user"
-        fi
-    done
+    if grep -q "command\[check_pg_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
+        for user in $(sudo -u postgres psql --csv -t -c '\du;' | cut -d ',' -f 1 | grep -Ev '^(postgres|repmgr|sysnove_monitoring|ofbiz)$'); do
+            if PGPASSWORD="$user" psql -U "$user" -h localhost -c '\l' > /dev/null 2>&1; then
+                critical "PG $user's password is $user"
+            fi
+        done
+    fi
 fi
 
 if [ $RET -eq 0 ]; then
-    if $WEB; then
+    if $CHECK_WEB; then
         /usr/local/nagios/plugins/check_websites_security.sh
         web_security_ret="$?"
         if [ "$web_security_ret" -eq 3 ]; then
