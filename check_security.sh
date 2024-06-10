@@ -2,12 +2,15 @@
 
 CHECK_WEB=true
 CHECK_DBS=true
+CHECK_USER_HOMES=true
 
 for arg in "$@"; do
     if [ "$arg" == '--no-web' ]; then
         CHECK_WEB=false
     elif [ "$arg" == '--no-dbs' ]; then
         CHECK_DBS=false
+    elif [ "$arg" == '--no-user-homes' ]; then
+        CHECK_USER_HOMES=false
     fi
 done
 
@@ -110,7 +113,9 @@ while IFS=: read -ra line; do
         fi
 
         if [ "$uid" -ge 1000 ] && [ "$username" != "nobody" ]; then
-            check_user_home "$username" "$uid" "$home"
+            if $CHECK_USER_HOMES || (groups "$username" | grep -q "sysnove"); then
+                check_user_home "$username" "$uid" "$home"
+            fi
         fi
 
         if grep -q "^$username:\$1\\$" /etc/shadow; then
