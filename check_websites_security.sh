@@ -13,10 +13,6 @@ warning () {
 
 check_website() {
     website=$1
-    if LC_ALL=C curl --max-time 5 -sL -A "Sysnove check_websites_security" "http://$website/.htpasswd" | head -n 2 | grep -q ':'; then
-        warning "http://$website/.htpasswd is readable."
-    fi
-
     if LC_ALL=C curl --max-time 5 -sL -A "Sysnove check_websites_security" "http://$website/.htaccess" | grep -Eq '(Rewrite|IfModule|SetEnv|Auth(Type|Name|UserFile)) '; then
         warning "http://$website/.htaccess is readable."
     fi
