@@ -72,16 +72,22 @@ def main():
 
     now = int(time.time())
 
+    # In Apache2 status, ReqPerSec & BytesPerSec are computed since the last restart of Apache2.
+    # Here we recompute them since the last call of this plugin.
     try:
         last_check = json.load(open(TMP_FILE))
     except:
         print("UNKNOWN - %s does not exist, please run the check again." % TMP_FILE)
         raise SystemExit(3)
     finally:
-        json.dump((now, values["Total Accesses"]), open(TMP_FILE, "w"))
+        json.dump((now, values["Total Accesses"], values["Total kBytes"]), open(TMP_FILE, "w"))
 
     values["ReqPerSec"] = "%.2f" % max(
         0, round((values["Total Accesses"] - last_check[1]) / (now - last_check[0]), 2)
+    )
+
+    values["BytesPerSec"] = "%.2f" % max(
+        0, round(((values["Total kBytes"] - last_check[2]) * 1000) / (now - last_check[0]), 2)
     )
 
     perfdata = (
