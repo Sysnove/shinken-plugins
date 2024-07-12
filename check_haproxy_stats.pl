@@ -88,7 +88,7 @@ my $license = "This program is free software; you can redistribute it and/or mod
 
 my $np = Monitoring::Plugin->new(  usage => "Usage: %s [-U <URL> [-u <User> -P <password>]]  [-p <proxy>] [-x <proxy>] [-m] [-n] [-s <servers>] [-i <REGEX>] [-w <threshold> ] [-c <threshold> ]  [-t <timeout>]  \n",
     plugin => $me,
-    shortname => $me,
+    shortname => ' ',
     blurb => "$me is a Nagios check for Haproxy using the statistics page via local socket or http(s) ",
     version => $VERSION,
     timeout => 30,
