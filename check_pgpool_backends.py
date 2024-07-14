@@ -21,7 +21,7 @@ def main():
     # Command failed, this is not expected.
     if status.returncode != 0:
         print(f"UNKONWN {status.stdout}")
-        print(f"  In case of auth problem, please check {os.environ['HOME']}/.pcppass."
+        print(f"  In case of auth problem, please check {os.environ['HOME']}/.pcppass.")
         exit(UNKNOWN)
 
     # Warning and Critical messages.
