@@ -68,7 +68,7 @@ def main():
 
                 # Check replication lag.
                 if int(replication_delay) > 10:
-                    warning.append(f"Node #{node_id} has a high lag."
+                    warning.append(f"Node #{node_id} has a high lag.")
 
         # Check backend role consistency.
         if backend_role != backend_role_actual:
