@@ -31,14 +31,21 @@ while read -r line; do
     fi
 done < <(grep check_smart /etc/nagios/nrpe.d/nrpe_physical.cfg)
 
+model="$(jq -r '.host.model' /etc/sysnove.json)"
+hotplug=""
+
+if [ "$model" == "Dedibox Pro-4-L" ]; then
+    hotplug=" (hot-plug replacement)"
+fi
+
 if [ ${#NOKS[@]} -eq 0 ]; then
     echo "OK: [${OKS[*]}] are all clean | $PERFDATA"
     exit 0
 elif [ ${#NOKS[@]} -eq 1 ]; then
-    echo "WARNING: ${NOKS[*]} is not OK | $PERFDATA"
+    echo "WARNING: ${NOKS[*]}$hotplug is not OK | $PERFDATA"
     exit 1
 else
-    echo "CRITICAL: [${NOKS[*]}] are not OK | $PERFDATA"
+    echo "CRITICAL: [${NOKS[*]}]$hotplug are not OK | $PERFDATA"
     exit 2
 fi
 ) | tac # Shinken uses the first line as the main output, so we need to inverse the output
