@@ -42,10 +42,12 @@ FIND_OPTS="\\( -name '*.log' -o -name syslog -o -name catalina.out \\) -size +${
 
 if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
     # locate --regex '.*(\.log|syslog|catalina.out)$' | xargs -L1 du -sm | awk '$1>1000{print $2}' ?
-    if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE; then
-        rm -f $CACHEFILE
-        echo "UNKNOWN: error during find"
-        exit 3
+    if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE 2>/dev/null; then
+        if [ "$?" != 1 ]; then # Ignores some errors, "no such device"
+            rm -f $CACHEFILE
+            echo "UNKNOWN: error during find"
+            exit 3
+        fi
     fi
 else
     if grep -q '^/' $CACHEFILE; then
