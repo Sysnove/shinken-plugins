@@ -4,6 +4,7 @@ SIZE="1G"
 CACHE=1 # days
 
 CACHEFILE=/var/tmp/nagios/check_big_log_files
+ERRFILE=/var/tmp/nagios/check_big_log_files.err
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
 if ! [ -d "$(dirname "$CACHEFILE")" ]; then
@@ -32,6 +33,11 @@ if [ -f "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
     exit 3
 fi
 
+if [ -f "$ERRFILE" ] && [ ! -O "$ERRFILE" ]; then
+    echo "UNKNOWN: $ERRFILE is not owned by $USER"
+    exit 3
+fi
+
 FIND_EXCLUDES=""
 
 for EXCLUDE in ${EXCLUDES}; do
@@ -42,8 +48,8 @@ FIND_OPTS="\\( -name '*.log' -o -name syslog -o -name catalina.out \\) -size +${
 
 if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
     # locate --regex '.*(\.log|syslog|catalina.out)$' | xargs -L1 du -sm | awk '$1>1000{print $2}' ?
-    if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE 2>/dev/null; then
-        if [ "$?" != 1 ]; then # Ignores some errors, "no such device"
+    if ! LC_ALL=C eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE 2>$ERRFILE; then
+        if grep -v 'No such device' "$ERRFILE"; then
             rm -f $CACHEFILE
             echo "UNKNOWN: error during find"
             exit 3
