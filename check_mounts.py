@@ -47,6 +47,9 @@ def main():
         fstab_lines = [l for l in fstab_lines if l.split(' ')[1] not in ['none', 'swap', '/media/cdrom0', '/media/usb0', '/media/usb1']]
         fstab_lines = [l for l in fstab_lines if l.split(' ')[2] not in ['swap', 'tmpfs']]
 
+        if os.uname()[1].endswith('02'): # DRBD secondary
+            fstab_lines = [l for l in fstab_lines if not l.startswith("/dev/drbd/")]
+
     # Compare fstab entries to mount output
     for fstab_line in fstab_lines:
         # Try to find mount point in mount output
