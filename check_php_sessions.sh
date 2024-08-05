@@ -1,6 +1,7 @@
 #!/bin/bash
 
 CACHEFILE=/var/tmp/nagios/check_php_sessions
+ERRFILE=/var/tmp/nagios/check_php_sessions.err
 CACHE=1 # days
 
 NAGIOS_USER=${SUDO_USER:-$(whoami)}
@@ -45,6 +46,10 @@ if [ -f "$CACHEFILE" ] && [ ! -O "$CACHEFILE" ]; then
     exit 3
 fi
 
+if [ -f "$ERRFILE" ] && [ ! -O "$ERRFILE" ]; then
+    echo "UNKNOWN: $ERRFILE is not owned by $USER"
+    exit 3
+fi
 
 FIND_EXCLUDES=""
 
@@ -55,16 +60,20 @@ done
 FIND_OPTS="-regextype posix-egrep -regex '.*/(ci_session|sess_).*' -ctime +${AGE} -print"
 
 if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
-    if ! eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE; then
-        rm -f $CACHEFILE
-        echo "UNKNOWN: error during find"
-        exit 3
+    if ! LC_ALL=C eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE 2>$ERRFILE; then
+        if grep -v 'No such device' "$ERRFILE"; then
+            rm -f $CACHEFILE
+            echo "UNKNOWN: error during find"
+            exit 3
+        fi
     fi
     if [ -d /var/lib/php/sessions ]; then
-        if ! eval "nice -n 10 find /var/lib/php/sessions ${FIND_OPTS}" >> $CACHEFILE; then
-            rm $CACHEFILE
-            echo "UNKNOWN: error during second find"
-            exit 3
+        if ! LC_ALL=C eval "nice -n 10 find /var/lib/php/sessions ${FIND_OPTS}" >> $CACHEFILE 2>$ERRFILE; then
+            if grep -v 'No such device' "$ERRFILE"; then
+                rm $CACHEFILE
+                echo "UNKNOWN: error during second find"
+                exit 3
+            fi
         fi
     fi
 else
