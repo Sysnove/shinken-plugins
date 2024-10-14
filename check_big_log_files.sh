@@ -46,23 +46,25 @@ done
 
 FIND_OPTS="\\( -name '*.log' -o -name syslog -o -name catalina.out \\) -size +${SIZE} -print"
 
-if [ -z "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then
-    # locate --regex '.*(\.log|syslog|catalina.out)$' | xargs -L1 du -sm | awk '$1>1000{print $2}' ?
-    if ! LC_ALL=C eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE 2>$ERRFILE; then
-        if grep -v 'No such device' "$ERRFILE"; then
-            rm -f $CACHEFILE
-            echo "UNKNOWN: error during find"
-            exit 3
-        fi
-    fi
-else
-    if grep -q '^/' $CACHEFILE; then
+if [ -n "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then # If CACHEFILE exists and is less than 1day old
+    if grep -q '^/' $CACHEFILE; then # If there is results in the file, check if they still exist
+        ts=$(date -r $CACHEFILE) # We need to update the file without changing the date
         # shellcheck disable=SC2013
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print 2>/dev/null; done)"
         if [ -n "$files" ]; then
             echo -e "$files" > $CACHEFILE
         else
             truncate -s 0 $CACHEFILE
+        fi
+        touch -d "$ts" $CACHEFILE
+    fi
+else # Full scan with find
+    # locate --regex '.*(\.log|syslog|catalina.out)$' | xargs -L1 du -sm | awk '$1>1000{print $2}' ?
+    if ! LC_ALL=C eval "nice -n 10 find / ${FIND_EXCLUDES} ${FIND_OPTS}" > $CACHEFILE 2>$ERRFILE; then
+        if grep -v 'No such device' "$ERRFILE"; then
+            rm -f $CACHEFILE
+            echo "UNKNOWN: error during find"
+            exit 3
         fi
     fi
 fi
