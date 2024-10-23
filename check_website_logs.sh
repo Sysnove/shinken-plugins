@@ -96,7 +96,7 @@ time_per_line_ms="$(echo "$time_per_line * 1000" | bc | awk '{printf "%.0f\n", $
 #total_estimated_time=$(echo "$time_per_line * $nb_lines" | bc)
 load=$(echo "scale=2; ($time_per_line * $nb_lines_with_time) / $period" | bc | awk '{printf "%.2f\n", $0}')
 
-perfdata="rate=${rate}req_per_sec; avg_time_per_request=${time_per_line_ms}ms; load=$load; p50=${p50}ms; p95=${p95}ms; p99=${p99}ms; max=${max}ms; apdex=${apdex}%;$APDEX_WARNING;$APDEX_CRITICAL;0;"
+perfdata="rate=${rate}req_per_sec; avg_time_per_request=${time_per_line_ms}ms; load=$load; p50=${p50}s; p95=${p95}s; p99=${p99}s; max=${max}s; apdex=${apdex}%;$APDEX_WARNING;$APDEX_CRITICAL;0;"
 
 if [ "$pct_lines_with_time" -gt 50 ]; then
     if [ -n "$APDEX_CRITICAL" ] && [ "$apdex" -lt "$APDEX_CRITICAL" ]; then
