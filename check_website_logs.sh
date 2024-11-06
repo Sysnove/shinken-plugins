@@ -1,8 +1,8 @@
 #!/bin/bash
 
 E_OK=0
-#E_WARNING=1
-#E_CRITICAL=2
+E_WARNING=1
+E_CRITICAL=2
 E_UNKNOWN=3
 
 LAST_RUN_FILE=""
@@ -101,8 +101,10 @@ perfdata="rate=${rate}req_per_sec; avg_time_per_request=${time_per_line_ms}ms; l
 if [ "$pct_lines_with_time" -gt 50 ]; then
     if [ -n "$APDEX_CRITICAL" ] && [ "$apdex" -lt "$APDEX_CRITICAL" ]; then
         echo "Apdex CRITICAL - Apdex ${apdex}% | $perfdata"
-    elif [ -n "$APDEXi_WARNING" ] && [ "$apdex" -lt "$APDEX_WARNING" ]; then
+        exit $E_CRITICAL
+    elif [ -n "$APDEX_WARNING" ] && [ "$apdex" -lt "$APDEX_WARNING" ]; then
         echo "Apdex WARNING - Apdex ${apdex}% | $perfdata"
+        exit $E_WARNING
     else
         echo "OK - $rate requests/second, avg $time_per_line second/request (load $load), Apdex ${apdex}% | $perfdata"
         exit $E_OK
