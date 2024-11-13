@@ -76,7 +76,6 @@ while getopts :w:c:m:h FLAG; do
         \?)
             echo -e \\n"Option - $OPTARG not allowed."
             printHelp
-            exit $RET_CRITICAL
             ;;
     esac
 done
@@ -147,16 +146,20 @@ for line in $(tail -n+3 /proc/net/dev | grep -v "no statistics"); do
     inspeed=$(((rbytes - lastrbytes) * 8 / interval))
     outspeed=$(((tbytes - lasttbytes) * 8 / interval))
 
+    # Sanitize. We don't want negative vars after reboot
+    [ $inspeed -lt 0 ] && inspeed=0
+    [ $outspeed -lt 0 ] && outspeed=0
+
     if [ $interval -gt 120 ]; then # avoid to register bursts
-        [ $inspeed -gt $inspeed_max ] && inspeed_max=$inspeed
-        [ $outspeed -gt $outspeed_max ] && outspeed_max=$outspeed
+        [ $inspeed -gt "$inspeed_max" ] && inspeed_max=$inspeed
+        [ $outspeed -gt "$outspeed_max" ] && outspeed_max=$outspeed
     fi
 
     echo "$name|$rbytes|$tbytes|$inspeed_max|$outspeed_max" >> $RUN_FILE
 
     # We don't want thresholds too low
-    [ $inspeed_max -lt $DEFAULTMAXBPS ] && inspeed_max=$DEFAULTMAXBPS
-    [ $outspeed_max -lt $DEFAULTMAXBPS ] && outspeed_max=$DEFAULTMAXBPS
+    [ "$inspeed_max" -lt $DEFAULTMAXBPS ] && inspeed_max=$DEFAULTMAXBPS
+    [ "$outspeed_max" -lt $DEFAULTMAXBPS ] && outspeed_max=$DEFAULTMAXBPS
 
     inspeed_warn=$(((WARN*inspeed_max)/100))
     inspeed_crit=$(((CRIT*inspeed_max)/100))
