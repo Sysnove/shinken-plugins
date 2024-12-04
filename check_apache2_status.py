@@ -47,7 +47,7 @@ def main():
         raise SystemExit(3)
 
     if r.status_code != 200:
-        print("CRITICAL - %s", r.status_code)
+        print("CRITICAL - %s returns %s" % (url, r.status_code))
         raise SystemExit(2)
 
     values = dict()
