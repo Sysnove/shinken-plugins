@@ -1,5 +1,9 @@
 #!/bin/bash
 
+THRESHOLD=$1
+[ -z "$THRESHOLD" ] && THRESHOLD=10
+THRESHOLD=$((THRESHOLD * 1000000000))
+
 # Always good to set the PATH in a cron script
 export PATH=/usr/local/bin:/usr/bin:/bin
 # Avoid locale interpretation in numfmt.
