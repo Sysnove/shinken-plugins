@@ -1,8 +1,8 @@
 #!/bin/bash
 
-THRESHOLD=$1
-[ -z "$THRESHOLD" ] && THRESHOLD=10
-THRESHOLD=$((THRESHOLD * 1000000000))
+WARN=$1
+[ -z "$WARN" ] && WARN=10
+WARN=$((WARN * 1000000000))
 
 # Always good to set the PATH in a cron script
 export PATH=/usr/local/bin:/usr/bin:/bin
@@ -21,7 +21,7 @@ if [[ $total -gt $active ]]; then
     reclaimable=$(echo "$DF_OUTPUT" | jq -r '.Reclaimable | split(" ")[0][0:-1]' | sed 's/k/K/' | numfmt --from=si)
 fi
 
-if [ "$reclaimable" -gt 10000000000 ]; then
+if [ "$reclaimable" -gt $WARN ]; then
     echo "WARNING : $(numfmt --to=si "$reclaimable") reclaimable volumes."
     exit 1
 else
