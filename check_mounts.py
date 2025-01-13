@@ -88,11 +88,11 @@ def main():
         # Check mount options
         mount_options = mount_entry[3].split(",")
 
-        if "ro" in mount_options:
+        if "ro" in mount_options and ("ro" not in fstab_options or "rw" in fstab_options):
             print("%s is read only" % fstab_mount_point)
             return STATUS_ERROR
 
-        if "rw" not in mount_options:
+        if "rw" not in mount_options and ("rw" in fstab_options or "ro" not in fstab_options):
             print("%s is not read write" % fstab_mount_point)
             return STATUS_ERROR
 
