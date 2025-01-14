@@ -381,9 +381,6 @@ if ($response->is_success) {
     my $RequestsNew = 0;
     # by default the average
     my $ReqPerConn = 0;
-    if ($AcceptedConn > 0) {
-        $ReqPerConn = $NbRequests/$AcceptedConn;
-    }
     my $elapsed = $Time  - $LastTime ;
     if (defined ($o_debug)) {
         print ("\nDebug: pre-computation\n");
@@ -396,12 +393,12 @@ if ($response->is_success) {
         $ConnPerSec = ($AcceptedConn-$LastAcceptedConn)/$elapsed;
         $RequestsNew = $NbRequests-$LastNbRequests;
         $ReqPerSec = $RequestsNew/$elapsed;
-        # get finer value
-        if ( $ConnPerSec!=0 ) {
-          $ReqPerConn = $ReqPerSec/$ConnPerSec;
-        } else {
-          $ReqPerConn = 0;
-        }
+    }
+    # get finer value
+    if ( $ConnPerSec!=0 ) {
+      $ReqPerConn = $ReqPerSec/$ConnPerSec;
+    } else {
+      $ReqPerConn = 0;
     }
     if (defined ($o_debug)) {
         print ("\nDebug: data computed\n");
