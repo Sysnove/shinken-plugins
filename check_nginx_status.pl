@@ -398,9 +398,9 @@ if ($response->is_success) {
         $ReqPerSec = $RequestsNew/$elapsed;
         # get finer value
         if ( $ConnPerSec!=0 ) {
-          my $ReqPerConn = $ReqPerSec/$ConnPerSec;
+          $ReqPerConn = $ReqPerSec/$ConnPerSec;
         } else {
-          my $ReqPerConn = 0;
+          $ReqPerConn = 0;
         }
     }
     if (defined ($o_debug)) {
