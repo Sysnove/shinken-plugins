@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# Important : This scripts checks stuff that should be OK 99.99999% of the time
+#
 
 if [ -d /usr/lib/nagios/plugins ]; then
     NAGIOS_PLUGINS=/usr/lib/nagios/plugins
@@ -8,6 +11,28 @@ fi
 
 set -e
 set -o pipefail
+
+
+#TEST_GRUB=true
+#TEST_RELEASE=true
+TEST_IMAP=true
+#TEST_NTP=true
+#TEST_INOTIFY=true
+#TEST_CRON=true
+TEST_SENSORS=true
+
+
+while test $# -gt 0
+do
+    case "$1" in
+        --no-imap) TEST_IMAP=false
+            ;;
+        --no-sensors) TEST_SENSORS=false
+            ;;
+    esac
+    shift
+done
+
 
 if [ -f /etc/debian_version ] ; then
     if ! [ -f /boot/grub/grub.cfg ] ; then
@@ -28,9 +53,11 @@ if lsb_release -d | grep -Eq '(Ubuntu|Debian)'; then
     fi
 fi
 
-if ! $NAGIOS_PLUGINS/check_tcp -H imap.snmail.fr -p 587 -t 1 > /dev/null; then
-    echo "CRITICAL - Could not connect to imap.snmail.fr:587"
-    exit 2
+if $TEST_IMAP; then
+    if ! $NAGIOS_PLUGINS/check_tcp -H imap.snmail.fr -p 587 -t 1 > /dev/null; then
+        echo "CRITICAL - Could not connect to imap.snmail.fr:587"
+        exit 2
+    fi
 fi
 
 (
@@ -38,8 +65,10 @@ $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_cron_log.sh
 
-if ! systemd-detect-virt -q; then
-    $NAGIOS_PLUGINS/check_sensors
+if $TEST_SENSORS; then
+    if ! systemd-detect-virt -q; then
+        $NAGIOS_PLUGINS/check_sensors
+    fi
 fi
 
 echo "OK - Everything is Awesome"
