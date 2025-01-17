@@ -92,11 +92,11 @@ last_check=-1
 # shellcheck disable=SC1090
 source "$LAST_RUN_FILE"
 
-new_count2=$old_count2
-new_count3=$old_count3
-new_count4=$old_count4
-new_count499=$old_count499
-new_count5=$old_count5
+new_count2=0
+new_count3=0
+new_count4=0
+new_count499=0
+new_count5=0
 # shellcheck disable=SC2086
 new_countall=$(wc -l $LOGS | tail -n 1 | awk '{print $1}')
 now=$(date +%H:%M:%S)
@@ -155,6 +155,12 @@ count4=$((new_count4 - old_count4))
 count499=$((new_count499 - old_count499))
 count5=$((new_count5 - old_count5))
 countall=$((new_countall - old_countall))
+
+[ $count2 -lt 0 ] && count2=0
+[ $count3 -lt 0 ] && count3=0
+[ $count4 -lt 0 ] && count4=0
+[ $count499 -lt 0 ] && count499=0
+[ $count5 -lt 0 ] && count5=0
 
 pourcent2=0
 pourcent3=0
