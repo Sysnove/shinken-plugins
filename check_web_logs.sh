@@ -92,11 +92,11 @@ last_check=-1
 # shellcheck disable=SC1090
 source "$LAST_RUN_FILE"
 
-new_count2=0
-new_count3=0
-new_count4=0
-new_count499=0
-new_count5=0
+new_count2=$old_count2
+new_count3=$old_count3
+new_count4=$old_count4
+new_count499=$old_count499
+new_count5=$old_count5
 # shellcheck disable=SC2086
 new_countall=$(wc -l $LOGS | tail -n 1 | awk '{print $1}')
 now=$(date +%H:%M:%S)
