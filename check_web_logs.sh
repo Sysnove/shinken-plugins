@@ -101,24 +101,28 @@ new_count5=0
 new_countall=$(wc -l $LOGS | tail -n 1 | awk '{print $1}')
 now=$(date +%H:%M:%S)
 
-IFS=$'\n'
-# shellcheck disable=SC2086
-for line in $(grep -v 'check_websites_security' $LOGS | grep -o '" [2-5].. ' | cut -d ' ' -f 2 | sort | uniq -c); do
-    code=$(echo $line | awk '{print $2}')
-    count=$(echo $line | awk '{print $1}')
-    if [[ "$code" == 2* ]]; then
-        new_count2=$((new_count2 + count))
-    elif [[ "$code" == 3* ]]; then
-        new_count3=$((new_count3 + count))
-    elif [[ "$code" == 4* ]]; then
-        new_count4=$((new_count4 + count))
-        if [ $code -eq 499 ]; then
-            count499=$((new_count499 + count))
+# :COMMENT:maethor:20250117: When files become too big, `grep -o '" [2-5].. '` becomes very slow
+# So we bypass this
+if [ "$new_countall" -lt 1000000 ]; then
+    IFS=$'\n'
+    # shellcheck disable=SC2086
+    for line in $(grep -v 'check_websites_security' $LOGS | grep -o '" [2-5].. ' | cut -d ' ' -f 2 | sort | uniq -c); do
+        code=$(echo $line | awk '{print $2}')
+        count=$(echo $line | awk '{print $1}')
+        if [[ "$code" == 2* ]]; then
+            new_count2=$((new_count2 + count))
+        elif [[ "$code" == 3* ]]; then
+            new_count3=$((new_count3 + count))
+        elif [[ "$code" == 4* ]]; then
+            new_count4=$((new_count4 + count))
+            if [ $code -eq 499 ]; then
+                count499=$((new_count499 + count))
+            fi
+        elif [[ "$code" == 5* ]]; then
+            new_count5=$((new_count5 + count))
         fi
-    elif [[ "$code" == 5* ]]; then
-        new_count5=$((new_count5 + count))
-    fi
-done
+    done
+fi
 
 echo "
 old_count2=$new_count2
