@@ -12,8 +12,24 @@ elif [ $ret -ne 0 ]; then
     exit 2
 fi
 
-# Check if daemon has been upgraded.
+# Check if docker uid and gid matches what's expected
+if [ -d "/srv/docker-data" ]; then
+    docker_data_uid=$(stat -c '%u' /srv/docker-data)
+    docker_data_gid=$(stat -c '%u' /srv/docker-data)
+    docker_uid="$(id -u docker)"
+    docker_gid="$(id -g docker)"
 
+    if [ "$docker_data_uid" != "$docker_uid" ]; then
+        echo "CRITICAL - docker uid ($docker_uid) != /srv/docker-data uid ($docker_data_uid)"
+        exit 2
+    fi
+    if [ "$docker_data_gid" != "$docker_gid" ]; then
+        echo "CRITICAL - docker gid ($docker_gid) != /srv/docker-data gid ($docker_data_gid)"
+        exit 2
+    fi
+fi
+
+# Check if daemon has been upgraded.
 if ! readlink -e "/proc/$(< /var/run/docker.pid)/exe" > /dev/null; then
     echo "CRITICAL - Docker has been upgraded, please schedule a service restart."
     exit 2
