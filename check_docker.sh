@@ -15,7 +15,7 @@ fi
 # Check if docker uid and gid matches what's expected
 if [ -d "/srv/docker-data" ]; then
     docker_data_uid=$(stat -c '%u' /srv/docker-data)
-    docker_data_gid=$(stat -c '%u' /srv/docker-data)
+    docker_data_gid=$(stat -c '%g' /srv/docker-data)
     docker_uid="$(id -u docker)"
     docker_gid="$(id -g docker)"
 
