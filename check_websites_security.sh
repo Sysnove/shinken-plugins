@@ -4,8 +4,11 @@ tmp_file=$(mktemp "/tmp/$(basename "$0").XXXXXX")
 trap 'rm -f -- "$tmp_file"' EXIT
 
 check_url() {
-    if LC_ALL=C curl -A "Sysnove check_websites_security" --max-time 5 -sIL -X GET "$1" | grep '^HTTP' | tail -n 1 | grep -q 200; then
-        echo "$2 : $1 is readable" >> "$tmp_file"
+    resp=$(LC_ALL=C curl -A "Sysnove check_websites_security" --max-time 5 -sIL -X GET "$1")
+    if echo "$resp" | grep '^HTTP' | tail -n 1 | grep -q 200; then
+        if echo "$resp" | grep -i '^content-type: ' | tail -n 1 | grep -q 'text/html'; then
+            echo "$2 : $1 is readable" >> "$tmp_file"
+        fi
     fi
 }
 
