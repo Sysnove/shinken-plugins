@@ -19,6 +19,8 @@ check_website() {
     check_url "http://$website/.git/config" WARNING
     check_url "http://$website/var/log/system.log" WARNING
     check_url "http://$website/.env" CRITICAL
+    check_url "http://$website/.env.local" CRITICAL
+    check_url "http://$website/.env.production" CRITICAL
 }
 
 if [ -d "/usr/local/ispconfig" ]; then
