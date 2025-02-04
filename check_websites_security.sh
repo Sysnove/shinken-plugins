@@ -3,17 +3,9 @@
 tmp_file=$(mktemp "/tmp/$(basename "$0").XXXXXX")
 trap 'rm -f -- "$tmp_file"' EXIT
 
-critical () {
-    echo "CRITICAL : $1" >> "$tmp_file"
-}
-
-warning () {
-    echo "WARNING : $1" >> "$tmp_file"
-}
-
 check_url() {
     if LC_ALL=C curl -A "Sysnove check_websites_security" --max-time 5 -sIL -X GET "$1" | grep '^HTTP' | tail -n 1 | grep -q 200; then
-        echo "$2 : $1 is readable."
+        echo "$2 : $1 is readable" >> "$tmp_file"
     fi
 }
 
