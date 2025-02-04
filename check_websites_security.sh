@@ -21,6 +21,7 @@ check_website() {
     check_url "http://$website/.env" CRITICAL
     check_url "http://$website/.env.local" CRITICAL
     check_url "http://$website/.env.production" CRITICAL
+    check_url "http://$website/dump.sql" CRITICAL
 }
 
 if [ -d "/usr/local/ispconfig" ]; then
