@@ -11,20 +11,19 @@ warning () {
     echo "WARNING : $1" >> "$tmp_file"
 }
 
+check_url() {
+    if LC_ALL=C curl -A "Sysnove check_websites_security" --max-time 5 -sIL -X GET "$1" | grep '^HTTP' | tail -n 1 | grep -q 200; then
+        echo "$2 : $1 is readable."
+    fi
+}
+
 check_website() {
     website=$1
-    if LC_ALL=C curl --max-time 5 -sL -A "Sysnove check_websites_security" "http://$website/.htaccess" | grep -Eq '(Rewrite|IfModule|SetEnv|Auth(Type|Name|UserFile)) '; then
-        warning "http://$website/.htaccess is readable."
-    fi
 
-    if LC_ALL=C curl --max-time 5 -sL -A "Sysnove check_websites_security" "http://$website/.git/config" | grep -q '\[branch'; then
-        critical "http://$website/.git/config is readable."
-    fi
-
-    if LC_ALL=C curl --max-time 5 -sL -A "Sysnove check_websites_security" "http://$website/.env" | grep '(_DB|DB_|HOST|PORT|REDIS|MONGO|MYSQL|environment|ENVIRONMENT)'; then
-        critical "http://$website/.env is readable."
-    fi
-
+    check_url "http://$website/.htaccess" WARNING
+    check_url "http://$website/.git/config" WARNING
+    check_url "http://$website/var/log/system.log" WARNING
+    check_url "http://$website/.env" CRITICAL
 }
 
 if [ -d "/usr/local/ispconfig" ]; then
