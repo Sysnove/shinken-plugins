@@ -60,6 +60,8 @@ if $TEST_IMAP; then
     fi
 fi
 
+(
+set +e
 varnish_vcl=$(ps faux | grep varnishd | grep -Eo '\-f .*\.vcl' | head -n 1 | cut -d ' ' -f 2)
 if [ -f "$varnish_vcl" ]; then
     if grep -q -E ' *.probe = {' $varnish_vcl; then
@@ -67,6 +69,7 @@ if [ -f "$varnish_vcl" ]; then
         exit 2
     fi
 fi
+)
 
 (
 $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
