@@ -60,6 +60,14 @@ if $TEST_IMAP; then
     fi
 fi
 
+varnish_vcl=$(ps faux | grep varnishd | grep -Eo '\-f .*\.vcl' | head -n 1 | cut -d ' ' -f 2)
+if [ -f "$varnish_vcl" ]; then
+    if grep -q -E ' *.probe = {' $varnish_vcl; then
+        echo "CRITICAL - Probe should be disabled in $varnish_vcl"
+        exit 2
+    fi
+fi
+
 (
 $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh | cut -d '|' -f 1
