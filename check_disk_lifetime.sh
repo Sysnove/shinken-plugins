@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DISK=$1
+RAID_DEVICE=$2
 
 THRESHOLD=7
 [ -n "$2" ] && THRESHOLD="$2"
@@ -27,9 +28,20 @@ if ! [ -e "$DISK" ]; then
     exit $E_UNKNOWN
 fi
 
-if grep -q 1 /sys/block/"$(basename "$DISK")"/queue/rotational; then
-    echo "OK - $DISK is rotational"
-    exit $E_OK
+if [ -z "$RAID_DEVICE" ]; then
+    if grep -q 1 /sys/block/"$(basename "$DISK")"/queue/rotational; then
+        echo "OK - $DISK is rotational"
+        exit $E_OK
+    fi
+
+    # Smartctl sometimes returns != 0 
+    #if ! smartctl=$(sudo /usr/sbin/smartctl -a "$DISK"); then
+        #echo "UNKNOWN - smartctl: $smartctl"
+        #exit $E_UNKNOWN
+    #fi
+    smartctl=$(sudo /usr/sbin/smartctl -a "$DISK")
+else
+    smartctl=$(sudo /usr/sbin/smartctl -a -d "$RAID_DEVICE" "$DISK")
 fi
 
 LAST_RUN_FILE=/var/tmp/nagios/check_disk_lifetime_last_run_$(basename "$DISK")
@@ -51,13 +63,6 @@ last_output=""
 status=$E_UNKNOWN
 
 now=$(date +%s)
-
-# Smartctl sometimes returns != 0 
-#if ! smartctl=$(sudo /usr/sbin/smartctl -a "$DISK"); then
-    #echo "UNKNOWN - smartctl: $smartctl"
-    #exit $E_UNKNOWN
-#fi
-smartctl=$(sudo /usr/sbin/smartctl -a "$DISK")
 
 if $nvme; then
     used=$(echo "$smartctl" | grep "Percentage Used:" | awk '{print $3}' | sed 's/%$//g')
