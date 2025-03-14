@@ -1,74 +1,44 @@
 #!/bin/bash
 
-THRESHOLD=7
-[ -n "$1" ] && THRESHOLD="$1"
-
-E_OK=0
-E_UNKNOWN=3
-
-WARNINGS=()
-IGNORED=()
-LAST_WARNING=""
+OKS=()
+NOKS=()
 PERFDATA=""
-REMAINS=()
-RET=$E_OK
 
 set -o pipefail
+
 (
-# shellcheck disable=SC2010
-for DEVICE in $(ls /sys/block | grep -Ev '^(sr|vd|fd)'); do
-    if [ -L "/sys/block/$DEVICE/device" ]; then
+while read -r line; do
+    device=$(echo "$line" | cut -d '_' -f 4 | cut -d ']' -f 1)
+    check_command=$(echo "$line" | cut -d '=' -f 2)
 
-    if [[ "$DEVICE" =~ sd ]]; then
-        true
-    elif [[ "$DEVICE" =~ nvme ]]; then
-        # /dev/nvme1n1 -> /dev/nvme1
-        DEVICE=$(echo "$DEVICE" | grep -o '^[a-z/]*[0-9]')
+    out=$($check_command)
+    ret=$?
+
+    if [ $ret -eq 0 ]; then
+        OKS+=("$device")
     else
-        echo "UNKOWN - $DEVICE is not sd nor nvme"
-        exit $E_UNKNOWN
+        NOKS+=("$device")
     fi
 
-        DEVPATH=$(echo "/dev/$DEVICE" | sed 's#!#/#g')
-        out=$(/usr/local/nagios/plugins/check_disk_lifetime.sh "$DEVPATH" "$THRESHOLD")
-        ret=$?
+    if echo "$out" | grep -q '|'; then
+        perfdata=$(echo "$out" | cut -d '|' -f 2 | sed "s#=#_$device=#g")
+        main=$(echo "$out" | cut -d '|' -f 1)
+        PERFDATA="$PERFDATA $perfdata"
 
-        if [ $ret -eq 3 ]; then
-            echo "$out"
-            exit 3
-        fi
-        
-        if echo "$out" | grep -q ' | ' ; then
-            perfdata=$(echo "$out" | cut -d '|' -f 2 | sed "s#=#_$DEVPATH=#g")
-            PERFDATA="$PERFDATA $perfdata"
-            REMAINS+=("$DEVICE=$(echo "$perfdata" | grep -Eo '[0-9]+%')")
-            
-            if [ $ret -eq 1 ]; then
-                RET=$ret
-                WARNINGS+=("$DEVPATH")
-                LAST_WARNING="$(echo "$out" | cut -d '|' -f 1)"
-                echo "$LAST_WARNING"
-            fi
-        else
-            echo "$out"
-            IGNORED+=("$DEVPATH")
-        fi
+        echo "$main"
+    else
+        echo "$out"
     fi
-done
+done < <(grep check_disk_lifetime /etc/nagios/nrpe.d/nrpe_physical.cfg | grep -v check_dummy)
 
-if [ ${#IGNORED[@]} -gt 0 ]; then
-    IGNORED_STR=" (ignored: ${IGNORED[*]})"
-fi
-
-if [ ${#REMAINS[@]} -eq 0 ]; then
-    echo "OK - No disk to check$IGNORED_STR"
-elif [ $RET -eq 0 ]; then
-    echo "OK - Disks lifetime are OK (${REMAINS[*]})$IGNORED_STR | $PERFDATA"
-elif [ ${#WARNINGS[@]} -eq 1 ]; then
-    echo "$LAST_WARNING | $PERFDATA"
+if [ ${#NOKS[@]} -eq 0 ]; then
+    echo "OK: [${OKS[*]}] are all clean | $PERFDATA"
+    exit 0
+elif [ ${#NOKS[@]} -eq 1 ]; then
+    echo "WARNING: ${NOKS[*]} is not OK | $PERFDATA"
+    exit 1
 else
-    echo "WARNING : ${WARNINGS[*]} have lost more than 1% lifetime in less than $THRESHOLD days (${REMAINS[*]})$IGNORED_STR | $PERFDATA"
+    echo "CRITICAL: [${NOKS[*]}] are not OK | $PERFDATA"
+    exit 2
 fi
-
-exit $RET
 ) | tac # Shinken uses the first line as the main output, so we need to inverse the output
