@@ -47,7 +47,7 @@ check_url() {
     fi
     fi
     if ! [ -f "$url_tmp_file" ]; then
-        LC_ALL=C curl -A "Sysnove check_websites_security" --max-time 2 -sI -X GET --resolve "$domain:$port:127.0.0.1" "$url" > "$url_tmp_file"
+        LC_ALL=C curl -A "Sysnove check_websites_security" --max-time 15 -sI -X GET --resolve "$domain:$port:127.0.0.1" "$url" > "$url_tmp_file"
         echo "$url" >> "$tmp_checked"
         if grep -q '^HTTP.*200' "$url_tmp_file"; then
             if ! grep -iq '^content-type: text/html' "$url_tmp_file"; then
