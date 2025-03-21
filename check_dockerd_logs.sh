@@ -75,7 +75,8 @@ tmpfile="/tmp/$$.tmp"
 /usr/local/bin/dategrep -format "${DATEFORMAT}" --start "$since" "$LOG_FILE" > $tmpfile
 
 total=$(wc -l < $tmpfile)
-errors=$(grep -c 'level=error' $tmpfile)
+# Exclude "Inconsistent driver and libnetwork state for endpoint" because there is nothing we can do about it
+errors=$(grep -v 'Inconsistent driver and libnetwork state for endpoint' $tmpfile | grep -c 'level=error')
 warnings=$(grep -c 'level=warning' $tmpfile)
 infos=$(grep -c 'level=info' $tmpfile)
 debug=$(grep -c 'level=debug' $tmpfile)
