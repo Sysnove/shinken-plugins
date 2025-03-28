@@ -6,7 +6,6 @@ else
     NAGIOS_PLUGINS=/usr/lib64/nagios/plugins
 fi
 
-set -e
 set -o pipefail
 
 check_tmp_rw(){
@@ -16,8 +15,18 @@ check_tmp_rw(){
 }
 
 (
+# Because check_disk hangs when NFS/SSHFS/CIFS mount point are stale
+# https://github.com/monitoring-plugins/monitoring-plugins/issues/1975
+# We timeout after 2s and we simply ignore this check if check_disk times out
+# TODO Remove when bug is fixed
+timeout 2 $NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_disk_full | sed 's/|.*//g'
+ret="$?"
+if [ "$ret" -gt 0 ] && [ "$ret" != 124 ]; then
+    exit $ret
+fi
+
+set -e
 check_tmp_rw
-$NAGIOS_PLUGINS/check_nrpe -4 -H localhost -c check_disk_full | sed 's/|.*//g'
 
 for dbms in mysql pg mongodb redis; do
     if grep -q "command\[check_${dbms}_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
