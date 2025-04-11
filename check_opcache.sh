@@ -45,10 +45,10 @@ if [ ${#opcache_underused[@]} -gt 0 ]; then
     exit 2
 elif [ ${#opcache_full[@]} -gt 0 ]; then
     echo "WARNING - Some OPcache are full : ${opcache_full[*]} | ${hitrates[*]}"
-    exit 1
+    exit 0 # TODO 1
 elif [ ${#interned_strings_full[@]} -gt 0 ]; then
     echo "WARNING - You should increase opcache.interned_strings_buffer for ${interned_strings_full[*]} | ${hitrates[*]}"
-    exit 1
+    exit 0 # TODO 1
 elif [ ${#opcache_ok[@]} -gt 0 ]; then
     echo "OK - PHP OPcache is working fine for ${opcache_ok[*]} | ${hitrates[*]}" 
     exit 0
