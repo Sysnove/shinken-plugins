@@ -90,6 +90,9 @@ last_check=$now
     varnishbackends=$(varnishadm backend.list | tail -n +2 | awk 'NF')
     varnishbackends_total=$(echo "$varnishbackends" | wc -l)
     varnishbackends_healthy=$(echo "$varnishbackends" | awk '{print $4}' | grep "healthy" -c)
+    if [ "$varnishbackends_healthy" -eq 0 ]; then # Varnish 5
+        varnishbackends_healthy=$(echo "$varnishbackends" | awk '{print $3}' | grep "Healthy" -c)
+    fi
 
     if [ "$varnishbackends_healthy" -eq "$varnishbackends_total" ] && [ "$varnishbackends_healthy" -gt 0 ]; then
         echo "Varnish OK : $period_hit requests in ${period_s} seconds (cache hitrate ${hitrate}%, ${n_object} objects) | $perfdata"
