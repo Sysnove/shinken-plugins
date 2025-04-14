@@ -85,7 +85,19 @@ last_check=$now
         reqpersec=0
     fi
 
-    echo "Varnish OK : $period_hit requests in ${period_s} seconds (cache hitrate ${hitrate}%, ${n_object} objects) | ReqPerSec=$reqpersec CacheHitrate=${hitrate}% Objects=${n_object}"
+    perfdata="ReqPerSec=$reqpersec CacheHitrate=${hitrate}% Objects=${n_object}"
+
+    varnishbackends=$(varnishadm backend.list | tail -n +2 | awk 'NF')
+    varnishbackends_total=$(echo "$varnishbackends" | wc -l)
+    varnishbackends_healthy=$(echo "$varnishbackends" | awk '{print $4}' | grep "healthy" -c)
+
+    if [ "$varnishbackends_healthy" -eq "$varnishbackends_total" ] && [ "$varnishbackends_healthy" -gt 0 ]; then
+        echo "Varnish OK : $period_hit requests in ${period_s} seconds (cache hitrate ${hitrate}%, ${n_object} objects) | $perfdata"
+        exit 0
+    else
+        echo "Varnish CRITICAL : $varnishbackends_healthy/$varnishbackends_total healthy backends | $perfdata"
+        exit 2
+    fi
 else
     echo "UNKNOWN : varnishstat returned code $? : $varnishstat"
     exit 3
