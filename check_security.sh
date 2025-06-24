@@ -168,7 +168,7 @@ fi
 if $CHECK_DBS; then
     if grep -q "command\[check_mysql_connection\]" /etc/nagios/nrpe.d/nrpe_local.cfg; then
         for user in $(sudo mysql -se 'select User from mysql.user;' | grep -Ev '^(enove|mariadb\.sys|mysql)$'); do
-            if sudo -u nagios mysql -u "$user" --password="$user" -e 'show databases' > /dev/null 2>&1; then
+            if mysql -u "$user" --password="$user" -e 'show databases' > /dev/null 2>&1; then
                 critical "MySQL $user's password is $user"
             fi
         done
