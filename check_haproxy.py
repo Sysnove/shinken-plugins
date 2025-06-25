@@ -297,7 +297,7 @@ def check_instance(frontends: list, backends: list, servers: list, args: Argumen
         sessions["frontend_current"] += frontend.sessions
 
         if frontend.state != "OPEN":
-            errors += f'Warn: frontend { frontend.name } is { frontend.state }, '
+            errors.append(f'Warn: frontend { frontend.name } is { frontend.state }')
             state = set_state(1, state)
 
         if frontend.sessionlimit is not None:
@@ -317,7 +317,7 @@ def check_instance(frontends: list, backends: list, servers: list, args: Argumen
         sessions["backend_current"] += backend.sessions
 
         if backend.state != "UP":
-            errors += f'Warn: backend { backend.name } is { backend.state }, '
+            errors.append(f'Warn: backend { backend.name } is { backend.state }')
             state = set_state(1, state)
 
         if backend.sessionlimit is not None:
