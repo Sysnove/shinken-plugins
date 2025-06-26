@@ -53,6 +53,11 @@ if lsb_release -d | grep -Eq '(Ubuntu|Debian)'; then
     fi
 fi
 
+if [ ! -d /etc/.git ] ; then
+    echo "CRITICAL - No /etc/.git, etckeeper is not working"
+    exit 2
+fi
+
 if $TEST_IMAP; then
     if ! $NAGIOS_PLUGINS/check_tcp -H imap.snmail.fr -p 587 -t 1 > /dev/null; then
         echo "CRITICAL - Could not connect to imap.snmail.fr:587"
