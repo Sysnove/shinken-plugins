@@ -223,7 +223,7 @@ run_whois() {
     fi
 
     # We need to try up to 10 times because whois can be unreliable
-    if [ $error -ne 0 ] || grep -q "Registry Expiry Date" "$outfile"; then
+    if [ $error -ne 0 ] && ! grep -q "Registry Expiry Date" "$outfile"; then
         if [ $WHOIS_CALLS -gt 10 ]; then
             die "$STATE_UNKNOWN" "UNKNOWN - WHOIS exited with error $error."
         fi
