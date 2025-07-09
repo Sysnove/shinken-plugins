@@ -117,7 +117,7 @@ if [ "$count_ignored" -gt 0 ]; then
     msg_ignored=" ($count_ignored ignored)"
 fi
 
-if [ -n "$count" ]; then
+if [ "$count" -gt 0 ]; then
     echo "WARNING - $count dangerous containers running in docker (${msg::-2})$msg_ignored"
     exit 1
 fi
