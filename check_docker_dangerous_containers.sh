@@ -79,9 +79,11 @@ while read -r name image ports; do
     while read -r port; do
         exposed="$(sed -nE "s/.*:([0-9]+)->.*/\1/p" <<< "$port")"
 
-        if [ -n "$exposed" ]; then
+        if grep -E "^(22|80|443|5666)$" <<< "$port"; then
             echo "Container $name is exposing port $exposed." >&2
             count_ports=$((count_ports + 1))
+            count=$((count + 1))
+            continue
         fi
     done <<< "$ports"
 
