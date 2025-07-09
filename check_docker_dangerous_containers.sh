@@ -32,11 +32,13 @@ while read name image ports; do
 
     # Filter out known wanted containers
     if grep -qE "^(base_mongo_proxy|registry_portus_mariadb|drone-)" <<< "$name"; then
+        echo "Ignoring well known $name." >&2
         continue
     fi
 
     # Filter out excludes
     if [ -n "$ignored_names" ] && grep -qE "^$ignored_names(\..*)?$" <<< "$name"; then
+        echo "Ignoring $name by argument." >&2
         count_ignored=$((count_ignored + 1))
         continue
     fi
