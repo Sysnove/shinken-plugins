@@ -13,6 +13,7 @@ declare count_couchbase=0
 declare count_couchdb=0
 declare count_mongo=0
 declare count_elasticsearch=0
+declare count_ports=0
 
 # Get containers
 containers="$(timeout 5 docker ps --format "{{ .Names }} {{ .Image }} {{ .Ports }}" 2>/dev/null)"
@@ -72,6 +73,18 @@ while read -r name image ports; do
             ;;
     esac
 
+    # Check ports
+    ports="$(sed -E "s/, /\n/g" <<< "$ports")"
+
+    while read -r port; do
+        exposed="$(sed -nE "s/.*:([0-9]+)->.*/\1/p" <<< "$port")"
+
+        if [ -n "$exposed" ]; then
+            echo "Container $name is exposing port $exposed." >&2
+            count_ports=$((count_ports + 1))
+        fi
+    done <<< "$ports"
+
     count_total=$((count_total + 1))
 done <<< "$containers"
 
@@ -93,6 +106,9 @@ if [ "$count_mongo" -gt 0 ]; then
 fi
 if [ "$count_elasticsearch"  -gt 0 ]; then
     msg="$msg$count_elasticsearch elasticsearch, "
+fi
+if [ "$count_ports" -gt 0 ]; then
+    msg="$msg$count_ports exposing not allowed ports (22, 80, 443, 5666), "
 fi
 
 if [ "$count_ignored" -gt 0 ]; then
