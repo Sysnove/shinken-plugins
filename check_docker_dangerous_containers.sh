@@ -76,22 +76,22 @@ while read -r name image ports; do
 done <<< "$containers"
 
 msg=''
-if [ -n "$count_pg" ]; then
+if [ "$count_pg" -gt 0 ]; then
     msg="$msg$count_pg postgres, "
 fi
-if [ -n "$count_mysql" ]; then
+if [ "$count_mysql" -gt 0 ]; then
     msg="$msg$count_mysql mysql, "
 fi
-if [ -n "$count_couchbase" ]; then
+if [ "$count_couchbase" -gt 0 ]; then
     msg="$msg$count_couchbase couchbase, "
 fi
-if [ -n "$count_couchdb" ]; then
+if [ "$count_couchdb" -gt 0 ]; then
     msg="$msg$count_couchdb couchdb, "
 fi
-if [ -n "$count_mongo" ]; then
+if [ "$count_mongo" -gt 0 ]; then
     msg="$msg$count_mongo mongo, "
 fi
-if [ -n "$count_elasticsearch" ]; then
+if [ "$count_elasticsearch"  -gt 0 ]; then
     msg="$msg$count_elasticsearch elasticsearch, "
 fi
 
