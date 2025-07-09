@@ -32,7 +32,8 @@ while read -r name image ports; do
     echo "Handling $name ($image)." >&2
 
     # Filter out known wanted containers
-    if grep -qE "^(base_|registry_)" <<< "$name"; then
+    # Note: drone- containers are workers launched by drone CI.
+    if grep -qE "^(base_|registry_|drone-)" <<< "$name"; then
         echo "Ignoring well known $name." >&2
         continue
     fi
