@@ -32,7 +32,7 @@ while read -r name image ports; do
     echo "Handling $name ($image)." >&2
 
     # Filter out known wanted containers
-    if grep -qE "^(base_mongo_proxy|registry_portus_mariadb|drone-)" <<< "$name"; then
+    if grep -qE "^(base_|registry_)" <<< "$name"; then
         echo "Ignoring well known $name." >&2
         continue
     fi
