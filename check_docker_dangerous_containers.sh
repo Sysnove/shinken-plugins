@@ -27,7 +27,7 @@ elif [ $ret -ne 0 ]; then
     exit 2
 fi
 
-while read name image ports; do
+while read -r name image ports; do
     echo "Handling $name ($image)." >&2
 
     # Filter out known wanted containers
