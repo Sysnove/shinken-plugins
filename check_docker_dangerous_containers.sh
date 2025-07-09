@@ -5,9 +5,17 @@ if [ "$1" == "-i" ]; then
 fi
 
 # Find docker containers based on dangerous images, like postgresql
+declare count=0
+declare count_ignored=0
+declare count_pg=0
+declare count_mysql=0
+declare count_couchbase=0
+declare count_couchdb=0
+declare count_mongo=0
+declare count_elasticsearch=0
 
 # Get containers
-containers="$(timeout 5 docker ps --format "{{.Names}}" 2>/dev/null)"
+containers="$(timeout 5 docker ps --format "{{ .Names }} {{ .Image }} {{ .Ports }}" 2>/dev/null)"
 ret=$?
 
 # Check if daemon is reachable
@@ -19,53 +27,51 @@ elif [ $ret -ne 0 ]; then
     exit 2
 fi
 
-# Filter out known wanted containers
-containers=$(echo "$containers" | grep -E -v "^(base_mongo_proxy|registry_portus_mariadb|drone-)")
+while read name image ports; do
+    echo "Handling $name ($image)." >&2
 
-# Filter out excludes
-if [ -n "$ignored_names" ]; then
-    count_ignored=$(echo "$containers" | grep -E -c "^$ignored_names(\..*)?$")
-    containers=$(echo "$containers" | grep -E -v "^$ignored_names(\..*)?$")
-else
-    count_ignored=0
-fi
+    # Filter out known wanted containers
+    if grep -qE "^(base_mongo_proxy|registry_portus_mariadb|drone-)" <<< "$name"; then
+        continue
+    fi
 
+    # Filter out excludes
+    if [ -n "$ignored_names" ] && grep -qE "^$ignored_names(\..*)?$" <<< "$name"; then
+        count_ignored=$((count_ignored + 1))
+        continue
+    fi
 
-# Get images
-images=$(echo "$containers" | xargs docker container inspect --format "{{ .Config.Image }}")
-
-for image in $images; do
     image_name=$(basename "$image" | cut -d':' -f1)
 
     case $image_name in
         postgres | postgis)
-            count_pg=$((count_pg+1))
-            count=$((count+1))
+            count_pg=$((count_pg + 1))
+            count=$((count + 1))
             ;;
         mysql | mariadb)
-            count_mysql=$((count_mysql+1))
-            count=$((count+1))
+            count_mysql=$((count_mysql + 1))
+            count=$((count + 1))
             ;;
         counchbase)
-            count_couchbase=$((count_couchbase+1))
-            count=$((count+1))
+            count_couchbase=$((count_couchbase + 1))
+            count=$((count + 1))
             ;;
         counchdb)
-            count_couchdb=$((count_couchbase+1))
-            count=$((count+1))
+            count_couchdb=$((count_couchbase + 1))
+            count=$((count + 1))
             ;;
         mongo)
-            count_mongo=$((count_mongo+1))
-            count=$((count+1))
+            count_mongo=$((count_mongo + 1))
+            count=$((count + 1))
             ;;
         elasticsearch)
-            count_elasticsearch=$((count_elasticsearch+1))
-            count=$((count+1))
+            count_elasticsearch=$((count_elasticsearch + 1))
+            count=$((count + 1))
             ;;
     esac
 
-    count_total=$((count_total+1))
-done
+    count_total=$((count_total + 1))
+done <<< "$containers"
 
 msg=''
 if [ -n "$count_pg" ]; then
