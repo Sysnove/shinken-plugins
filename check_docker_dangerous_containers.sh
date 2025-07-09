@@ -79,11 +79,11 @@ while read -r name image ports; do
     while read -r port; do
         exposed="$(sed -nE "s/.*:([0-9]+)->.*/\1/p" <<< "$port")"
 
-        if grep -E "^(22|80|443|5666)$" <<< "$port"; then
+        if grep -qE "^(22|80|443|5666)$" <<< "$exposed"; then
             echo "Container $name is exposing port $exposed." >&2
             count_ports=$((count_ports + 1))
             count=$((count + 1))
-            continue
+            break
         fi
     done <<< "$ports"
 
@@ -110,7 +110,7 @@ if [ "$count_elasticsearch"  -gt 0 ]; then
     msg="$msg$count_elasticsearch elasticsearch, "
 fi
 if [ "$count_ports" -gt 0 ]; then
-    msg="$msg$count_ports exposing not allowed ports (22, 80, 443, 5666), "
+    msg="$msg$count_ports exposing not allowed ports (22, 80, 443 or 5666), "
 fi
 
 if [ "$count_ignored" -gt 0 ]; then
