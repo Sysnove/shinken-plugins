@@ -185,9 +185,12 @@ fi
 
 if [ $RET -eq 0 ]; then
     if $CHECK_WEB; then
-        /usr/local/nagios/plugins/check_websites_security.sh
+        timeout 50 /usr/local/nagios/plugins/check_websites_security.sh
         web_security_ret="$?"
-        if [ "$web_security_ret" -eq 3 ]; then
+        if [ "$web_security_ret" -eq 124 ]; then
+            echo "UNKNOWN : /usr/local/nagios/plugins/check_websites_security.sh took more than 50s. Please check why."
+            exit 3
+        elif [ "$web_security_ret" -eq 3 ]; then
             RET=3
         elif [ "$web_security_ret" -eq 2 ]; then
             RET=2
