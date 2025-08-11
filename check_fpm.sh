@@ -10,6 +10,11 @@ pool_unknown=""
 
 ret=0
 
+if [ "$(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '=' -f 2 | wc -l)" -gt 80 ]; then
+    echo "UNKNOWN - More than 80 PHP-FPM pools. Cannot check all of them."
+    exit 3
+fi
+
 for sock in $(cat /etc/php*/**/fpm/pool.d/*.conf | grep '^listen =' | cut -d '=' -f 2) ; do
     config_file=$(grep -l "listen = $sock" /etc/php*/**/fpm/pool.d/*.conf)
     php_version=$(echo $config_file | cut -d '/' -f 4)
