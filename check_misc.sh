@@ -93,6 +93,9 @@ fi
 if $TEST_SENSORS; then
     if ! systemd-detect-virt -q; then
         $NAGIOS_PLUGINS/check_sensors
+        if [ -f $NAGIOS_PLUGINS/check_ipmi_sensor ]; then
+            $NAGIOS_PLUGINS/check_ipmi_sensor --nosel | cut -d '|' -f 1
+        fi
     fi
 fi
 
