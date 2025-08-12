@@ -65,9 +65,14 @@ if $TEST_IMAP; then
     fi
 fi
 
-if [ "$(grep 'cpu MHz' /proc/cpuinfo | awk '{sum+=$NF; nb+=1} END {printf "%3.0f\n", sum/nb}')" -lt 820 ]; then
-    echo "CRITICAL - CPU is running at 800Mhz. Could be an hardware problem. Please check impi-sensors."
-    exit 2
+if [ "$(grep 'cpu MHz' /proc/cpuinfo | awk '{sum+=$NF; nb+=1} END {printf "%.0f\n", sum/nb}')" -lt 820 ]; then
+    #echo "CRITICAL - CPU is running at 800Mhz. Could be an hardware problem. Please check impi-sensors."
+    #exit 2
+    if ! systemd-detect-virt -q; then
+        if [ -f $NAGIOS_PLUGINS/check_ipmi_sensor ] && [ -f /usr/sbin/ipmi-sensors ]; then
+            /usr/bin/sudo $NAGIOS_PLUGINS/check_ipmi_sensor --nosel -xT Entity_Presence,Voltage | cut -d '|' -f 1
+        fi
+    fi
 fi
 
 (
@@ -93,9 +98,6 @@ fi
 if $TEST_SENSORS; then
     if ! systemd-detect-virt -q; then
         $NAGIOS_PLUGINS/check_sensors
-        if [ -f $NAGIOS_PLUGINS/check_ipmi_sensor ] && [ -f /usr/sbin/ipmi-sensors ]; then
-            /usr/bin/sudo $NAGIOS_PLUGINS/check_ipmi_sensor --nosel -xT Entity_Presence,Voltage | cut -d '|' -f 1
-        fi
     fi
 fi
 
