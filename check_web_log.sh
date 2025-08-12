@@ -92,6 +92,7 @@ now=$(date +%s)
 
 echo "
 #LOGFILE=$LOGFILE
+#FILTER=$FILTER
 old_file_pos=$new_file_pos
 last_check=$now
 " > "$LAST_RUN_FILE"
@@ -104,7 +105,7 @@ begin=$new_file_pos
 end=$old_file_pos
 
 lines () {
-    head -n "$begin" "$LOGFILE" | tail --lines=+"$end" | grep -E "$FILTER"
+    strings "$LOGFILE" | head -n "$begin" | tail --lines=+"$end" | grep -E "$FILTER"
 }
 
 nb_lines=$(lines | wc -l)
