@@ -65,6 +65,11 @@ if $TEST_IMAP; then
     fi
 fi
 
+if [ "$(grep 'cpu MHz' /proc/cpuinfo | awk '{sum+=$NF; nb+=1} END {printf "%3.0f\n", sum/nb}')" -lt 820 ]; then
+    echo "CRITICAL - CPU is running at 800Mhz. Could be an hardware problem. Please check impi-sensors."
+    exit 2
+fi
+
 (
 set +e
 # shellcheck disable=SC2009
