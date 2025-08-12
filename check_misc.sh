@@ -71,7 +71,7 @@ if $TEST_SENSORS; then
         #exit 2
         if ! systemd-detect-virt -q; then
             if [ -f $NAGIOS_PLUGINS/check_ipmi_sensor ] && [ -f /usr/sbin/ipmi-sensors ]; then
-                /usr/bin/sudo $NAGIOS_PLUGINS/check_ipmi_sensor --nosel -xT Entity_Presence,Voltage | cut -d '|' -f 1
+                /usr/bin/sudo $NAGIOS_PLUGINS/check_ipmi_sensor --nosel -xT Entity_Presence,Voltage,Physical_Security,Management_Subsystem_Health | cut -d '|' -f 1
             fi
         fi
     fi
