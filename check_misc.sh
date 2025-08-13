@@ -65,17 +65,6 @@ if $TEST_IMAP; then
     fi
 fi
 
-if [ -f $NAGIOS_PLUGINS/check_ipmi_sensor ] && [ -f /usr/sbin/ipmi-sensors ] && ! systemd-detect-virt -q; then
-    if sudo /usr/sbin/ipmi-sensors > /dev/null 2>&1; then
-        cpu_min_freq="$(LC_ALL=C lscpu | grep "min MHz" | awk '{printf "%.0f\n", $NF + 20}')"
-        if [ "$(grep 'cpu MHz' /proc/cpuinfo | awk '{sum+=$NF; nb+=1} END {printf "%.0f\n", sum/nb}')" -lt "$cpu_min_freq" ]; then
-            #echo "CRITICAL - CPU is running at 800Mhz. Could be an hardware problem. Please check impi-sensors."
-            #exit 2
-            $NAGIOS_PLUGINS/check_ipmi_sensor --nosel -xT Entity_Presence,Voltage,Physical_Security,Management_Subsystem_Health | cut -d '|' -f 1
-        fi
-    fi
-fi
-
 (
 set +e
 # shellcheck disable=SC2009
@@ -96,11 +85,23 @@ if [ -f /etc/cron.d/ipinfo ]; then
     /usr/bin/sudo /usr/local/nagios/plugins/check_ipinfo_bl.sh
 fi
 
-if $TEST_SENSORS; then
-    if ! systemd-detect-virt -q; then
+if ! systemd-detect-virt -q; then
+    if $TEST_SENSORS; then
         $NAGIOS_PLUGINS/check_sensors
     fi
+
+    if [ -f $NAGIOS_PLUGINS/check_ipmi_sensor ] && [ -f /usr/sbin/ipmi-sensors ]; then
+        if sudo /usr/sbin/ipmi-sensors > /dev/null 2>&1; then
+            cpu_min_freq="$(LC_ALL=C lscpu | grep "min MHz" | awk '{printf "%.0f\n", $NF + 20}')"
+            if [ "$(grep 'cpu MHz' /proc/cpuinfo | awk '{sum+=$NF; nb+=1} END {printf "%.0f\n", sum/nb}')" -lt "$cpu_min_freq" ]; then
+                #echo "CRITICAL - CPU is running at 800Mhz. Could be an hardware problem. Please check impi-sensors."
+                #exit 2
+                $NAGIOS_PLUGINS/check_ipmi_sensor --nosel -xT Entity_Presence,Voltage,Physical_Security,Management_Subsystem_Health | cut -d '|' -f 1
+            fi
+        fi
+    fi
 fi
+
 
 echo "OK - Everything is Awesome"
 ) | tac # Shinken uses the first line as the main output, so we need to inverse the output
