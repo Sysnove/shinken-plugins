@@ -36,7 +36,7 @@ for service in $services; do
 done
 
 # Multi-instance postfix, check postfix@-
-if [ -f /lib/systemd/system/postfix@.service ]; then
+if [ -f /lib/systemd/system/postfix@.service ] && grep -q 'bookworm' /etc/debian_version; then
     service "postfix@-" status >/dev/null || down="$down postfix@-"
 fi
 
