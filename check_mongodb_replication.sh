@@ -38,8 +38,8 @@ if [ -e /usr/bin/mongosh ]; then
     [ -n "$PORT" ] && ARGS="$ARGS $HOST:$PORT"
     MONGOCLIENT=/usr/bin/mongosh
 else
-    [ -n "$HOST" ] && ARGS="$ARGS -H $HOST"
-    [ -n "$PORT" ] && ARGS="$ARGS -P $PORT"
+    [ -n "$HOST" ] && ARGS="$ARGS --host $HOST"
+    [ -n "$PORT" ] && ARGS="$ARGS --port $PORT"
     MONGOCLIENT=/usr/bin/mongo
 fi
 
