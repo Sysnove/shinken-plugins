@@ -1,26 +1,60 @@
 #!/bin/bash
 
-USER=$1
-PASSWORD=$2
-HOST=$3
+USER=""
+PASSWORD=""
+HOST=""
+PORT=""
+REPLSET_HOST=""
+
+WARN=600
+CRIT=3600
+
+usage() {
+     sed -rn 's/^### ?//;T;p' "$0"
+}
+
+# process args
+while [ -n "$1" ]; do 
+    case $1 in
+        -u)	shift; USER=$1 ;;
+        -p) shift; PASSWORD=$1 ;;
+        -P) shift; HOST=$1 ;;
+        -H) shift; PORT=$1 ;;
+        -h) shift; REPLSET_HOST=$1 ;;
+        -w) shift; WARN=$1 ;;
+        -c) shift; CRIT=$1 ;;
+        --help)	usage; exit 1 ;;
+        *) usage; exit 1 ;;
+    esac
+    shift
+done
+
+ARGS=""
+[ -n "$USER" ] && ARGS="$ARGS -u $USER"
+[ -n "$PASSWORD" ] && ARGS="$ARGS -p $PASSWORD"
 
 if [ -e /usr/bin/mongosh ]; then
+    [ -z "$HOST" ] && HOST=localhost
+    [ -n "$PORT" ] && ARGS="$HOST:$PORT"
     MONGOCLIENT=/usr/bin/mongosh
 else
+    [ -n "$HOST" ] && ARGS="-H $HOST"
+    [ -n "$PORT" ] && ARGS="-P $PORT"
     MONGOCLIENT=/usr/bin/mongo
 fi
 
-rs_status=$($MONGOCLIENT -u "$USER" -p "$PASSWORD" --eval "JSON.stringify(rs.status())" --quiet | jq -r ".members[]")
+# shellcheck disable=SC2086
+rs_status=$($MONGOCLIENT $ARGS --eval "JSON.stringify(rs.status())" --quiet | jq -r ".members[]")
 
 if [ -z "$rs_status" ]; then
     echo "UNKNOWN - Could not list rs.status() | .members"
     exit 3
 fi
 
-status_host=$(echo "$rs_status" | jq -r "select(.name == \"$HOST:27017\") | .stateStr")
+status_host=$(echo "$rs_status" | jq -r "select(.name == \"$REPLSET_HOST:27017\") | .stateStr")
 
 if [ -z "$status_host" ]; then
-    echo "UNKNOWN - Could not find host $HOST in rs.status()"
+    echo "UNKNOWN - Could not find host $REPLSET_HOST in rs.status()"
     exit 3
 fi
 
@@ -37,6 +71,17 @@ else
     lag=$((ts_optime_primary - ts_optime_host)) 
 fi
 
-perfdata="replication_lag=$lag;600;3600"
+perfdata="replication_lag=$lag;$WARN;$CRIT"
 
-echo "OK - $HOST is $status_host, lag is $lag seconds | $perfdata"
+output="$HOST is $status_host, lag is $lag seconds | $perfdata"
+
+if [ "$lag" -gt "$CRIT" ]; then
+    echo "CRITICAL - $output"
+    exit 2
+elif [ "$lag" -gt "$WARN" ]; then
+    echo "WARNING - $output"
+    exit 1
+else
+    echo "OK - $output"
+    exit 0
+fi
