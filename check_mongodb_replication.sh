@@ -3,7 +3,7 @@
 USER=""
 PASSWORD=""
 HOST=""
-PORT=""
+PORT="27017"
 REPLSET_HOST=""
 
 WARN=600
@@ -35,11 +35,11 @@ ARGS=""
 
 if [ -e /usr/bin/mongosh ]; then
     [ -z "$HOST" ] && HOST=localhost
-    [ -n "$PORT" ] && ARGS="$HOST:$PORT"
+    [ -n "$PORT" ] && ARGS="$ARGS $HOST:$PORT"
     MONGOCLIENT=/usr/bin/mongosh
 else
-    [ -n "$HOST" ] && ARGS="-H $HOST"
-    [ -n "$PORT" ] && ARGS="-P $PORT"
+    [ -n "$HOST" ] && ARGS="$ARGS -H $HOST"
+    [ -n "$PORT" ] && ARGS="$ARGS -P $PORT"
     MONGOCLIENT=/usr/bin/mongo
 fi
 
@@ -51,7 +51,7 @@ if [ -z "$rs_status" ]; then
     exit 3
 fi
 
-status_host=$(echo "$rs_status" | jq -r "select(.name == \"$REPLSET_HOST:27017\") | .stateStr")
+status_host=$(echo "$rs_status" | jq -r "select(.name == \"$REPLSET_HOST:$PORT\") | .stateStr")
 
 if [ -z "$status_host" ]; then
     echo "UNKNOWN - Could not find host $REPLSET_HOST in rs.status()"
@@ -63,7 +63,7 @@ if [ "$status_host" == "PRIMARY" ]; then
 else
     # Secondary, compute lag
     optime_primary=$(echo "$rs_status" | jq -r "select(.stateStr == \"PRIMARY\") | .optimeDate")
-    optime_host=$(echo "$rs_status" | jq -r "select(.name == \"$HOST:27017\") | .optimeDate")
+    optime_host=$(echo "$rs_status" | jq -r "select(.name == \"$REPLSET_HOST:$PORT\") | .optimeDate")
 
     ts_optime_primary=$(date -d "$optime_primary" +%s)
     ts_optime_host=$(date -d "$optime_host" +%s)
