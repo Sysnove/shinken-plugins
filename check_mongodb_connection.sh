@@ -36,9 +36,9 @@ if [ -e /usr/bin/mongosh ]; then
     [ -n "$PORT" ] && ARGS="$HOST:$PORT"
     MONGOCLIENT=/usr/bin/mongosh
 else
-    [ -n "$HOST" ] && ARGS="-H $HOST"
-    [ -n "$PORT" ] && ARGS="-P $PORT"
-    MONGOCLIENT=/usr/bin/mongo
+    [ -n "$HOST" ] && ARGS="$ARGS -H $HOST"
+    [ -n "$PORT" ] && ARGS="$ARGS -P $PORT"
+    MONGOCLIENT=$(which mongo)
 fi
 
 begin=$(date +%s%N | cut -b1-13)
