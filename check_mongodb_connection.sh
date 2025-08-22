@@ -17,8 +17,8 @@ while [ -n "$1" ]; do
     case $1 in
         -u)	shift; USER=$1 ;;
         -p) shift; PASSWORD=$1 ;;
-        -P) shift; HOST=$1 ;;
-        -H) shift; PORT=$1 ;;
+        -H) shift; HOST=$1 ;;
+        -P) shift; PORT=$1 ;;
         -w) shift; WARN=$1 ;;
         -c) shift; CRIT=$1 ;;
         -h)	usage; exit 1 ;;
