@@ -69,6 +69,20 @@ for d in $db_datadirs; do
 done
 
 #
+# Check SWAP files
+#
+
+swapfiles=$(swapon -s | grep file | awk '{print $1}')
+for swapfile in $swapfiles; do
+    if ! echo "$backup_excludes" | grep -E -q "^(re:|sh:)?$swapfile/?$"; then
+        if ! echo "$backup_includes" | grep -E -q "^(re:|sh:)?$swapfile/?$"; then
+            echo "WARNING - You should exclude $swapfile from backups"
+            exit 1
+        fi
+    fi
+done
+
+#
 # Check bind and network mounts that should be in backup excludes
 #
 
