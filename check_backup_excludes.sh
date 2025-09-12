@@ -5,11 +5,16 @@
 #
 
 FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/(www|vmail|lib/docker|backups.*))/?$'
+ALLOWED_EXCLUDES='BLAHBLAHBLAH'
+# We need this exception for elasticsearch clusters where we need /var/backups/elasticsearch on all nodes, but we only need to backup it on the first node.
+if ! [ -f /etc/backup.d/21_elasticsearch.sh ]; then
+    ALLOWED_EXCLUDES='/var/backups/elasticsearch'
+fi
 
 backup_excludes=$(grep '^exclude =' /etc/backup.d/91_all.borg | awk '{print $3}')
 backup_includes=$(grep '^include =' /etc/backup.d/91_all.borg | awk '{print $3}')
 
-found_forbidden_excludes=$(echo "$backup_excludes" | grep -E "$FORBIDDEN_EXCLUDES" | tr '\n' ' ')
+found_forbidden_excludes=$(echo "$backup_excludes" | grep -v "$ALLOWED_EXCLUDES" | grep -E "$FORBIDDEN_EXCLUDES" | tr '\n' ' ')
 if [ -n "$found_forbidden_excludes" ]; then
     echo "CRITICAL - You should not exclude $found_forbidden_excludes (/srv, /var, /var/www, /var/vmail, /var/lib/docker or /var/backups/*)"
     exit 2
