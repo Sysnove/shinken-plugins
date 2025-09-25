@@ -87,6 +87,7 @@ fi
 
 (
 $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
+/usr/bin/sudo /usr/local/nagios/plugins/check_failover_interfaces.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_cron_log.sh
 if [ -f /etc/cron.d/ipinfo ]; then
@@ -101,7 +102,7 @@ if ! systemd-detect-virt -q; then
     if $TEST_IPMI_SENSORS && [ -f $NAGIOS_PLUGINS/check_ipmi_sensor ] && [ -f /usr/sbin/ipmi-sensors ]; then
         if timeout 5s sudo /usr/sbin/ipmi-sensors > /dev/null 2>&1; then
             cpu_min_freq="$(LC_ALL=C lscpu | grep "min MHz" | awk '{printf "%.0f\n", $NF + 20}')"
-	    [ -z "$cpu_min_freq" ] && cpu_min_freq=820
+            [ -z "$cpu_min_freq" ] && cpu_min_freq=820
             if [ "$(grep 'cpu MHz' /proc/cpuinfo | awk '{sum+=$NF; nb+=1} END {printf "%.0f\n", sum/nb}')" -lt "$cpu_min_freq" ]; then
                 #echo "CRITICAL - CPU is running at 800Mhz. Could be an hardware problem. Please check impi-sensors."
                 #exit 2
