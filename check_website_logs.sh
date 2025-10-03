@@ -11,6 +11,7 @@ FILTER=""
 SATISFIED_THRESHOLD=1
 APDEX_WARNING=""
 APDEX_CRITICAL=""
+FULL_PERFDATA=false
 
 # process args
 while [ -n "$1" ]; do 
@@ -19,8 +20,9 @@ while [ -n "$1" ]; do
         -f) shift; FILTER="$1" ;;
         -t) shift; LAST_RUN_FILE=$1 ;;
         -T) shift; SATISFIED_THRESHOLD=$1 ;;
-        -W) shift; APDEX_WARNING=$1 ;;
-        -C) shift; APDEX_CRITICAL=$1 ;;
+        -W) shift; APDEX_WARNING=$1; FULL_PERFDATA=true ;;
+        -C) shift; APDEX_CRITICAL=$1; FULL_PERFDATA=true ;;
+        -P) shift; FULL_PERFDATA=true;;
         -h)	show_help; exit 1 ;;
     esac
     shift
@@ -72,31 +74,49 @@ begin=$new_file_pos
 end=$old_file_pos
 
 lines () {
-    head -n "$begin" "$LOGFILE" | tail --lines=+"$end"
+    head -n "$begin" "$LOGFILE" | tail --lines=+"$end" | grep -E "$FILTER"
 }
 
 nb_lines=$(lines | wc -l)
-nb_lines_with_time=$(lines | grep -Ec "$FILTER.* [0-9.]+ [0-9.\-]+$")
-total_time=$(lines | grep -E "$FILTER.* [0-9.]+ [0-9.\-]+$" | awk '{s+=$(NF-1)} END {print s}')
-p50=$(lines | grep -E "$FILTER.* [0-9.]+ [0-9.\-]+$" | awk '{print $(NF-1)}' | sort | awk '{all[NR] = $0} END{print all[int(NR*0.50)]}')
-p95=$(lines | grep -E "$FILTER.* [0-9.]+ [0-9.\-]+$" | awk '{print $(NF-1)}' | sort | awk '{all[NR] = $0} END{print all[int(NR*0.95)]}')
-p99=$(lines | grep -E "$FILTER.* [0-9.]+ [0-9.\-]+$" | awk '{print $(NF-1)}' | sort | awk '{all[NR] = $0} END{print all[int(NR*0.99)]}')
-max=$(lines | grep -E "$FILTER.* [0-9.]+ [0-9.\-]+$" | awk '{print $(NF-1)}' | sort | tail -n 1)
 
-nb_satisfied=$(lines | grep -E "$FILTER.* [0-9.]+ [0-9.\-]+$" | awk "\$(NF-1) < $SATISFIED_THRESHOLD{print \$(NF-1)}" | wc -l)
-nb_tolerated=$(lines | grep -E "$FILTER.* [0-9.]+ [0-9.\-]+$" | awk "\$(NF-1) < ($SATISFIED_THRESHOLD*4){print \$(NF-1)}" | wc -l)
-apdex=$(echo "(($nb_satisfied + (($nb_tolerated-$nb_satisfied)/2)) * 100) / $nb_lines_with_time" | bc)
+# Try nginx format
+response_times=$(lines | grep -E "\" [0-9.]+ [0-9.\-]+$" | awk '{print $(NF-1)}' | sort -n)
+# Try apache2 format
+if [ -z "$response_times" ]; then
+    response_times=$(lines | grep -E "\" [0-9]+$" | awk '{print $(NF)/1000}' | sort -n)
+fi
+# Try php-fpm format
+if [ -z "$response_times" ]; then
+    response_times=$(lines | grep -E "\" [0-9.]+$"  | awk '{print $(NF)}' | sort -n)
+fi
+
+nb_lines_with_time=$(echo "$response_times" | wc -l)
+total_time=$(echo "$response_times" | awk '{s+=$1} END {print s}')
 
 period=$((now - last_check))
 
 rate=$(echo "scale=1; $nb_lines_with_time / $period" | bc |  awk '{printf "%.1f\n", $0}')
-pct_lines_with_time=$(echo "($nb_lines_with_time * 100) / $nb_lines" | bc)
-time_per_line="$(echo "scale=3; $total_time / $nb_lines_with_time" | bc | awk '{printf "%.3f\n", $0}')"
-time_per_line_ms="$(echo "$time_per_line * 1000" | bc | awk '{printf "%.0f\n", $0}')"
-#total_estimated_time=$(echo "$time_per_line * $nb_lines" | bc)
-load=$(echo "scale=2; ($time_per_line * $nb_lines_with_time) / $period" | bc | awk '{printf "%.2f\n", $0}')
+avg_time="$(echo "scale=3; $total_time / $nb_lines_with_time" | bc | awk '{printf "%.3f\n", $0}')"
+avg_time_ms="$(echo "$avg_time * 1000" | bc | awk '{printf "%.0f\n", $0}')"
+#total_estimated_time=$(echo "$avg_time * $nb_lines" | bc)
+load=$(echo "scale=2; ($avg_time * $nb_lines_with_time) / $period" | bc | awk '{printf "%.2f\n", $0}')
 
-perfdata="rate=${rate}req_per_sec; avg_time_per_request=${time_per_line_ms}ms; load=$load; p50=${p50}s; p95=${p95}s; p99=${p99}s; max=${max}s; apdex=${apdex}%;$APDEX_WARNING;$APDEX_CRITICAL;0;"
+perfdata="rate=${rate}req_per_sec; avg_time_per_request=${avg_time_ms}ms; load=$load;"
+
+if $FULL_PERFDATA; then
+    p50=$(echo "$response_times" | awk '{all[NR] = $0} END{print all[int(NR*0.50)]}')
+    p95=$(echo "$response_times" | awk '{all[NR] = $0} END{print all[int(NR*0.95)]}')
+    p99=$(echo "$response_times" | awk '{all[NR] = $0} END{print all[int(NR*0.99)]}')
+    max=$(echo "$response_times" | tail -n 1)
+
+    nb_satisfied=$(echo "$response_times" | awk "\$1 < $SATISFIED_THRESHOLD{print \$1}" | wc -l)
+    nb_tolerated=$(echo "$response_times" | awk "\$1 < ($SATISFIED_THRESHOLD*4){print \$1}" | wc -l)
+    apdex=$(echo "(($nb_satisfied + (($nb_tolerated-$nb_satisfied)/2)) * 100) / $nb_lines_with_time" | bc)
+
+    perfdata="$perfdata p50=${p50}s; p95=${p95}s; p99=${p99}s; max=${max}s; apdex=${apdex}%;$APDEX_WARNING;$APDEX_CRITICAL;0;"
+fi
+
+pct_lines_with_time=$(echo "($nb_lines_with_time * 100) / $nb_lines" | bc)
 
 if [ "$pct_lines_with_time" -gt 50 ]; then
     if [ -n "$APDEX_CRITICAL" ] && [ "$apdex" -lt "$APDEX_CRITICAL" ]; then
@@ -106,10 +126,10 @@ if [ "$pct_lines_with_time" -gt 50 ]; then
         echo "Apdex WARNING - Apdex ${apdex}% | $perfdata"
         exit $E_WARNING
     else
-        echo "OK - $rate requests/second, avg $time_per_line second/request (load $load), Apdex ${apdex}% | $perfdata"
+        echo "OK - $rate requests/second, avg $avg_time second/request (load $load)${apdex:+, Apdex ${SATISFIED_THRESHOLD}s ${apdex}%} | $perfdata"
         exit $E_OK
     fi
 else
-    echo "OK - $rate requests/second (response times not logged) | $perfdata"
+    echo "OK - $rate requests/second (response times not found) | $perfdata"
     exit $E_OK
 fi
