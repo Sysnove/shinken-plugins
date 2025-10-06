@@ -192,7 +192,7 @@ fi
 RET_MSG="$countall requests in $period seconds : $count2 2xx ($pourcent2%), $count3 3xx ($pourcent3%), $count4 4xx ($pourcent4%), $count5 5xx ($pourcent5%) $log_files_read_str | total=${ratetotal}req_per_sec;;;0;100 2xx=${pourcent2}%;;;0;100 3xx=${pourcent3}%;$WARN_3;$CRIT_3;0;100 4xx=${pourcent4}%;$WARN_4;$CRIT_4;0;100 499=${pourcent499}%;$WARN_5;$CRIT_5;0;100 5xx=${pourcent5}%;$WARN_5;$CRIT_5;0;100"
 
 # :COMMENT:maethor:20210603:  499 errors are check with 5** threshold. May not be a good idea, we'll see
-if [ "$MIN_RATE" -gt "$ratetotal_int" ]; then
+if [ "$MIN_RATE" -lt "$ratetotal_int" ]; then
     if [ $pourcent3 -gt "$CRIT_3" ] || [ $pourcent4 -gt "$CRIT_4" ] || [ $pourcent5 -gt "$CRIT_5" ] || [ $pourcent499 -gt "$CRIT_5" ]; then
         RET_MSG="CRITICAL - $RET_MSG"
         RET_CODE=$E_CRITICAL
