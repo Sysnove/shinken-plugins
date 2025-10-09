@@ -40,8 +40,10 @@ def main():
 
     url = "%s://%s:%s/%s?auto" % (scheme, args.hostname, args.port, args.status_page)
 
+    headers = {'User-agent': 'Sysnove check_apache2_status.py'}
+
     try:
-        r = requests.get(url, verify=False)
+        r = requests.get(url, headers=headers, verify=False)
     except:
         print("UNKNOWN - Error requesting %s" % url)
         raise SystemExit(3)
