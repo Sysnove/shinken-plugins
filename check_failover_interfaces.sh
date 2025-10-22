@@ -1,5 +1,11 @@
 #!/bin/sh
 
+if [ ! -f /etc/network/interfaces.d/failovers.cfg ]; then
+    echo "OK - No failover interface"
+    exit 0
+fi
+
+# shellcheck disable=SC2013
 for failover in $(grep 'ip addr add' /etc/network/interfaces.d/failovers.cfg | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'); do
     interface=$(grep 'ip addr add' /etc/network/interfaces.d/failovers.cfg | grep -oE 'dev [^ ]+' | awk '{print $NF}' | head -n 1)
 
