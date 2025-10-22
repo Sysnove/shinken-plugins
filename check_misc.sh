@@ -69,20 +69,33 @@ if $TEST_IMAP; then
 fi
 
 (
-    set +e
-    # shellcheck disable=SC2009
-    if pgrep varnishd >/dev/null; then
-        varnish_vcl=$(ps faux | grep varnishd | grep -Eo '\-f .*\.vcl' | head -n 1 | cut -d ' ' -f 2)
-        if [ -f "$varnish_vcl" ]; then
-            if grep -q -E '^ *.probe = {' "$varnish_vcl"; then
-                echo "CRITICAL - Probe should be disabled in $varnish_vcl"
-                exit 2
-            fi
-        else
-            echo "CRITICAL - vcl file does not exist: $varnish_vcl"
+set +e
+# shellcheck disable=SC2009
+if pgrep varnishd >/dev/null; then
+    varnish_vcl=$(ps faux | grep varnishd | grep -Eo '\-f .*\.vcl' | head -n 1 | cut -d ' ' -f 2)
+    if [ -f "$varnish_vcl" ]; then
+        if grep -q -E '^ *.probe = {' "$varnish_vcl"; then
+            echo "CRITICAL - Probe should be disabled in $varnish_vcl"
             exit 2
         fi
+    else
+        echo "CRITICAL - vcl file does not exist: $varnish_vcl"
+        exit 2
     fi
+fi
+)
+
+(
+set +e
+# shellcheck disable=SC2013
+for md in $(cat /proc/mdstat | grep -oE '^md[0-9]'); do
+    disks=$(cat /proc/mdstat | grep "^$md" | grep -oE '(hd|sd|nvme).+')
+    nb_disks=$(echo "$disks" | wc -w)
+    if [ "$nb_disks" -lt 2 ]; then
+        echo "CRITICAL - $md RAID is made of $nb_disks disks: $disks"
+        exit 2
+    fi
+done
 )
 
 (
@@ -111,7 +124,6 @@ if ! systemd-detect-virt -q; then
         fi
     fi
 fi
-
 
 echo "OK - Everything is Awesome"
 ) | tac # Shinken uses the first line as the main output, so we need to inverse the output
