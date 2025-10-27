@@ -273,7 +273,7 @@ def check_instance(frontends: list, backends: list, servers: list, args: Argumen
         sessions["server_current"] += server.sessions
         sessions["server_total"] += server.sessionstotal
         queues["server_current"] += server.queue
-        if server.state not in ["UP", 'no check']:
+        if server.state not in ["UP", 'no check'] and not server.state.startswith('UP'):
             errors.append(f'Warn: server { server.name } is { server.state }')
             state = set_state(1, state)
 
