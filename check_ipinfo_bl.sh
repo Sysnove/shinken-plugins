@@ -5,6 +5,11 @@ if ! which ipset > /dev/null 2>&1; then
     exit 0
 fi
 
+if grep -q '^name=!%$' /etc/ipinfo_bl; then
+    echo "ipinfo is disabled"
+    exit 0
+fi
+
 entries=$(ipset list IPINFO_BL4 | grep 'Number of entries:' | awk '{print $NF}')
 
 if [ -z "$entries" ] ; then
