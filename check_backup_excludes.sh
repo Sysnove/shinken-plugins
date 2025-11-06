@@ -4,7 +4,7 @@
 # Check directories that should not be excluded from backups but could be by mistake
 #
 
-FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/(www|vmail|lib/docker|backups.*))/?$'
+FORBIDDEN_EXCLUDES='^(sh:)?(/srv|/var|/var/lib/docker|/var/backups.*)/?$'
 ALLOWED_EXCLUDES='BLAHBLAHBLAH'
 # We need this exception for elasticsearch clusters where we need /var/backups/elasticsearch on all nodes, but we only need to backup it on the first node.
 if ! [ -f /etc/backup.d/21_elasticsearch.sh ]; then
