@@ -11,4 +11,4 @@
 done
 
 echo "OK : No partition over 10M files"
-exit 1
+exit 0
