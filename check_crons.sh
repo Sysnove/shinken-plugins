@@ -25,8 +25,7 @@ while [ -n "$1" ]; do
     shift
 done
 
-# shellcheck disable=2009
-too_long_crons=$(ps -e -o pid,etimes,command | grep CRON -A 1 | grep -v '/usr/sbin/CRON' | awk "{if(\$2>$((MAX_CRON_DURATION * 24 * 3600))) print \$0}" | wc -l)
+too_long_crons=$(pgrep -f /usr/sbin/CRON | xargs --no-run-if-empty ps -o etimes -p | awk "{if(\$1>$((MAX_CRON_DURATION * 24 * 3600))) print \$0}" | grep -cv ELAPSED)
 
 if [ "$too_long_crons" -gt 0 ]; then
     echo "WARNING - $too_long_crons crons are running from more than $MAX_CRON_DURATION days."
