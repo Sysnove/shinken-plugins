@@ -33,7 +33,7 @@ if [ "$too_long_crons" -gt 0 ]; then
 fi
 
 for i in {1..60}; do
-    nb=$(grep "$(date --date="$i minutes ago" +'%d %H:%M:0')" /var/log/cron.log | grep -v ':00:0' | grep -v ' (root) ' | grep -c ' CMD ' | grep -v "perl -e 'sleep int(rand('")
+    nb=$(grep "$(date --date="$i minutes ago" +'%d %H:%M:0')" /var/log/cron.log | grep -v ':00:0' | grep -v ' (root) ' | grep ' CMD ' | grep -cv "perl -e 'sleep int(rand(")
     if [ "$nb" -gt "$MAX_CRONS_AT_A_TIME" ]; then
         echo "WARNING - $nb crons have been called at $(date --date="$i minutes ago" +'%H:%M:00')"
         exit 1
