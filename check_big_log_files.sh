@@ -48,7 +48,7 @@ FIND_OPTS="\\( -name '*.log' -o -name syslog -o -name catalina.out \\) -size +${
 
 if [ -n "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then # If CACHEFILE exists and is less than 1day old
     if grep -q '^/' $CACHEFILE; then # If there is results in the file, check if they still exist
-        ts=$(date -r $CACHEFILE) # We need to update the file without changing the date
+        ts=$(date -r $CACHEFILE +%s) # We need to update the file without changing the date
         # shellcheck disable=SC2013
         files="$(for f in $(cat $CACHEFILE); do find "$f" -size +"${SIZE}" -print 2>/dev/null; done)"
         if [ -n "$files" ]; then
@@ -56,7 +56,7 @@ if [ -n "$(find $CACHEFILE -mtime -${CACHE} -print)" ]; then # If CACHEFILE exis
         else
             truncate -s 0 $CACHEFILE
         fi
-        touch -d "$ts" $CACHEFILE
+        touch -d "@$ts" $CACHEFILE
     fi
 else # Full scan with find
     # locate --regex '.*(\.log|syslog|catalina.out)$' | xargs -L1 du -sm | awk '$1>1000{print $2}' ?
