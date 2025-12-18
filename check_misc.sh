@@ -102,6 +102,7 @@ fi
 
 (
 $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
+/usr/bin/sudo /usr/local/nagios/plugins/check_shorewall_custom_conf.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_failover_interfaces.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_cron_log.sh
