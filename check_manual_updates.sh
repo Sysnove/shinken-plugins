@@ -137,6 +137,15 @@ if [ -f "/srv/metabase/metabase.jar" ]; then
     fi
 fi
 
+if mongodb_running=$(/usr/lib/nagios/plugins/check_nrpe -4 -H localhost -u -c check_mongodb_connection 2>/dev/null); then
+    mongodb_running=$(echo "$mongodb_running" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+    mongodb_installed=$(aptitude show mongodb-org-server | grep '^Version' | awk '{print $NF}')
+    if [ "$mongodb_running" != "$mongodb_installed" ] ; then
+        echo "WARNING : MongoDB $mongodb_running is running, but $mongodb_installed is installed. Please restart       …mongodb-server"
+        exit 1
+    fi
+fi
+
 if [ -n "$apps" ]; then
     echo "OK : Everything is up to date ($apps)"
 else
