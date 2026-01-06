@@ -108,6 +108,7 @@ if [ -d /etc/nginx ]; then
     nginx_security_warnings=$(grep -RE '^ *(listen|include snippets/security.conf)' /etc/nginx/sites-enabled | grep 'include snippets' -B 1 | grep ':8080' -A 1 | cut -d ':' -f 1 | uniq)
     if [ -n "$nginx_security_warnings" ]; then
         echo "WARNING - You should not use Nginx security.conf snippet in a vhost on port 8080."
+        echo "$nginx_security_warnings"
         exit 1
     fi
 fi
