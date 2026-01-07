@@ -32,6 +32,8 @@ fi
 
 if [ "$hits" -gt 0 ] ; then
     echo "CRITICAL: $hits malwares found ! | $perfdata"
+    echo "More details in \`mreport\` command"
+    echo "/var/run/maldet_scan_files and $last"
     exit 2
 fi
 
@@ -49,10 +51,12 @@ if [ -n "$DURATION_WARN" ] && [ "$duration" -ge "$DURATION_WARN" ]; then
     fi
 
     if [ -z "$penultimate_duration" ] || [ "$penultimate_duration" -ge "$DURATION_WARN" ] ; then
-        echo "WARNING: No malware found but the last scan ($last_date) took ${duration} seconds. | $perfdata"
+        echo "WARNING: No malware found, but the last scan ($last_date) took ${duration}s to scan ${files} files. | $perfdata"
+        echo "More details in /var/run/maldet_scan_files and $last"
         exit 1
     fi
 fi
 
-echo "OK: No malware found, last scan ($last_date) took ${duration} seconds. | $perfdata"
+echo "OK: No malware found, ${files} files scanned in ${duration}s ($last_date). | $perfdata"
+echo "More details in /var/run/maldet_scan_files and $last"
 exit 0
