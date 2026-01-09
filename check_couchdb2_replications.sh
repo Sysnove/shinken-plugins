@@ -1,4 +1,5 @@
 #!/bin/bash
+# Patch 2026-01-09 gsubiron: Remplacement de jshon par jq
 ################################################################################
 # Script:       check_couchdb_replication.sh                                   #
 # Author:       Claudio Kuenzler www.claudiokuenzler.com                       #
@@ -120,7 +121,7 @@ if [[ ${detect} -eq 1 ]]; then
     exit $STATE_CRITICAL
   fi
 
-  replist=$(echo $cdbresp | jshon -a -e "doc_id" | tr '\n' ' ')
+  replist=$(echo $cdbresp | jq -r '.[] | .doc_id | select( . != null )' | tr '\n' ' ')
   if [[ -n $replist ]]; then
     echo "COUCHDB AVAILABLE REPLICATIONS: $replist"
     exit $STATE_OK
@@ -183,7 +184,7 @@ else
     exit $STATE_CRITICAL
   fi
   
-  repstatus=$(echo $cdbresp | jshon -e state)
+  repstatus=$(echo $cdbresp | jq -r .state)
   
   if [[ "$repstatus" == '"running"' ]]; then
     echo "COUCHDB REPLICATION OK - Replication $repid is $repstatus"
