@@ -59,7 +59,7 @@ old_cache_pass=$cache_pass
 last_check=$now
 " > "$LAST_RUN_FILE"
 
-    if [ -z "$last_check" ] || [ "$old_cache_hit" -eq -1 ] || [ "$old_cache_hit" == "null" ]; then
+    if [ -z "$last_check" ] || [ "$old_cache_hit" -eq -1 ] || [ "$old_cache_hit" == "null" ] || [ "$old_cache_pass" -eq -1 ]; then
         echo "UNKOWN - Variables missing in database, please run the check again."
         exit 3
     fi
