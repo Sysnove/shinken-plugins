@@ -6,7 +6,7 @@
 ###
 ### CopyLeft 2022 Guillaume Subiron <guillaume@sysnove.fr>
 ###
-### Usage : check_varnishstat.sh 
+### Usage : check_varnishstat.sh
 ###
 
 LAST_RUN_FILE=/var/tmp/nagios/check_varnishstat_last_run
@@ -25,15 +25,12 @@ if varnishstat=$(varnishstat -j 2>&1); then
     now=$(date +%H:%M:%S)
 
     varnishstat_version=$(echo "$varnishstat" | jq ".version")
-    if [ "$varnishstat_version" == "null" ]; then # V0
-        cache_hit=$(echo "$varnishstat" | jq '."MAIN.cache_hit".value')
-        cache_hitpass=$(echo "$varnishstat" | jq '."MAIN.cache_hitpass".value')
-        cache_miss=$(echo "$varnishstat" | jq '."MAIN.cache_miss".value')
-        n_object=$(echo "$varnishstat" | jq '."MAIN.n_object".value')
-    elif [ "$varnishstat_version" -eq 1 ]; then
+    if [ "$varnishstat_version" -eq 1 ]; then
         cache_hit=$(echo "$varnishstat" | jq '.counters."MAIN.cache_hit".value')
         cache_hitpass=$(echo "$varnishstat" | jq '.counters."MAIN.cache_hitpass".value')
+        cache_hitmiss=$(echo "$varnishstat" | jq '.counters."MAIN.cache_hitmiss".value')
         cache_miss=$(echo "$varnishstat" | jq '.counters."MAIN.cache_miss".value')
+        cache_pass=$(echo "$varnishstat" | jq '.counters."MAIN.s_pass".value')
         n_object=$(echo "$varnishstat" | jq '.counters."MAIN.n_object".value')
     else
         echo "UNNOWN - Varnishstat version $varnishstat_version is not managed."
@@ -47,14 +44,18 @@ if varnishstat=$(varnishstat -j 2>&1); then
 
     old_cache_hit=-1
     old_cache_hitpass=-1
+    old_cache_hitmiss=-1
     old_cache_miss=-1
+    old_cache_pass=-1
     # shellcheck disable=SC1090
     source "$LAST_RUN_FILE"
 
     echo "
 old_cache_hit=$cache_hit
 old_cache_hitpass=$cache_hitpass
+old_cache_hitmiss=$cache_hitmiss
 old_cache_miss=$cache_miss
+old_cache_pass=$cache_pass
 last_check=$now
 " > "$LAST_RUN_FILE"
 
@@ -63,10 +64,10 @@ last_check=$now
         exit 3
     fi
 
-    total_hit=$((cache_hit + cache_hitpass + cache_miss))
-    old_total_hit=$((old_cache_hit + old_cache_hitpass + old_cache_miss))
+    nb_requests=$((cache_hit + cache_hitpass + cache_hitmiss + cache_miss + cache_pass))
+    old_nb_requests=$((old_cache_hit + old_cache_hitpass + old_cache_hitmiss + old_cache_miss + old_cache_pass))
 
-    if [ $total_hit -lt $old_total_hit ]; then
+    if [ $nb_requests -lt $old_nb_requests ]; then
         echo "UNKOWN - Total hit have shrink since last run, please run the check again."
         exit 3
     fi
@@ -75,11 +76,14 @@ last_check=$now
     last_check_s=$(date -d "$last_check" +%s)
     period_s=$(( now_s - last_check_s ))
 
-    period_hit=$((total_hit - old_total_hit))
+    period_nb_requests=$((nb_requests - old_nb_requests))
 
-    if [ "$period_hit" -gt 0 ]; then
-        hitrate=$((((cache_hit - old_cache_hit) * 100) / period_hit))
-        reqpersec=$(bc <<< "scale=1; ($period_hit / $period_s)")
+    if [ "$period_nb_requests" -gt 0 ]; then
+        period_hit=$((cache_hit - old_cache_hit))
+        #period_miss=$((cache_miss + cache_hitmiss - old_cache_miss - old_cache_hitmiss))
+        period_pass=$((cache_pass + cache_hitpass - old_cache_pass - old_cache_hitpass))
+        hitrate=$(((period_hit * 100) / (period_nb_requests - period_pass)))
+        reqpersec=$(bc <<< "scale=1; (($period_nb_requests - $period_pass) / $period_s)")
     else
         hitrate=100
         reqpersec=0
@@ -95,7 +99,7 @@ last_check=$now
     fi
 
     if [ "$varnishbackends_healthy" -eq "$varnishbackends_total" ] && [ "$varnishbackends_healthy" -gt 0 ]; then
-        echo "Varnish OK : $period_hit requests in ${period_s} seconds (cache hitrate ${hitrate}%, ${n_object} objects) | $perfdata"
+        echo "Varnish OK : $period_nb_requests requests in ${period_s} seconds (cache hitrate ${hitrate}%, ${n_object} objects) | $perfdata"
         exit 0
     else
         echo "Varnish CRITICAL : $varnishbackends_healthy/$varnishbackends_total healthy backends | $perfdata"
