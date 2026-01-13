@@ -6,7 +6,7 @@ opcache_underused=()
 opcache_full=()
 interned_strings_full=()
 
-for v in 5.6 7.0 7.2 7.3 7.4 8.0 8.1 8.2 8.3 8.4; do
+for v in 5.6 7.0 7.2 7.3 7.4 8.0 8.1 8.2 8.3 8.4 8.5; do
     opcache=$(curl -sL -4 "http://$(cat /etc/hostname.sysnove).sysnove.net/phpinfo-$v.php")
     if echo -r "$opcache" | grep ">opcache.enable<" | grep -q ">On<" ; then
         #memory_consumption=$(echo -r "$opcache" | grep "opcache.memory_consumption" | grep -Eo '[0-9]*' | tail -n 1)
