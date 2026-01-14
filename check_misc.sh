@@ -69,76 +69,33 @@ if $TEST_IMAP; then
 fi
 
 (
-set +e
-# shellcheck disable=SC2009
-if pgrep varnishd >/dev/null; then
-    varnish_vcl=$(ps faux | grep varnishd | grep -Eo '\-f .*\.vcl' | head -n 1 | cut -d ' ' -f 2)
-    if [ -f "$varnish_vcl" ]; then
-        if grep -q -E '^ *.probe = {' "$varnish_vcl"; then
-            echo "CRITICAL - Probe should be disabled in $varnish_vcl"
-            exit 2
-        fi
-    else
-        echo "CRITICAL - vcl file does not exist: $varnish_vcl"
-        exit 2
-    fi
-fi
-)
-
-(
-set +e
-# shellcheck disable=SC2013
-if [ -f /proc/mdstat ]; then
-    for md in $(cat /proc/mdstat | grep -oE '^md[0-9]'); do
-        disks=$(cat /proc/mdstat | grep "^$md" | grep -oE '(hd|sd|nvme).+')
-        nb_disks=$(echo "$disks" | wc -w)
-        if [ "$nb_disks" -lt 2 ]; then
-            echo "CRITICAL - $md RAID is made of $nb_disks disks: $disks"
-            exit 2
-        fi
-    done
-fi
-)
-
-(
-set +e
-if [ -d /etc/nginx ]; then
-    # Checks for security.conf snippet in Nginx vhosts on port 8080.
-    # Because 403 and 429 returned by security.conf could be cached by Varnish and then returned to everyone.
-    nginx_security_warnings=$(grep -RE '^ *(listen|include snippets/security.conf)' /etc/nginx/sites-enabled | grep 'include snippets' -B 1 | grep ':8080' -A 1 | cut -d ':' -f 1 | uniq)
-    if [ -n "$nginx_security_warnings" ]; then
-        echo "WARNING - You should not use Nginx security.conf snippet in a vhost on port 8080."
-        echo "$nginx_security_warnings"
-        exit 1
-    fi
-fi
-)
-
-(
 $NAGIOS_PLUGINS/check_ntp_time -H 0.debian.pool.ntp.org | cut -d '|' -f 1
 /usr/local/nagios/plugins/check_shorewall_custom_conf.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_failover_interfaces.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_inotify_user_instances.sh | cut -d '|' -f 1
 /usr/bin/sudo /usr/local/nagios/plugins/check_cron_log.sh
+#/usr/bin/sudo /usr/local/nagios/plugins/check_ansible_groups.sh
 if [ -f /etc/cron.d/ipinfo ]; then
     /usr/bin/sudo /usr/local/nagios/plugins/check_ipinfo_bl.sh
 fi
+if [ -d /etc/nginx ]; then
+    /usr/local/nagios/plugins/check_nginx_config.sh
+fi
+if [ -f /proc/mdstat ]; then
+    /usr/local/nagios/plugins/check_md_nbdisks.sh
+fi
+if pgrep varnishd >/dev/null; then
+    /usr/local/nagios/plugins/check_varnish_vcl.sh
+fi
 
 if ! systemd-detect-virt -q; then
+    /usr/local/nagios/plugins/check_sensors.sh
     if $TEST_SENSORS; then
         $NAGIOS_PLUGINS/check_sensors
     fi
 
     if $TEST_IPMI_SENSORS && [ -f $NAGIOS_PLUGINS/check_ipmi_sensor ] && [ -f /usr/sbin/ipmi-sensors ]; then
-        if timeout 5s sudo /usr/sbin/ipmi-sensors > /dev/null 2>&1; then
-            cpu_min_freq="$(LC_ALL=C lscpu | grep "min MHz" | awk '{printf "%.0f\n", $NF + 20}')"
-            [ -z "$cpu_min_freq" ] && cpu_min_freq=820
-            if [ "$(grep 'cpu MHz' /proc/cpuinfo | awk '{sum+=$NF; nb+=1} END {printf "%.0f\n", sum/nb}')" -lt "$cpu_min_freq" ]; then
-                #echo "CRITICAL - CPU is running at 800Mhz. Could be an hardware problem. Please check impi-sensors."
-                #exit 2
-                timeout 5s $NAGIOS_PLUGINS/check_ipmi_sensor --nosel -xT Entity_Presence,Voltage,Physical_Security,Management_Subsystem_Health | cut -d '|' -f 1
-            fi
-        fi
+        /usr/local/nagios/plugins/check_ipmi_sensors.sh
     fi
 fi
 
