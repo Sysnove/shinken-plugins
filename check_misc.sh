@@ -89,7 +89,6 @@ if pgrep varnishd >/dev/null; then
 fi
 
 if ! systemd-detect-virt -q; then
-    /usr/local/nagios/plugins/check_sensors.sh
     if $TEST_SENSORS; then
         $NAGIOS_PLUGINS/check_sensors
     fi
