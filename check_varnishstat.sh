@@ -78,7 +78,7 @@ last_check=$now
 
     period_nb_requests=$((nb_requests - old_nb_requests))
 
-    if [ "$period_nb_requests" -gt 0 ]; then
+    if [ "$period_nb_requests" -gt 0 ] && [ "$period_nb_requests" -gt "$period_pass" ]; then
         period_hit=$((cache_hit - old_cache_hit))
         #period_miss=$((cache_miss + cache_hitmiss - old_cache_miss - old_cache_hitmiss))
         period_pass=$((cache_pass + cache_hitpass - old_cache_pass - old_cache_hitpass))
