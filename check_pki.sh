@@ -41,7 +41,6 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     [ "${CERTIFICATE}" = "${PKI_DIRECTORY}/ca-old.crt" ] && continue
 
     # Retrieve Certificate purpose.
-    echo "Verifying ${CERTIFICATE}."
     if openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose crlsign "${CERTIFICATE}" >/dev/null 2>&1; then
         PURPOSE="CA"
     elif openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose sslserver "${CERTIFICATE}" >/dev/null 2>&1; then
