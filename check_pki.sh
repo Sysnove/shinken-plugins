@@ -81,7 +81,7 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     # Check only server certificates.
     if openssl x509 -noout -purpose -in "${CERTIFICATE}" | grep -q "SSL server : Yes"; then
         if ! output="$(openssl_verify \
-            "${CA_CERTIFICATE}" \
+            "${CERTIFICATE}" \
             -attime "$(date +'%s' --date '+ 1 month')")"
         then
             warning "Server certificate ${CERTIFICATE} will not be valid in ont month: ${output}."
@@ -102,7 +102,7 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
 
     # Check certificate
     if ! output="$(openssl_verify \
-        "${CA_CERTIFICATE}" \
+        "${CERTIFICATE}" \
         -attime "$(date +'%s' --date '+ 1 month')")"
     then
         warning "Server certificate ${CERTIFICATE} will not be valid in ont month: ${output}."
