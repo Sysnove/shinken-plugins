@@ -18,9 +18,16 @@ critical() {
     exit 2
 }
 
-unknown() {
-    echo "UNKNOWN: $*"
-    exit 3
+
+append() {
+    FIRST="$1"
+    SECOND="$2"
+
+    if [ -z "${FIRST}" ]; then
+        echo  "${SECOND}"
+    else
+        echo "${FIRST}, ${SECOND}"
+    fi
 }
 
 [ $# -ne 1 ] && critical "{0} needs one and only one parameter: PKI directory."
@@ -40,30 +47,31 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     # Do not check old CA certificate.
     [ "${CERTIFICATE}" = "${PKI_DIRECTORY}/ca-old.crt" ] && continue
 
-    # Retrieve Certificate purpose.
-    if openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose crlsign "${CERTIFICATE}" >/dev/null 2>&1; then
-        PURPOSE="CA"
-    elif openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose sslserver "${CERTIFICATE}" >/dev/null 2>&1; then
-        PURPOSE="Server"
-    elif openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose sslclient "${CERTIFICATE}" >/dev/null 2>&1; then
-        PURPOSE="Client"
-    else
-        openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose sslclient "${CERTIFICATE}"
-        PURPOSE="Unknown"
-    fi
-
     # Check expiration
     if ! openssl verify -CAfile "${CA_CERTIFICATE}" "${CERTIFICATE}" >/dev/null 2>&1; then
-        critical "${PURPOSE} certificate ${CERTIFICATE} has expired."
+        EXPIRED_CERTS="$(append "${EXPIRED_CERTS}" "$(basename "${CERTIFICATE}")")"
     fi
 
     if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_WEEK}" "${CERTIFICATE}" >/dev/null 2>&1; then
-        critical "${PURPOSE} certificate ${CERTIFICATE} will expire in less than one week."
+        NEAR_EXPIRATION_CERTS="$(append "${NEAR_EXPIRATION_CERTS}" "$(basename "${CERTIFICATE}")")"
     fi
 
     if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_MONTH}" "${CERTIFICATE}" >/dev/null 2>&1; then
-        warning "${PURPOSE} certificate ${CERTIFICATE} will expire in less than one month."
+        FAR_EXPIRATION_CERTS="$(append "${FAR_EXPIRATION_CERTS}" "$(basename "${CERTIFICATE}")")"
     fi
 done
+
+
+if [ -n "${EXPIRED_CERTS}" ]; then
+    critical "Expired certificates: ${EXPIRED_CERTS}."
+fi
+
+if [ -n "${NEAR_EXPIRATION_CERTS}" ]; then
+    critical "Those certificates expire in less than one week: ${NEAR_EXPIRATION_CERTS}."
+fi
+
+if [ -n "${FAR_EXPIRATION_CERTS}" ]; then
+    warning "Those certificates expire in less than one month: ${FAR_EXPIRATION_CERTS}."
+fi
 
 ok "All certificates in ${PKI_DIRECTORY} are valid."
