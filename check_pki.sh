@@ -53,12 +53,16 @@ for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     fi
 
     # Check expiration
-    if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_MONTH}" "${CERTIFICATE}" >/dev/null 2>&1; then
-        warning "${PURPOSE} certificate ${CERTIFICATE} will expire in less than one month."
+    if ! openssl verify -CAfile "${CA_CERTIFICATE}" "${CERTIFICATE}" >/dev/null 2>&1; then
+        critical "${PURPOSE} certificate ${CERTIFICATE} has expired."
     fi
 
     if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_WEEK}" "${CERTIFICATE}" >/dev/null 2>&1; then
         critical "${PURPOSE} certificate ${CERTIFICATE} will expire in less than one week."
+    fi
+
+    if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_MONTH}" "${CERTIFICATE}" >/dev/null 2>&1; then
+        warning "${PURPOSE} certificate ${CERTIFICATE} will expire in less than one month."
     fi
 done
 
