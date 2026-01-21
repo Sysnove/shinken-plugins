@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+IN_ONE_WEEK="$(date +'%s' --date '+ 1 week')"
+IN_ONE_MONTH="$(date +'%s' --date '+ 1 month')"
 
 ok() {
     echo "OK: $*"
@@ -29,83 +31,35 @@ PKI_DIRECTORY="$1"
 [ ! -d "${PKI_DIRECTORY}" ] && critical "PKI directory ${PKI_DIRECTORY} does not exist."
 
 # Check for CA certificate
-
 CA_CERTIFICATE="${PKI_DIRECTORY}/ca.crt"
 
 [ ! -r "${CA_CERTIFICATE}" ] && critical "CA certificate missing."
 
-openssl_verify() {
-    CERTIFICATE="$1"
-    shift
-
-    if _output="$(openssl verify \
-        -CAfile "${CA_CERTIFICATE}" \
-        -x509_strict \
-        -check_ss_sig \
-        -policy_check \
-        "$@" \
-        "${CERTIFICATE}" 2>&1)"; then
-        return 0
-    fi
-
-    _error_line="$(echo "${_output}" | grep -E '^error [0-9]+ at .*$')"
-    _error_code=$(echo "${_error_line}" | sed -n -E 's/^error ([0-9]+) at .*$/\1/p')
-
-    echo "${_error_line}"
-
-    return "${_error_code}"
-}
-
-if ! output="$(openssl_verify \
-    "${CA_CERTIFICATE}" \
-    -attime "$(date +'%s' --date '+ 1 week')")"
-then
-    critical "CA certificate will not be valid in one week: ${output}."
-fi
-
-if ! output="$(openssl_verify \
-    "${CA_CERTIFICATE}" \
-    -attime "$(date +'%s' --date '+ 1 month')")"
-then
-    warning "CA certificate will not be valid in one month: ${output}."
-fi
-
-# Check for server certificates
+# Check certificate validity.
 for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
-    # CA Certificate alreay checked.
-    [ "${CERTIFICATE}" = "${CA_CERTIFICATE}" ] && continue
-
     # Do not check old CA certificate.
     [ "${CERTIFICATE}" = "${PKI_DIRECTORY}/ca-old.crt" ] && continue
 
-    # Check only server certificates.
-    if openssl x509 -noout -purpose -in "${CERTIFICATE}" | grep -q "SSL server : Yes"; then
-        if ! output="$(openssl_verify \
-            "${CERTIFICATE}" \
-            -attime "$(date +'%s' --date '+ 1 month')")"
-        then
-            warning "Server certificate ${CERTIFICATE} will not be valid in ont month: ${output}."
-        fi
+    # Retrieve Certificate purpose.
+    echo "Verifying ${CERTIFICATE}."
+    if openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose crlsign "${CERTIFICATE}" >/dev/null 2>&1; then
+        PURPOSE="CA"
+    elif openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose sslserver "${CERTIFICATE}" >/dev/null 2>&1; then
+        PURPOSE="Server"
+    elif openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose sslclient "${CERTIFICATE}" >/dev/null 2>&1; then
+        PURPOSE="Client"
+    else
+        openssl verify -CAfile "${CA_CERTIFICATE}" -no_check_time -purpose sslclient "${CERTIFICATE}"
+        PURPOSE="Unknown"
     fi
-done
 
-# Check for other certificates
-for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
-    # CA Certificate alreay checked.
-    [ "${CERTIFICATE}" = "${CA_CERTIFICATE}" ] && continue
+    # Check expiration
+    if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_MONTH}" "${CERTIFICATE}" >/dev/null 2>&1; then
+        warning "${PURPOSE} certificate ${CERTIFICATE} will expire in less than one month."
+    fi
 
-    # Do not check old CA certificate.
-    [ "${CERTIFICATE}" = "${PKI_DIRECTORY}/ca-old.crt" ] && continue
-
-    # Server certificates already checked.
-    openssl x509 -noout -purpose -in "${CERTIFICATE}" | grep -q "SSL server : Yes" && continue
-
-    # Check certificate
-    if ! output="$(openssl_verify \
-        "${CERTIFICATE}" \
-        -attime "$(date +'%s' --date '+ 1 month')")"
-    then
-        warning "Server certificate ${CERTIFICATE} will not be valid in ont month: ${output}."
+    if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_WEEK}" "${CERTIFICATE}" >/dev/null 2>&1; then
+        critical "${PURPOSE} certificate ${CERTIFICATE} will expire in less than one week."
     fi
 done
 
