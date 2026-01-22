@@ -78,12 +78,17 @@ last_check=$now
 
     period_nb_requests=$((nb_requests - old_nb_requests))
 
-    if [ "$period_nb_requests" -gt 0 ] && [ "$period_nb_requests" -gt "$period_pass" ]; then
+    if [ "$period_nb_requests" -gt 0 ]; then
         period_hit=$((cache_hit - old_cache_hit))
         #period_miss=$((cache_miss + cache_hitmiss - old_cache_miss - old_cache_hitmiss))
         period_pass=$((cache_pass + cache_hitpass - old_cache_pass - old_cache_hitpass))
-        hitrate=$(((period_hit * 100) / (period_nb_requests - period_pass)))
-        reqpersec=$(bc <<< "scale=1; (($period_nb_requests - $period_pass) / $period_s)")
+        if [ "$period_pass" -eq "$period_nb_requests" ]; then
+            hitrate=100
+            reqpersec=0
+        else
+            hitrate=$(((period_hit * 100) / (period_nb_requests - period_pass)))
+            reqpersec=$(bc <<< "scale=1; (($period_nb_requests - $period_pass) / $period_s)")
+        fi
     else
         hitrate=100
         reqpersec=0
