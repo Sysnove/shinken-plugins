@@ -45,7 +45,10 @@ CA_CERTIFICATE="${PKI_DIRECTORY}/ca.crt"
 CA_CERT_SUBJECT_HASH="$(openssl x509 -subject_hash -noout -in "${CA_CERTIFICATE}")"
 
 CA_OLD_CERTIFICATE="${PKI_DIRECTORY}/ca-old.crt"
-CA_OLD_CERT_SUBJECT_HASH="$(openssl x509 -subject_hash -noout -in "${CA_OLD_CERTIFICATE}")"
+
+if [ -r "${CA_OLD_CERTIFICATE}" ]; then
+    CA_OLD_CERT_SUBJECT_HASH="$(openssl x509 -subject_hash -noout -in "${CA_OLD_CERTIFICATE}")"
+fi
 
 # Check certificate validity.
 for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
