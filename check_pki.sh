@@ -42,17 +42,22 @@ CA_CERTIFICATE="${PKI_DIRECTORY}/ca.crt"
 
 [ ! -r "${CA_CERTIFICATE}" ] && critical "CA certificate missing."
 
+CA_CERT_SUBJECT_HASH="$(openssl x509 -subject_hash -noout -in "${CA_CERTIFICATE}")"
+
 CA_OLD_CERTIFICATE="${PKI_DIRECTORY}/ca-old.crt"
+CA_OLD_CERT_SUBJECT_HASH="$(openssl x509 -subject_hash -noout -in "${CA_OLD_CERTIFICATE}")"
 
 # Check certificate validity.
 for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     # Do not check old CA certificate.
     [ "${CERTIFICATE}" = "${PKI_DIRECTORY}/ca-old.crt" ] && continue
 
+    CERT_ISSUER_HASH="$(openssl x509 -issuer_hash -noout -in "${CERTIFICATE}")"
+
     # Detect CA
-    if [ -r "${CA_OLD_CERTIFICATE}" ] && openssl verify -no_check_time -CAfile "${CA_OLD_CERTIFICATE}" "${CERTIFICATE}"; then
+    if [ "${CERT_ISSUER_HASH}" = "${CA_OLD_CERT_SUBJECT_HASH}" ]; then
         CERT_CA="${CA_OLD_CERTIFICATE}"
-    elif openssl verify -no_check_time -CAfile "${CA_CERTIFICATE}" "${CERTIFICATE}"; then
+    elif [ "${CERT_ISSUER_HASH}" = "${CA_CERT_SUBJECT_HASH}" ]; then
         CERT_CA="${CA_CERTIFICATE}"
     else
         NO_CA_CERTS="$(append "${NO_CA_CERTS}" "$(basename "${CERTIFICATE}")")"
