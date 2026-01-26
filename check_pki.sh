@@ -42,21 +42,33 @@ CA_CERTIFICATE="${PKI_DIRECTORY}/ca.crt"
 
 [ ! -r "${CA_CERTIFICATE}" ] && critical "CA certificate missing."
 
+CA_OLD_CERTIFICATE="${PKI_DIRECTORY}/ca-old.crt"
+
 # Check certificate validity.
 for CERTIFICATE in "${PKI_DIRECTORY}"/*.crt; do
     # Do not check old CA certificate.
     [ "${CERTIFICATE}" = "${PKI_DIRECTORY}/ca-old.crt" ] && continue
 
+    # Detect CA
+    if [ -r "${CA_OLD_CERTIFICATE}" ] && openssl verify -no_check_time -CAfile "${CA_OLD_CERTIFICATE}" "${CERTIFICATE}"; then
+        CERT_CA="${CA_OLD_CERTIFICATE}"
+    elif openssl verify -no_check_time -CAfile "${CA_CERTIFICATE}" "${CERTIFICATE}"; then
+        CERT_CA="${CA_CERTIFICATE}"
+    else
+        NO_CA_CERTS="$(append "${NO_CA_CERTS}" "$(basename "${CERTIFICATE}")")"
+        continue
+    fi
+
     # Check expiration
-    if ! openssl verify -CAfile "${CA_CERTIFICATE}" "${CERTIFICATE}" >/dev/null 2>&1; then
+    if ! openssl verify -CAfile "${CERT_CA}" "${CERTIFICATE}" >/dev/null 2>&1; then
         EXPIRED_CERTS="$(append "${EXPIRED_CERTS}" "$(basename "${CERTIFICATE}")")"
     fi
 
-    if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_WEEK}" "${CERTIFICATE}" >/dev/null 2>&1; then
+    if ! openssl verify -CAfile "${CERT_CA}" -attime "${IN_ONE_WEEK}" "${CERTIFICATE}" >/dev/null 2>&1; then
         NEAR_EXPIRATION_CERTS="$(append "${NEAR_EXPIRATION_CERTS}" "$(basename "${CERTIFICATE}")")"
     fi
 
-    if ! openssl verify -CAfile "${CA_CERTIFICATE}" -attime "${IN_ONE_MONTH}" "${CERTIFICATE}" >/dev/null 2>&1; then
+    if ! openssl verify -CAfile "${CERT_CA}" -attime "${IN_ONE_MONTH}" "${CERTIFICATE}" >/dev/null 2>&1; then
         FAR_EXPIRATION_CERTS="$(append "${FAR_EXPIRATION_CERTS}" "$(basename "${CERTIFICATE}")")"
     fi
 done
@@ -72,6 +84,10 @@ fi
 
 if [ -n "${FAR_EXPIRATION_CERTS}" ]; then
     warning "Those certificates expire in less than one month: ${FAR_EXPIRATION_CERTS}."
+fi
+
+if [ -n "${NO_CA_CERTS}" ]; then
+    warning "Those certificates are not signed by know CA: ${NO_CA_CERTS}."
 fi
 
 ok "All certificates in ${PKI_DIRECTORY} are valid."
