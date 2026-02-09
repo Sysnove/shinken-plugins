@@ -80,6 +80,8 @@ check_website() {
     check_uri "$website" "/.env.local" CRITICAL
     check_uri "$website" "/.env.production" CRITICAL
     check_uri "$website" "/dump.sql" CRITICAL
+    check_uri "$website" "/package.json" CRITICAL
+    check_uri "$website" "/wp-content/debug.log" CRITICAL
 }
 
 export -f check_url
