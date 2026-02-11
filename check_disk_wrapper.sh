@@ -12,6 +12,6 @@ else
     exit 3
 fi
 
-$exe $@ -I '^/sys' -I '^/run' -I '^/dev$' -I 'docker/overlay2/' -I borgfs -I tmpfs -X borgfs -X tmpfs -X fuse.portal -X fuse.nvim.appimage -X fuse.sshfs -X fuse.FlexNetFs -X cifs -X fuse.nvim -X devtmpfs -X aufs -X overlay -X overlay2 -X squashfs $(findmnt --raw | grep '\[' | awk '{print "-I "$1}' | xargs)
+$exe $@ -I '^/sys' -I '^/run' -I '^/dev$' -I 'docker/overlay2/' -I '/var/lib/kubelet' -I borgfs -I tmpfs -X borgfs -X tmpfs -X fuse.portal -X fuse.nvim.appimage -X fuse.sshfs -X fuse.FlexNetFs -X cifs -X fuse.nvim -X devtmpfs -X aufs -X overlay -X overlay2 -X squashfs $(findmnt --raw | grep '\[' | awk '{print "-I "$1}' | xargs)
 
 exit $?
