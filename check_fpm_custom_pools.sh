@@ -10,14 +10,14 @@ for conf in $(find /etc/php | grep 'pool.d/.*.conf$' | grep -v '/www.conf$' | gr
         continue
     fi
 
-    if ! grep '^access.log = /var/log/php-fpm/access.log' "$conf"; then
+    if ! grep -q '^access.log = /var/log/php-fpm/access.log' "$conf"; then
         echo "WARNING - access.log is not configured in $conf"
         ret=1
         continue
     fi
 
     for var in request_terminate_timeout access.format; do
-        if ! grep "^$var" "$conf"; then
+        if ! grep -q "^$var" "$conf"; then
             echo "WARNING - $var is not configured in $conf"
             ret=1
             continue
