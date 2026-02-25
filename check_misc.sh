@@ -81,6 +81,9 @@ fi
 if [ -d /etc/nginx ]; then
     /usr/local/nagios/plugins/check_nginx_config.sh
 fi
+if [ -d /etc/php ]; then
+    /usr/local/nagios/plugins/check_fpm_custom_pools.sh
+fi
 if [ -f /proc/mdstat ]; then
     /usr/local/nagios/plugins/check_md_nbdisks.sh
 fi
