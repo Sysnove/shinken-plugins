@@ -9,7 +9,21 @@ if [ -n "$nginx_security_warnings" ]; then
     exit 1
 fi
 
-# :TODO:maethor:20260114: Check log format to force timed_combined?
+# Test that magento /media/ location is not in 8080 vhost
+nginx_media_warnings=$(grep -RE '^ *(listen|location /media/ {)' /etc/nginx/sites-enabled | grep 'location /media/' -B 1 | grep ':8080' | cut -d ':' -f 1)
+if [ -n "$nginx_media_warnings" ]; then
+    echo "WARNING - You should not define /media/ location in 8080 magento's vhost. It should be before Varnish."
+    echo "$nginx_media_warnings"
+    exit 1
+fi
+
+# Check log format to force timed_combined
+nginx_logs_warnings=$(grep -RE '^ *access_log.*\.log( combined)?;' /etc/nginx/sites-enabled)
+if [ -n "$nginx_logs_warnings" ]; then
+    echo "WARNING - Some vhosts are not configured with access_log timed_combined."
+    echo "$nginx_logs_warnings"
+    exit 1
+fi
 
 echo "OK - Nginx config is all good."
 exit 0
