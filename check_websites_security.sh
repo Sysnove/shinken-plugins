@@ -134,7 +134,9 @@ if [ $RET -eq 0 ]; then
     echo "$nb_websites $server websites - Everything seems OK (took ${SECONDS}s to check $(wc -l < "$tmp_checked") URL)"
     cat "$tmp_checked"
 else
-    echo "$NB_ERRORS dangerous files found in $nb_websites $server websites"
+    if [ "$NB_ERRORS" -gt 1 ]; then
+        echo "CRITICAL : $NB_ERRORS dangerous URL found ($nb_websites $server websites scanned)"
+    fi
     cat "$tmp_errors"
 fi
 
