@@ -81,7 +81,10 @@ check_website() {
     check_uri "$website" "/.env.production" CRITICAL
     check_uri "$website" "/dump.sql" CRITICAL
     check_uri "$website" "/package.json" CRITICAL
+    check_uri "$website" "/package-lock.json" CRITICAL
     check_uri "$website" "/wp-content/debug.log" CRITICAL
+    check_uri "$website" "/docker-compose.yml" CRITICAL
+    check_uri "$website" "/Dockerfile" CRITICAL
 }
 
 export -f check_url
