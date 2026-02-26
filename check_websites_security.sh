@@ -15,8 +15,6 @@ if [ "${USER}" != "root" ]; then
     exit 3
 fi
 
-FREQUENCY=$((4*24)) # NB checks per day. Must be configured to set tests probabilities.
-
 tmp_errors=$(mktemp "/tmp/$(basename "$0").XXXXXX")
 export tmp_errors
 tmp_checked=$(mktemp "/tmp/$(basename "$0").XXXXXX")
@@ -29,8 +27,10 @@ mkdir -p /var/tmp/check_websites_security
 find /var/tmp/check_websites_security -type f -empty -delete
 find /var/tmp/check_websites_security -type f -mtime +7 -delete
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317 disable=SC2329
 check_url() {
+    FREQUENCY=$((4*24)) # NB checks per day. Must be configured to set tests probabilities.
+
     url="$1"
     domain=$2
     port=$3
@@ -38,13 +38,13 @@ check_url() {
     url_tmp_file=/var/tmp/check_websites_security/${url//\//_}
     if [ -f "$url_tmp_file" ]; then
         url_last_check=$((($(date +%s) - $(date +%s -r "$url_tmp_file")) / 86400))
-    if [ "$url_last_check" -gt 0 ]; then
-        # 10% chance per day after 1 day, 20% after 2 days, 33% after 3 days, 50% after 4 days
-        probability_of_check=$((FREQUENCY * (10 / url_last_check)))
-        if [ "$((RANDOM % probability_of_check))" -eq 0 ]; then
-            rm "$url_tmp_file"
+        if [ "$url_last_check" -gt 0 ]; then
+            # 10% chance per day after 1 day, 20% after 2 days, 33% after 3 days, 50% after 4 days
+            probability_of_check=$((FREQUENCY * (10 / url_last_check)))
+            if [ "$((RANDOM % probability_of_check))" -eq 0 ]; then
+                rm "$url_tmp_file"
+            fi
         fi
-    fi
     fi
     if ! [ -f "$url_tmp_file" ]; then
         LC_ALL=C curl -A "Sysnove check_websites_security" --max-time 15 -sI -X GET --resolve "$domain:$port:127.0.0.1" "$url" > "$url_tmp_file"
@@ -58,7 +58,7 @@ check_url() {
     fi
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317 disable=SC2329
 check_uri() {
     domain=$1
     uri=$2
@@ -67,7 +67,7 @@ check_uri() {
     check_url "https://$domain$uri" "$domain" 443 "$level"
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317 disable=SC2329
 check_website() {
     website=$1
 
