@@ -1,14 +1,27 @@
 #!/bin/bash
 
 # Checks that this host is in proper ansible groups
-
-# magento_servers
-if magento_vhosts=$(grep -Rl '/static.php?resource=' /etc/nginx/sites-enabled); then
-    if ! jq -r '.host.ansible_groups[]' /etc/sysnove.json | grep -qw magento_servers; then
-        echo "$magento_vhosts"
-        echo "WARNING: This host should be in magento_servers."
-        exit 1
+#
+# # magento_servers
+if [ -d /etc/nginx/sites-enabled ]; then
+    if magento_vhosts=$(grep -Rl '/static.php?resource=' /etc/nginx/sites-enabled); then
+        if ! jq -r '.host.ansible_groups[]' /etc/sysnove.json | grep -qw magento_servers; then
+            echo "$magento_vhosts"
+            echo "WARNING: This host should be in magento_servers."
+            exit 1
+        fi
     fi
+fi
+if [ -d /etc/apache2/sites-enabled ]; then
+    for root in $(grep -Rh DocumentRoot /etc/apache2/sites-enabled | grep -Eo '/[^ ":]+' | sort | uniq); do
+        if [ -f "$root/get.php" ] && [ -f "$root/static.php" ] && [ -f "$root/health_check.php" ]; then
+            if ! jq -r '.host.ansible_groups[]' /etc/sysnove.json | grep -qw magento_servers; then
+                echo "$root"
+                echo "WARNING: This host should be in magento_servers."
+                exit 1
+            fi
+        fi
+    done
 fi
 
 # mariadb_servers_big on servers with more than 15Go RAM
