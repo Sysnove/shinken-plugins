@@ -16,10 +16,12 @@ currenttimestamp=$(date +"%s")
 
 delay=$((($currenttimestamp - $lasttimestamp) / 3600))
 
-if [ $delay -eq 0 ]; then
-    echo "OK - ISPConfig cron is up to date"
-    exit 0
-else
+if [ $delay -ne 0 ]; then
     echo "WARNING - ISPConfig cron is $delay hours late."
     exit 1
 fi
+
+if sudo mysql dbispconfig -e "select * from sys_datalog where datalog_id > $(sudo mysql -sN dbispconfig -e 'select updated from server;')"
+
+echo "OK - ISPConfig cron is up to date"
+exit 0
