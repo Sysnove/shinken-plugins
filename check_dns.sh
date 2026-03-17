@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Nagios's check_dns uses nxlookup and time mesured can be very slow when the host is under load.
+# On an empty host, we typically get 60ms with Nagios's check_dns, and 0 to 15ms with this plugin.
+
 ###
 ### Usage: check_dns.sh -H google.com -w 0.1 -c 0.3
 ###
