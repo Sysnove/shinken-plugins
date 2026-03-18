@@ -35,14 +35,14 @@ if [ $? != 0 ]; then
     exit 3
 fi
 
-perfdata="running_queries=$running_count; warning_queries=$warning_count; critical_queries=$critical_count; longest_running_query=${longest_running_query}s;$WARNING;$CRITICAL"
+#perfdata="running_queries=$running_count; warning_queries=$warning_count; critical_queries=$critical_count; longest_running_query=${longest_running_query}s;$WARNING;$CRITICAL"
 
 if [ "$critical_count" -ge 1 ]; then
-    echo "CRITICAL : $critical_count querie(s) running for longer than $CRITICAL seconds | $perfdata"
+    echo "CRITICAL : $critical_count querie(s) running for $longest_running_query seconds"
     exit 2
 elif [ "$warning_count" -ge 1 ]; then
-    echo "WARNING : $warning_count querie(s) running for longer than $WARNING seconds | $perfdata"
+    echo "WARNING : $warning_count querie(s) running for $longest_running_query seconds"
     exit 1
 else
-    echo "OK : $running_count running querie(s) | $perfdata"
+    echo "OK : $running_count running querie(s)"
 fi
