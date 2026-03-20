@@ -11,7 +11,7 @@ if ! [ -d "$(dirname "$CACHEFILE")" ]; then
     install -g "$NAGIOS_USER" -o "$NAGIOS_USER" -m 750 -d "$(dirname "$CACHEFILE")"
 fi
 
-EXCLUDES="/var/cache /var/lib /usr/share /lost+found /proc /sys /dev /run"
+EXCLUDES="/var/backups /var/cache /var/lib /usr/share /lost+found /proc /sys /dev /run"
 
 while getopts "e:s:f" option; do
     case $option in
