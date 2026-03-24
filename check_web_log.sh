@@ -105,7 +105,7 @@ begin=$new_file_pos
 end=$old_file_pos
 
 lines () {
-    head -n "$begin" "$LOGFILE" | tail --lines=+"$end" | grep -E "$FILTER" | strings
+    sed -n "${begin},${end}p" "$LOGFILE" | strings
 }
 
 nb_lines=$(lines | wc -l)
