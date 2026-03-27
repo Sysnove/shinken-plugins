@@ -15,15 +15,33 @@ def main():
         shell=True
     ).splitlines()]
 
-    # Retrive Docker network information.
-    network_information = json.loads(
-        subprocess.check_output(
-            "docker network ls --filter driver=overlay -q | xargs docker network inspect -v",
-            shell=True
-        )
-    )
+    # Retrieve Docker network list.
+    network_ids = subprocess.check_output(
+        "docker network ls --filter driver=overlay -q",
+        shell=True
+    ).decode("utf-8").splitlines()
 
-    for network in network_information:
+    for network_id in network_ids:
+        # Retrieve Docker network information.
+        try:
+            network = json.loads(
+                subprocess.check_output(
+                    f"docker network inspect -v {network_id}",
+                    shell=True
+                )
+            )[0]
+        except:
+            pass
+
+        # Sometimes command fails with -v.
+        if not network:
+            network = json.loads(
+                subprocess.check_output(
+                    f"docker network inspect {network_id}",
+                    shell=True
+                )
+            )[0]
+
         name = network['Name']
 
         nvip = 0
