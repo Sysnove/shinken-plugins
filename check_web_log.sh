@@ -101,11 +101,8 @@ if [ "$new_file_pos" -lt "$old_file_pos" ] ; then
     old_file_pos=1
 fi
 
-begin=$new_file_pos
-end=$old_file_pos
-
 lines () {
-    sed -n "${begin},${end}p" "$LOGFILE" | strings
+    sed -n "${old_file_pos},${new_file_pos}p" "$LOGFILE" | strings
 }
 
 nb_lines=$(lines | wc -l)
